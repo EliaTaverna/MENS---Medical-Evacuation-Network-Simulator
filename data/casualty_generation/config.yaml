@@ -1,0 +1,33 @@
+# Casualty Generation Configuration
+# =================================
+# Tabular data in CSV files:
+#   - diagnosis_mix.csv: diagnosis, frequency
+#   - prescriptions.csv: label, frequency, prescription
+#   - lifetime.csv: triage, distribution, low, high
+
+# Facilities where casualties spawn
+facility_ids:
+  - ccp1
+  - ccp2
+  - ccp3
+  - ccp4
+  - ccp5
+  - ccp6
+  - ccp7
+  - ccp8
+  - ccp9
+
+# Global Personnel At Risk
+par_total: 18800
+
+# Wave scheduling parameters
+n_days: 7
+waves_per_day: 3
+wave_duration_min: 30
+
+# Casualty rate: casualties per soldier per day
+# 0.023 BCAS + 0.0013 DNBI = 0.0243
+rate_per_day: 0.0161
+
+# Random seed for reproducibility
+seed: 42

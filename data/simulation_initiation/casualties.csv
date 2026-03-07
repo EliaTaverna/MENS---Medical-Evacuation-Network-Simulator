@@ -1,0 +1,2128 @@
+t_create,spawn_facility_id,triage,prescription,lifetime_dist_type,lifetime_low,lifetime_high,lifetime_mode
+32.15745252343422,ccp8,T3,['PEC'],triangular,,,11000
+33.00214330485817,ccp8,T3,['PEC'],triangular,,,11000
+33.500391780597326,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+33.676965290216145,ccp1,T3,['PEC'],triangular,,,11000
+34.10073545124003,ccp6,T3,['PEC'],triangular,,,11000
+34.733851166101076,ccp6,T2,"['DCR', 'DCS']",triangular,,,1440
+34.869513743567005,ccp1,T3,['PEC'],triangular,,,11000
+34.89135813213196,ccp1,T3,['PEC'],triangular,,,11000
+36.03209478284682,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+36.916752073234214,ccp8,T3,['PEC'],triangular,,,11000
+37.74339224318319,ccp1,T3,['PEC'],triangular,,,11000
+38.86480770828146,ccp8,T3,['PEC'],triangular,,,11000
+40.13885846897752,ccp1,T3,['PEC'],triangular,,,11000
+41.44440428248386,ccp6,T2,['DCR'],triangular,,,1440
+42.17312183463393,ccp1,T3,['PEC'],triangular,,,11000
+42.8706917985383,ccp6,T2,['DCR'],triangular,,,1440
+43.57012446422743,ccp6,T3,['PEC'],triangular,,,11000
+44.27482300622375,ccp6,T3,['PEC'],triangular,,,11000
+44.32849467752625,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+45.70737348540759,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+47.410808769583255,ccp8,T2,['DCR'],triangular,,,1440
+47.86312711195623,ccp6,T2,['DCR'],triangular,,,1440
+48.971411576926485,ccp8,T3,['PEC'],triangular,,,11000
+49.17177049862021,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+49.187752848907955,ccp6,T3,['PEC'],triangular,,,11000
+50.3316845214161,ccp1,T3,['PEC'],triangular,,,11000
+52.100170310023515,ccp8,T2,['DCR'],triangular,,,1440
+53.74895728459205,ccp6,T3,['PEC'],triangular,,,11000
+54.01126390991224,ccp8,T2,['DCR'],triangular,,,1440
+54.11116534641377,ccp8,T3,['PEC'],triangular,,,11000
+54.33054159725339,ccp6,T3,['PEC'],triangular,,,11000
+55.04278320624485,ccp8,T3,['PEC'],triangular,,,11000
+55.35854295005162,ccp8,T3,['PEC'],triangular,,,11000
+55.71881020670315,ccp1,T3,['PEC'],triangular,,,11000
+56.17443578663466,ccp8,T3,['PEC'],triangular,,,11000
+57.04724763362752,ccp8,T2,['DCR'],triangular,,,1440
+59.07551844433266,ccp1,T3,['PEC'],triangular,,,11000
+63.844154377037505,ccp6,T3,['PEC'],triangular,,,11000
+65.3374904011534,ccp6,T3,['PEC'],triangular,,,11000
+67.30084006779674,ccp6,T3,['PEC'],triangular,,,11000
+69.20601802448091,ccp6,T3,['PEC'],triangular,,,11000
+71.55214754147804,ccp6,T2,['DCR'],triangular,,,1440
+74.78176251872415,ccp6,T2,['DCR'],triangular,,,1440
+77.73551706349373,ccp6,T3,['PEC'],triangular,,,11000
+81.71795536613583,ccp6,T3,['PEC'],triangular,,,11000
+82.43220505666775,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+82.69633546921197,ccp6,T3,['PEC'],triangular,,,11000
+86.46124096619205,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+152.48212042391938,ccp7,T3,['PEC'],triangular,,,11000
+154.99459892693463,ccp5,T3,['PEC'],triangular,,,11000
+155.10360296633368,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+155.44977124193986,ccp7,T3,['PEC'],triangular,,,11000
+156.23473322819638,ccp5,T3,['PEC'],triangular,,,11000
+158.2643644302097,ccp5,T2,['DCR'],triangular,,,1440
+161.11301784257142,ccp7,T1,['DCR'],triangular,,,60
+161.45000125334664,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+161.52269311495488,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+162.00246785748888,ccp5,T3,['PEC'],triangular,,,11000
+162.5687783495417,ccp5,T2,['DCR'],triangular,,,1440
+164.6831487944177,ccp7,T2,"['DCR', 'DCS']",triangular,,,1440
+166.28563504140243,ccp5,T3,['PEC'],triangular,,,11000
+169.3461356773008,ccp5,T3,['PEC'],triangular,,,11000
+172.93784773425568,ccp7,T3,['PEC'],triangular,,,11000
+173.69968802114326,ccp7,T3,['PEC'],triangular,,,11000
+174.05355262983252,ccp7,T3,['PEC'],triangular,,,11000
+175.66584596176938,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+178.76391932931998,ccp7,T2,"['DCR', 'DCS']",triangular,,,1440
+179.1461402244828,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+180.09971445782062,ccp4,T2,['DCR'],triangular,,,1440
+182.79581671346645,ccp4,T3,['PEC'],triangular,,,11000
+183.45045144720135,ccp4,T3,['PEC'],triangular,,,11000
+183.9216637443064,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+186.05413472188226,ccp4,T3,['PEC'],triangular,,,11000
+187.2094539174189,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+194.85312547554722,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+195.1780957690695,ccp4,T3,['PEC'],triangular,,,11000
+195.85071398977374,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+199.3986473666976,ccp4,T3,['PEC'],triangular,,,11000
+200.22998807306027,ccp4,T3,['PEC'],triangular,,,11000
+201.01814089033022,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+201.13633184469575,ccp4,T3,['PEC'],triangular,,,11000
+201.85945032956238,ccp4,T1,['DCR'],triangular,,,60
+210.58386332410032,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+222.34202342602123,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+228.49602514691728,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+231.46715225828598,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+233.92197900166286,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+237.0226556535934,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+237.8024607826068,ccp1,T3,['PEC'],triangular,,,11000
+238.18925435935182,ccp1,T3,['PEC'],triangular,,,11000
+238.64808492205498,ccp1,T3,['PEC'],triangular,,,11000
+241.7904602388799,ccp3,T3,['PEC'],triangular,,,11000
+249.049701948431,ccp3,T1,['DCR'],triangular,,,60
+254.043206407655,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+255.62408721726786,ccp3,T2,['DCR'],triangular,,,1440
+258.82673294158707,ccp3,T3,['PEC'],triangular,,,11000
+259.48071282671305,ccp3,T3,['PEC'],triangular,,,11000
+259.6602448647875,ccp3,T3,['PEC'],triangular,,,11000
+264.42595031473303,ccp3,T3,['PEC'],triangular,,,11000
+267.0625128477192,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+360.23128998293225,ccp9,T3,['PEC'],triangular,,,11000
+360.4056416896856,ccp9,T2,['DCR'],triangular,,,1440
+367.1754756492169,ccp9,T2,['DCR'],triangular,,,1440
+368.2131681902774,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+370.3235006999573,ccp9,T3,['PEC'],triangular,,,11000
+376.2529361575452,ccp9,T3,['PEC'],triangular,,,11000
+376.92974014389756,ccp9,T2,['DCR'],triangular,,,1440
+377.34953379129377,ccp9,T3,['PEC'],triangular,,,11000
+377.53296958369486,ccp9,T3,['PEC'],triangular,,,11000
+377.5709552810713,ccp9,T2,['DCR'],triangular,,,1440
+381.5611604500618,ccp9,T2,['DCR'],triangular,,,1440
+383.77166407569086,ccp9,T3,['PEC'],triangular,,,11000
+385.1357002413658,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+390.6583561432986,ccp7,T3,['PEC'],triangular,,,11000
+391.5731704021093,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+393.07943039744566,ccp7,T2,['DCR'],triangular,,,1440
+399.6164999943789,ccp7,T3,['PEC'],triangular,,,11000
+400.15283028056285,ccp7,T3,['PEC'],triangular,,,11000
+408.8296338203028,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+408.9885395377074,ccp7,T2,['DCR'],triangular,,,1440
+411.6850709403094,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+415.5494310116657,ccp7,T3,['PEC'],triangular,,,11000
+421.1555039418281,ccp7,T3,['PEC'],triangular,,,11000
+421.36723684158966,ccp3,T2,"['DCR', 'DCS']",triangular,,,1440
+422.09341221156757,ccp7,T3,['PEC'],triangular,,,11000
+422.7449946441551,ccp3,T2,['DCR'],triangular,,,1440
+424.4490549119514,ccp3,T3,['PEC'],triangular,,,11000
+425.7120329064104,ccp3,T3,['PEC'],triangular,,,11000
+425.99976276428026,ccp3,T3,['PEC'],triangular,,,11000
+427.09583956336405,ccp7,T3,['PEC'],triangular,,,11000
+427.26707043381464,ccp3,T2,"['DCR', 'DCS']",triangular,,,1440
+429.1264993990525,ccp3,T3,['PEC'],triangular,,,11000
+429.27462932815877,ccp7,T2,"['DCR', 'DCS']",triangular,,,1440
+432.56367515434493,ccp3,T3,['PEC'],triangular,,,11000
+437.39616483437084,ccp7,T3,['PEC'],triangular,,,11000
+442.50965884530024,ccp7,T3,['PEC'],triangular,,,11000
+444.5698540615475,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+444.94815413235364,ccp7,T3,['PEC'],triangular,,,11000
+447.1697109714486,ccp7,T3,['PEC'],triangular,,,11000
+448.65025353906566,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+453.22696558260975,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+454.05653695225885,ccp2,T3,['PEC'],triangular,,,11000
+457.998820857743,ccp2,T3,['PEC'],triangular,,,11000
+458.28434906156366,ccp2,T3,['PEC'],triangular,,,11000
+460.4877448809771,ccp2,T3,['PEC'],triangular,,,11000
+460.7387964911027,ccp2,T3,['PEC'],triangular,,,11000
+463.35662793790766,ccp2,T2,['DCR'],triangular,,,1440
+463.5119594220065,ccp2,T2,['DCR'],triangular,,,1440
+470.20473981844987,ccp2,T3,['PEC'],triangular,,,11000
+470.6081331884541,ccp2,T2,"['DCR', 'DCS']",triangular,,,1440
+470.68643213424065,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+473.62208472265723,ccp2,T3,['PEC'],triangular,,,11000
+473.8478244279265,ccp2,T3,['PEC'],triangular,,,11000
+475.2893204734237,ccp2,T2,['DCR'],triangular,,,1440
+511.52398391174614,ccp2,T3,['PEC'],triangular,,,11000
+513.8362659211997,ccp2,T3,['PEC'],triangular,,,11000
+516.1196708990798,ccp2,T3,['PEC'],triangular,,,11000
+517.0091298573662,ccp2,T3,['PEC'],triangular,,,11000
+517.5959642174197,ccp2,T3,['PEC'],triangular,,,11000
+517.7282326212048,ccp2,T3,['PEC'],triangular,,,11000
+517.8550413601617,ccp2,T3,['PEC'],triangular,,,11000
+521.5983255645907,ccp2,T3,['PEC'],triangular,,,11000
+521.8829660968206,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+523.2429043167707,ccp2,T3,['PEC'],triangular,,,11000
+523.3789116592269,ccp2,T3,['PEC'],triangular,,,11000
+523.8602395055273,ccp2,T3,['PEC'],triangular,,,11000
+534.2786936039223,ccp2,T2,['DCR'],triangular,,,1440
+539.7358895169418,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+816.5214960811794,ccp6,T3,['PEC'],triangular,,,11000
+822.273022467125,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+825.0015617076521,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+825.0605522049383,ccp6,T3,['PEC'],triangular,,,11000
+825.4660129585586,ccp6,T3,['PEC'],triangular,,,11000
+826.2182904847823,ccp6,T3,['PEC'],triangular,,,11000
+826.5178503062384,ccp6,T3,['PEC'],triangular,,,11000
+827.6663174125111,ccp6,T3,['PEC'],triangular,,,11000
+832.4192072284287,ccp6,T3,['PEC'],triangular,,,11000
+837.3202672177886,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+839.7946113918015,ccp6,T3,['PEC'],triangular,,,11000
+962.0386440056438,ccp8,T3,['PEC'],triangular,,,11000
+962.3458576765208,ccp8,T3,['PEC'],triangular,,,11000
+964.2124601264502,ccp8,T3,['PEC'],triangular,,,11000
+964.5530679210553,ccp8,T3,['PEC'],triangular,,,11000
+964.7178229433902,ccp8,T3,['PEC'],triangular,,,11000
+964.7495981266594,ccp8,T3,['PEC'],triangular,,,11000
+965.0975639874653,ccp8,T3,['PEC'],triangular,,,11000
+971.1376646279145,ccp8,T2,['DCR'],triangular,,,1440
+975.8485216593207,ccp8,T3,['PEC'],triangular,,,11000
+977.580885801689,ccp8,T3,['PEC'],triangular,,,11000
+978.130198004743,ccp8,T2,['DCR'],triangular,,,1440
+980.1011089319684,ccp8,T3,['PEC'],triangular,,,11000
+980.5764748151264,ccp8,T2,['DCR'],triangular,,,1440
+982.0270598987191,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+986.8777428285073,ccp8,T3,['PEC'],triangular,,,11000
+1021.7185151813237,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+1021.949721602931,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+1022.1616494663376,ccp5,T3,['PEC'],triangular,,,11000
+1031.5657727702207,ccp5,T2,['DCR'],triangular,,,1440
+1033.1518396748972,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+1033.7721008513731,ccp5,T2,['DCR'],triangular,,,1440
+1034.268860539773,ccp5,T3,['PEC'],triangular,,,11000
+1043.9133481755607,ccp5,T3,['PEC'],triangular,,,11000
+1044.0278305914674,ccp5,T3,['PEC'],triangular,,,11000
+1046.2048079314666,ccp5,T3,['PEC'],triangular,,,11000
+1056.1417901612836,ccp9,T3,['PEC'],triangular,,,11000
+1059.771637302826,ccp9,T2,['DCR'],triangular,,,1440
+1059.9922283694002,ccp9,T3,['PEC'],triangular,,,11000
+1062.255230430577,ccp9,T3,['PEC'],triangular,,,11000
+1067.2955136163803,ccp9,T2,"['DCR', 'DCS']",triangular,,,1440
+1067.5534552276347,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+1070.5497857730359,ccp9,T3,['PEC'],triangular,,,11000
+1071.0490916204703,ccp9,T2,['DCR'],triangular,,,1440
+1071.5031569898558,ccp9,T3,['PEC'],triangular,,,11000
+1072.4174738829784,ccp9,T3,['PEC'],triangular,,,11000
+1078.4903614402094,ccp9,T3,['PEC'],triangular,,,11000
+1079.0468159421703,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+1079.788514448748,ccp9,T3,['PEC'],triangular,,,11000
+1110.5203056551957,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+1113.4633377599093,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+1113.566005687749,ccp5,T3,['PEC'],triangular,,,11000
+1115.0838571728364,ccp5,T3,['PEC'],triangular,,,11000
+1121.5220043404865,ccp5,T3,['PEC'],triangular,,,11000
+1123.1392402331242,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+1127.1108818106622,ccp5,T2,"['DCR', 'DCS']",triangular,,,1440
+1127.2326532625925,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+1137.2183161093094,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+1140.689853399975,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+1141.6709064366073,ccp8,T3,['PEC'],triangular,,,11000
+1147.9202331562046,ccp8,T3,['PEC'],triangular,,,11000
+1148.9148836755494,ccp8,T3,['PEC'],triangular,,,11000
+1150.0122868030573,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+1150.8691789740783,ccp8,T3,['PEC'],triangular,,,11000
+1152.235015948661,ccp8,T2,['DCR'],triangular,,,1440
+1156.0737878350299,ccp8,T3,['PEC'],triangular,,,11000
+1156.1889354470932,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+1159.0245088401339,ccp8,T3,['PEC'],triangular,,,11000
+1160.7709036010094,ccp8,T3,['PEC'],triangular,,,11000
+1164.8744656810811,ccp8,T3,['PEC'],triangular,,,11000
+1166.5235474011893,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+1168.4729724710155,ccp8,T2,['DCR'],triangular,,,1440
+1169.7242605480894,ccp8,T3,['PEC'],triangular,,,11000
+1202.617232799434,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+1205.4237969194212,ccp1,T1,['DCR'],triangular,,,60
+1205.9148806672545,ccp1,T3,['PEC'],triangular,,,11000
+1206.1027164989466,ccp1,T2,['DCR'],triangular,,,1440
+1209.0384101370803,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+1215.7158845933868,ccp1,T3,['PEC'],triangular,,,11000
+1216.3861928719023,ccp1,T3,['PEC'],triangular,,,11000
+1225.3618541737656,ccp1,T3,['PEC'],triangular,,,11000
+1229.314634295913,ccp1,T2,['DCR'],triangular,,,1440
+1291.1093850198513,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+1293.140339233451,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+1295.823406382878,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+1296.1039692641466,ccp4,T3,['PEC'],triangular,,,11000
+1297.9630275583988,ccp4,T2,['DCR'],triangular,,,1440
+1299.5073367443147,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+1302.6292481537864,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+1303.5383757529041,ccp4,T3,['PEC'],triangular,,,11000
+1304.391507911092,ccp4,T3,['PEC'],triangular,,,11000
+1310.4853446709603,ccp4,T3,['PEC'],triangular,,,11000
+1315.772250951212,ccp4,T3,['PEC'],triangular,,,11000
+1315.7831004409759,ccp4,T3,['PEC'],triangular,,,11000
+1318.2350216315976,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+1350.9994415140586,ccp9,T3,['PEC'],triangular,,,11000
+1351.7971423487295,ccp9,T3,['PEC'],triangular,,,11000
+1352.6636177636724,ccp9,T3,['PEC'],triangular,,,11000
+1355.3745692806351,ccp9,T3,['PEC'],triangular,,,11000
+1369.9245631747901,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+1370.3778360977237,ccp9,T3,['PEC'],triangular,,,11000
+1372.9054155035358,ccp9,T3,['PEC'],triangular,,,11000
+1374.9663238929738,ccp9,T3,['PEC'],triangular,,,11000
+1375.3512916454931,ccp9,T3,['PEC'],triangular,,,11000
+1375.854842343741,ccp9,T2,"['DCR', 'DCS']",triangular,,,1440
+1376.8991093152188,ccp9,T3,['PEC'],triangular,,,11000
+1377.585553061915,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+1410.2163659812486,ccp2,T3,['PEC'],triangular,,,11000
+1411.056880652094,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+1412.8718134862947,ccp2,T3,['PEC'],triangular,,,11000
+1413.071128010115,ccp2,T3,['PEC'],triangular,,,11000
+1413.7729508631828,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+1413.7952193976494,ccp2,T3,['PEC'],triangular,,,11000
+1414.6214594742262,ccp4,T3,['PEC'],triangular,,,11000
+1415.0706553516927,ccp2,T3,['PEC'],triangular,,,11000
+1416.130780396285,ccp4,T3,['PEC'],triangular,,,11000
+1416.2309792940068,ccp4,T3,['PEC'],triangular,,,11000
+1416.9075279357353,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+1417.03208466682,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+1419.2648160796562,ccp4,T3,['PEC'],triangular,,,11000
+1419.2850187817126,ccp4,T2,['DCR'],triangular,,,1440
+1419.4818557939825,ccp2,T3,['PEC'],triangular,,,11000
+1419.9517440560996,ccp4,T2,['DCR'],triangular,,,1440
+1420.2597559900448,ccp3,T2,['DCR'],triangular,,,1440
+1420.3074705164092,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+1420.9959338408758,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+1422.8465198036622,ccp2,T2,"['DCR', 'DCS']",triangular,,,1440
+1423.355884372822,ccp3,T3,['PEC'],triangular,,,11000
+1426.9647952030707,ccp2,T3,['PEC'],triangular,,,11000
+1431.1496167489092,ccp4,T3,['PEC'],triangular,,,11000
+1431.4507850860082,ccp3,T2,['DCR'],triangular,,,1440
+1431.5748016366067,ccp2,T3,['PEC'],triangular,,,11000
+1432.0309030310473,ccp4,T2,['DCR'],triangular,,,1440
+1432.5079795078282,ccp4,T3,['PEC'],triangular,,,11000
+1433.472257859404,ccp2,T3,['PEC'],triangular,,,11000
+1433.7949431418333,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+1434.3271946887112,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+1436.5212736962499,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+1437.7819653740678,ccp4,T3,['PEC'],triangular,,,11000
+1438.5418225403664,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+1439.0620655072335,ccp3,T3,['PEC'],triangular,,,11000
+1439.0865107082655,ccp4,T3,['PEC'],triangular,,,11000
+1440.3683630959076,ccp3,T2,['DCR'],triangular,,,1440
+1440.3905005008505,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+1444.197928674783,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+1447.7693406444278,ccp3,T2,['DCR'],triangular,,,1440
+1461.2784145325654,ccp3,T2,['DCR'],triangular,,,1440
+1465.7275230115208,ccp3,T2,['DCR'],triangular,,,1440
+1465.8681175027148,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+1467.1165620189038,ccp3,T3,['PEC'],triangular,,,11000
+1467.3157107011887,ccp3,T2,['DCR'],triangular,,,1440
+1469.0045831513994,ccp3,T3,['PEC'],triangular,,,11000
+1502.8121276658142,ccp9,T3,['PEC'],triangular,,,11000
+1503.4642250121196,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+1505.1805518814851,ccp9,T3,['PEC'],triangular,,,11000
+1509.4613043359655,ccp9,T2,['DCR'],triangular,,,1440
+1511.2845129600103,ccp9,T3,['PEC'],triangular,,,11000
+1516.075833235556,ccp9,T2,['DCR'],triangular,,,1440
+1516.1913396154066,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+1516.4067558040526,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+1517.3765318895478,ccp9,T3,['PEC'],triangular,,,11000
+1519.6845087625636,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+1526.5027595342701,ccp9,T2,"['DCR', 'DCS']",triangular,,,1440
+1591.9125227968998,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+1594.360807116505,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+1604.5544508118442,ccp7,T2,['DCR'],triangular,,,1440
+1608.3669097073125,ccp7,T2,['DCR'],triangular,,,1440
+1610.7287349169655,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+1614.6814581170265,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+1616.5202566919356,ccp7,T3,['PEC'],triangular,,,11000
+1617.0225203127266,ccp7,T3,['PEC'],triangular,,,11000
+1617.3377064954288,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+1618.9511575833994,ccp7,T3,['PEC'],triangular,,,11000
+1619.1858602580792,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+1621.4416427718634,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+1622.3015354907652,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+1622.8746759778583,ccp7,T3,['PEC'],triangular,,,11000
+1626.5359425526972,ccp7,T3,['PEC'],triangular,,,11000
+1629.0038899012043,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+1631.9217191874227,ccp7,T3,['PEC'],triangular,,,11000
+1631.9777281115485,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+1635.0366878827417,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+1640.6406970508253,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+1642.842430909663,ccp6,T3,['PEC'],triangular,,,11000
+1643.5647919155476,ccp7,T3,['PEC'],triangular,,,11000
+1643.6016018157927,ccp7,T3,['PEC'],triangular,,,11000
+1643.7202803736584,ccp7,T3,['PEC'],triangular,,,11000
+1645.0920850267821,ccp6,T3,['PEC'],triangular,,,11000
+1646.6114517473575,ccp6,T3,['PEC'],triangular,,,11000
+1647.0105726714246,ccp6,T2,"['DCR', 'DCS']",triangular,,,1440
+1648.8250566299607,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+1648.9750950593,ccp7,T3,['PEC'],triangular,,,11000
+1649.0675881408563,ccp6,T3,['PEC'],triangular,,,11000
+1719.4987259909842,ccp5,T3,['PEC'],triangular,,,11000
+1720.28724073329,ccp5,T2,['DCR'],triangular,,,1440
+1722.8231087740799,ccp5,T3,['PEC'],triangular,,,11000
+1725.0578220430934,ccp5,T3,['PEC'],triangular,,,11000
+1726.126124516974,ccp5,T3,['PEC'],triangular,,,11000
+1726.5016074270486,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+1727.374445035519,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+1730.6395429756813,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+1730.8503377149618,ccp5,T3,['PEC'],triangular,,,11000
+1733.5269730396953,ccp5,T3,['PEC'],triangular,,,11000
+1734.4316349674198,ccp5,T3,['PEC'],triangular,,,11000
+1738.5725284042885,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+1742.1582996652435,ccp4,T2,['DCR'],triangular,,,1440
+1743.4738538163476,ccp4,T3,['PEC'],triangular,,,11000
+1746.6278586941078,ccp4,T3,['PEC'],triangular,,,11000
+1750.0754144472735,ccp4,T3,['PEC'],triangular,,,11000
+1750.3745905762448,ccp4,T2,['DCR'],triangular,,,1440
+1756.3256748613492,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+1757.5434904004699,ccp4,T2,['DCR'],triangular,,,1440
+1758.095328867749,ccp4,T3,['PEC'],triangular,,,11000
+1761.659118112505,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+1767.5252411238755,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+1767.5799292729694,ccp4,T3,['PEC'],triangular,,,11000
+1768.5656081893724,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+1836.0425219900173,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+1847.5594304462543,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+1848.0767626825188,ccp6,T2,['DCR'],triangular,,,1440
+1848.8507016216913,ccp6,T3,['PEC'],triangular,,,11000
+1851.003837600817,ccp6,T3,['PEC'],triangular,,,11000
+1853.9733981357535,ccp6,T3,['PEC'],triangular,,,11000
+1854.3112006245865,ccp6,T2,"['DCR', 'DCS']",triangular,,,1440
+1857.2323482952884,ccp6,T3,['PEC'],triangular,,,11000
+1861.7277043260767,ccp2,T3,['PEC'],triangular,,,11000
+1868.185652667162,ccp2,T3,['PEC'],triangular,,,11000
+1868.450551996274,ccp2,T3,['PEC'],triangular,,,11000
+1868.578341701054,ccp2,T3,['PEC'],triangular,,,11000
+1873.8913562747123,ccp2,T3,['PEC'],triangular,,,11000
+1874.1991898783392,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+1878.0953551281427,ccp2,T3,['PEC'],triangular,,,11000
+1882.1482234735627,ccp2,T2,['DCR'],triangular,,,1440
+1883.9260795989103,ccp2,T3,['PEC'],triangular,,,11000
+1884.5960044568167,ccp2,T3,['PEC'],triangular,,,11000
+1922.3756807582147,ccp8,T2,"['DCR', 'DCS']",triangular,,,1440
+1929.1357578642892,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+1934.6685594255168,ccp8,T3,['PEC'],triangular,,,11000
+1937.62045912635,ccp8,T2,['DCR'],triangular,,,1440
+1938.1055839620358,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+1938.4278086673946,ccp8,T3,['PEC'],triangular,,,11000
+1942.3896621085114,ccp8,T2,['DCR'],triangular,,,1440
+1943.285063794069,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+1943.4410625749226,ccp8,T3,['PEC'],triangular,,,11000
+1946.5977241925711,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+1948.540060730255,ccp8,T3,['PEC'],triangular,,,11000
+1950.6921100779857,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+1950.9951633794155,ccp3,T2,['DCR'],triangular,,,1440
+1951.8749857839143,ccp3,T3,['PEC'],triangular,,,11000
+1953.6933127576738,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+1954.6760833724336,ccp5,T2,['DCR'],triangular,,,1440
+1955.350353124262,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+1958.4980631748076,ccp3,T3,['PEC'],triangular,,,11000
+1958.738362695576,ccp5,T3,['PEC'],triangular,,,11000
+1962.5099443307365,ccp5,T2,['DCR'],triangular,,,1440
+1963.1538107445956,ccp5,T3,['PEC'],triangular,,,11000
+1964.028755424153,ccp5,T3,['PEC'],triangular,,,11000
+1965.356409823925,ccp5,T3,['PEC'],triangular,,,11000
+1965.9688584889695,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+1969.8619805532276,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+1972.4017232267674,ccp5,T3,['PEC'],triangular,,,11000
+1972.4592017176178,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+1974.269793671009,ccp3,T3,['PEC'],triangular,,,11000
+1975.0648500465168,ccp5,T3,['PEC'],triangular,,,11000
+1975.6294356168628,ccp3,T3,['PEC'],triangular,,,11000
+1976.4097630011559,ccp3,T3,['PEC'],triangular,,,11000
+1979.6582074793123,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+2070.773460275424,ccp5,T2,['DCR'],triangular,,,1440
+2071.2330837458485,ccp6,T3,['PEC'],triangular,,,11000
+2076.604431004557,ccp6,T3,['PEC'],triangular,,,11000
+2077.695020537085,ccp5,T3,['PEC'],triangular,,,11000
+2077.8509512904984,ccp5,T3,['PEC'],triangular,,,11000
+2078.215342360802,ccp6,T3,['PEC'],triangular,,,11000
+2079.290943397786,ccp5,T2,['DCR'],triangular,,,1440
+2080.130268452529,ccp5,T3,['PEC'],triangular,,,11000
+2080.514678913819,ccp5,T3,['PEC'],triangular,,,11000
+2081.3560407578957,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+2082.488472902458,ccp6,T3,['PEC'],triangular,,,11000
+2088.9223327684517,ccp6,T3,['PEC'],triangular,,,11000
+2091.3704408368462,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+2093.9186322796945,ccp5,T3,['PEC'],triangular,,,11000
+2094.589099951852,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+2096.248186958147,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+2096.8214167325,ccp5,T3,['PEC'],triangular,,,11000
+2097.182391968475,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+2099.0879333771604,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+2110.0431336244633,ccp8,T2,['DCR'],triangular,,,1440
+2113.2485237234546,ccp8,T3,['PEC'],triangular,,,11000
+2113.735975187048,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+2115.5144189978146,ccp8,T3,['PEC'],triangular,,,11000
+2117.1352139904834,ccp8,T2,['DCR'],triangular,,,1440
+2122.3105929902617,ccp8,T3,['PEC'],triangular,,,11000
+2122.5363493455457,ccp8,T3,['PEC'],triangular,,,11000
+2122.924719363269,ccp8,T3,['PEC'],triangular,,,11000
+2127.2061128277446,ccp8,T3,['PEC'],triangular,,,11000
+2129.09392425495,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+2129.332224857026,ccp8,T3,['PEC'],triangular,,,11000
+2161.3351241044447,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+2162.1719134985915,ccp7,T3,['PEC'],triangular,,,11000
+2164.2849042433263,ccp7,T3,['PEC'],triangular,,,11000
+2171.548242022953,ccp7,T2,"['DCR', 'DCS']",triangular,,,1440
+2172.380561886749,ccp7,T3,['PEC'],triangular,,,11000
+2176.0311305122773,ccp7,T3,['PEC'],triangular,,,11000
+2180.823826438133,ccp7,T3,['PEC'],triangular,,,11000
+2183.2402086297047,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+2186.51749654975,ccp7,T3,['PEC'],triangular,,,11000
+2186.854951923691,ccp7,T3,['PEC'],triangular,,,11000
+2220.41755457373,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+2221.19508813044,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+2223.599383605409,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+2228.4338614965523,ccp2,T3,['PEC'],triangular,,,11000
+2230.0883207984502,ccp2,T3,['PEC'],triangular,,,11000
+2231.213889715758,ccp2,T3,['PEC'],triangular,,,11000
+2231.405405214311,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+2240.503885150142,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+2244.7375408343396,ccp2,T3,['PEC'],triangular,,,11000
+2245.2738865410743,ccp2,T3,['PEC'],triangular,,,11000
+2250.431919745785,ccp4,T3,['PEC'],triangular,,,11000
+2250.866088700957,ccp4,T3,['PEC'],triangular,,,11000
+2251.0857228002014,ccp4,T3,['PEC'],triangular,,,11000
+2252.914748628881,ccp4,T3,['PEC'],triangular,,,11000
+2254.675330961643,ccp4,T3,['PEC'],triangular,,,11000
+2255.5499433243594,ccp4,T3,['PEC'],triangular,,,11000
+2259.8900379414363,ccp4,T2,['DCR'],triangular,,,1440
+2260.6426684734556,ccp4,T3,['PEC'],triangular,,,11000
+2267.8043489678594,ccp4,T3,['PEC'],triangular,,,11000
+2277.665513026494,ccp4,T3,['PEC'],triangular,,,11000
+2279.620501581826,ccp4,T3,['PEC'],triangular,,,11000
+2283.429580332899,ccp2,T2,['DCR'],triangular,,,1440
+2284.1072630551166,ccp2,T3,['PEC'],triangular,,,11000
+2286.5160187994175,ccp2,T2,"['DCR', 'DCS']",triangular,,,1440
+2298.3621681708523,ccp2,T2,"['DCR', 'DCS']",triangular,,,1440
+2302.6423396028586,ccp2,T2,['DCR'],triangular,,,1440
+2304.111937029739,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+2305.3247057624467,ccp2,T3,['PEC'],triangular,,,11000
+2306.181084975655,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+2309.8092066386675,ccp2,T3,['PEC'],triangular,,,11000
+2313.6185502099697,ccp9,T3,['PEC'],triangular,,,11000
+2317.0989575038825,ccp9,T3,['PEC'],triangular,,,11000
+2319.3019742001143,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+2321.752759817427,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+2325.164289930102,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+2327.3017799816175,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+2328.5108880055386,ccp9,T3,['PEC'],triangular,,,11000
+2329.982926113926,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+2333.6446365166953,ccp9,T3,['PEC'],triangular,,,11000
+2338.1521369573256,ccp9,T3,['PEC'],triangular,,,11000
+2464.3967865291834,ccp1,T2,"['DCR', 'DCS']",triangular,,,1440
+2466.3486846013966,ccp1,T2,['DCR'],triangular,,,1440
+2468.298753406629,ccp1,T3,['PEC'],triangular,,,11000
+2468.636388018504,ccp1,T3,['PEC'],triangular,,,11000
+2468.646967990714,ccp1,T3,['PEC'],triangular,,,11000
+2473.608581439501,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+2479.389207411232,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+2480.50530367564,ccp1,T3,['PEC'],triangular,,,11000
+2483.0215550492326,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+2483.1648177285656,ccp1,T3,['PEC'],triangular,,,11000
+2489.5086475655285,ccp1,T3,['PEC'],triangular,,,11000
+2550.7148523975266,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+2551.813316303421,ccp3,T3,['PEC'],triangular,,,11000
+2554.492166928016,ccp3,T3,['PEC'],triangular,,,11000
+2557.005416932101,ccp3,T3,['PEC'],triangular,,,11000
+2561.769293730463,ccp3,T2,['DCR'],triangular,,,1440
+2564.323919730122,ccp3,T3,['PEC'],triangular,,,11000
+2567.5088609520176,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+2569.056767386256,ccp3,T2,['DCR'],triangular,,,1440
+2574.318354962545,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+2577.9731548554983,ccp3,T3,['PEC'],triangular,,,11000
+2587.6599029444424,ccp8,T3,['PEC'],triangular,,,11000
+2588.701531851847,ccp8,T2,"['DCR', 'DCS']",triangular,,,1440
+2593.952684770001,ccp8,T3,['PEC'],triangular,,,11000
+2595.6164139686052,ccp8,T3,['PEC'],triangular,,,11000
+2598.7804326343185,ccp8,T3,['PEC'],triangular,,,11000
+2599.9491542299916,ccp8,T3,['PEC'],triangular,,,11000
+2600.4243048499725,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+2601.5287720065903,ccp8,T2,['DCR'],triangular,,,1440
+2601.7061278714486,ccp8,T3,['PEC'],triangular,,,11000
+2602.453116503398,ccp8,T2,['DCR'],triangular,,,1440
+2606.360157760697,ccp8,T3,['PEC'],triangular,,,11000
+2673.425865256499,ccp1,T2,['DCR'],triangular,,,1440
+2676.1753721158443,ccp1,T3,['PEC'],triangular,,,11000
+2679.9836050840618,ccp1,T3,['PEC'],triangular,,,11000
+2685.6919167738574,ccp1,T3,['PEC'],triangular,,,11000
+2686.9837854910793,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+2691.729424955355,ccp1,T3,['PEC'],triangular,,,11000
+2693.72223171126,ccp1,T2,['DCR'],triangular,,,1440
+2696.82593682199,ccp1,T2,"['DCR', 'DCS']",triangular,,,1440
+2697.1601025833756,ccp1,T3,['PEC'],triangular,,,11000
+2697.373322855873,ccp1,T3,['PEC'],triangular,,,11000
+2699.338443651114,ccp1,T3,['PEC'],triangular,,,11000
+2762.3606866623018,ccp4,T3,['PEC'],triangular,,,11000
+2762.5120498826764,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+2764.187757255372,ccp4,T2,['DCR'],triangular,,,1440
+2766.194979129411,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+2768.1245806895517,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+2768.1313182452323,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+2768.321823335198,ccp1,T3,['PEC'],triangular,,,11000
+2769.610977000624,ccp1,T2,['DCR'],triangular,,,1440
+2769.764721232704,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+2770.329636935299,ccp4,T3,['PEC'],triangular,,,11000
+2771.4938349263516,ccp1,T3,['PEC'],triangular,,,11000
+2771.809703908585,ccp4,T2,['DCR'],triangular,,,1440
+2772.934011402752,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+2773.4179161724824,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+2775.555089929029,ccp4,T2,['DCR'],triangular,,,1440
+2780.9061540459993,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+2781.135446782229,ccp1,T3,['PEC'],triangular,,,11000
+2781.7111279219184,ccp1,T3,['PEC'],triangular,,,11000
+2783.9871047870784,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+2785.54589523395,ccp1,T3,['PEC'],triangular,,,11000
+2786.103027165779,ccp4,T3,['PEC'],triangular,,,11000
+2786.160864884011,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+2824.609301934638,ccp9,T2,['DCR'],triangular,,,1440
+2827.7353454471827,ccp9,T3,['PEC'],triangular,,,11000
+2828.3674141448023,ccp9,T3,['PEC'],triangular,,,11000
+2834.4884717277328,ccp9,T3,['PEC'],triangular,,,11000
+2835.306320166175,ccp9,T2,['DCR'],triangular,,,1440
+2842.4102583100907,ccp9,T3,['PEC'],triangular,,,11000
+2843.1792143246207,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+2843.95317907652,ccp9,T2,['DCR'],triangular,,,1440
+2848.7042223538147,ccp9,T2,['DCR'],triangular,,,1440
+2849.5399275704035,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+2940.442544993081,ccp5,T3,['PEC'],triangular,,,11000
+2941.0198330267167,ccp5,T2,['DCR'],triangular,,,1440
+2942.3328578666105,ccp5,T3,['PEC'],triangular,,,11000
+2943.5710140241936,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+2946.4320937162042,ccp5,T3,['PEC'],triangular,,,11000
+2950.229421305611,ccp5,T2,['DCR'],triangular,,,1440
+2951.313750211836,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+2959.3595226108946,ccp5,T2,"['DCR', 'DCS']",triangular,,,1440
+2961.5018122325105,ccp5,T3,['PEC'],triangular,,,11000
+3000.4493149046,ccp5,T2,"['DCR', 'DCS']",triangular,,,1440
+3003.30401087431,ccp5,T3,['PEC'],triangular,,,11000
+3006.102769551171,ccp5,T3,['PEC'],triangular,,,11000
+3006.1286796548393,ccp5,T2,['DCR'],triangular,,,1440
+3007.4855887753906,ccp5,T3,['PEC'],triangular,,,11000
+3011.927946381766,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+3020.0388908502873,ccp5,T3,['PEC'],triangular,,,11000
+3021.804383637898,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+3025.3788592288874,ccp5,T2,['DCR'],triangular,,,1440
+3030.973203420366,ccp6,T2,"['DCR', 'DCS']",triangular,,,1440
+3032.0627876980243,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+3033.2722282781206,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+3034.4748988946662,ccp6,T2,['DCR'],triangular,,,1440
+3034.489589009339,ccp6,T2,['DCR'],triangular,,,1440
+3035.1159649244482,ccp2,T2,['DCR'],triangular,,,1440
+3039.2144196738673,ccp2,T3,['PEC'],triangular,,,11000
+3039.4879884227976,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+3039.6248220540865,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+3040.8006359176343,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+3045.0870798963692,ccp6,T3,['PEC'],triangular,,,11000
+3045.728104807741,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+3045.8028623925893,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+3046.054948609477,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+3046.479174975294,ccp6,T2,"['DCR', 'DCS']",triangular,,,1440
+3047.763936565302,ccp6,T2,['DCR'],triangular,,,1440
+3048.018801231664,ccp2,T3,['PEC'],triangular,,,11000
+3049.1884731441514,ccp6,T3,['PEC'],triangular,,,11000
+3049.5246382293294,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+3051.590950518273,ccp2,T3,['PEC'],triangular,,,11000
+3053.082289724234,ccp6,T2,"['DCR', 'DCS']",triangular,,,1440
+3054.077883149954,ccp2,T3,['PEC'],triangular,,,11000
+3055.167503646266,ccp6,T2,['DCR'],triangular,,,1440
+3055.3918358975275,ccp6,T3,['PEC'],triangular,,,11000
+3055.4442529795497,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+3056.0813069759706,ccp6,T2,['DCR'],triangular,,,1440
+3072.590049040909,ccp7,T3,['PEC'],triangular,,,11000
+3078.4763956229335,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+3079.04498953975,ccp7,T3,['PEC'],triangular,,,11000
+3079.7414132427493,ccp7,T2,['DCR'],triangular,,,1440
+3082.724469853389,ccp7,T3,['PEC'],triangular,,,11000
+3083.0698232328164,ccp7,T2,['DCR'],triangular,,,1440
+3085.1987285634586,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+3085.593678031772,ccp7,T3,['PEC'],triangular,,,11000
+3087.481901013357,ccp7,T2,['DCR'],triangular,,,1440
+3089.8441560665083,ccp7,T2,['DCR'],triangular,,,1440
+3093.5447810297483,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+3097.01141289311,ccp1,T3,['PEC'],triangular,,,11000
+3098.2185394555445,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+3099.460979707507,ccp1,T3,['PEC'],triangular,,,11000
+3102.5450029568087,ccp1,T2,['DCR'],triangular,,,1440
+3102.712479754534,ccp1,T3,['PEC'],triangular,,,11000
+3103.1245252536064,ccp1,T2,['DCR'],triangular,,,1440
+3104.3036212806333,ccp1,T2,['DCR'],triangular,,,1440
+3108.0497759130144,ccp1,T3,['PEC'],triangular,,,11000
+3110.8040188763616,ccp1,T2,['DCR'],triangular,,,1440
+3111.852713967584,ccp1,T3,['PEC'],triangular,,,11000
+3112.752785901884,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+3119.8615705863126,ccp1,T3,['PEC'],triangular,,,11000
+3184.7432099270245,ccp9,T3,['PEC'],triangular,,,11000
+3187.704237332593,ccp9,T3,['PEC'],triangular,,,11000
+3196.009346619529,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+3196.8289978487715,ccp9,T3,['PEC'],triangular,,,11000
+3197.5183469376675,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+3200.730302063675,ccp9,T3,['PEC'],triangular,,,11000
+3202.078845955854,ccp9,T3,['PEC'],triangular,,,11000
+3202.206870318946,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+3203.667877162917,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+3203.680370480553,ccp9,T3,['PEC'],triangular,,,11000
+3207.2440640882182,ccp9,T3,['PEC'],triangular,,,11000
+3209.642673016095,ccp9,T3,['PEC'],triangular,,,11000
+3241.9483415703075,ccp4,T3,['PEC'],triangular,,,11000
+3248.2324488699305,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+3250.279936558595,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+3250.963294371941,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+3256.806394470671,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+3261.264427387904,ccp4,T3,['PEC'],triangular,,,11000
+3263.022275973947,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+3265.159385855139,ccp4,T3,['PEC'],triangular,,,11000
+3266.2058669611374,ccp4,T3,['PEC'],triangular,,,11000
+3301.0649623277086,ccp6,T3,['PEC'],triangular,,,11000
+3301.300910502771,ccp7,T3,['PEC'],triangular,,,11000
+3303.879841299493,ccp7,T3,['PEC'],triangular,,,11000
+3304.951246058446,ccp6,T3,['PEC'],triangular,,,11000
+3308.1499827595067,ccp6,T3,['PEC'],triangular,,,11000
+3308.2507238036164,ccp7,T3,['PEC'],triangular,,,11000
+3310.933473330653,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+3311.1060289682646,ccp7,T3,['PEC'],triangular,,,11000
+3312.2940290568026,ccp7,T3,['PEC'],triangular,,,11000
+3315.7678793916384,ccp6,T2,"['DCR', 'DCS']",triangular,,,1440
+3315.9848015240996,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+3316.08258923324,ccp7,T3,['PEC'],triangular,,,11000
+3318.4936655515457,ccp6,T2,['DCR'],triangular,,,1440
+3320.651354337402,ccp6,T3,['PEC'],triangular,,,11000
+3321.1061442718715,ccp7,T3,['PEC'],triangular,,,11000
+3323.0311961627217,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+3323.1638900053013,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+3323.192591026475,ccp6,T3,['PEC'],triangular,,,11000
+3325.572320527147,ccp6,T3,['PEC'],triangular,,,11000
+3328.242663056163,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+3328.9961627626617,ccp6,T2,['DCR'],triangular,,,1440
+3329.7610393097816,ccp6,T2,['DCR'],triangular,,,1440
+3393.965383817915,ccp8,T3,['PEC'],triangular,,,11000
+3395.0774739660706,ccp8,T3,['PEC'],triangular,,,11000
+3397.1013346368773,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+3397.3779624092494,ccp8,T2,['DCR'],triangular,,,1440
+3402.9284942195877,ccp8,T3,['PEC'],triangular,,,11000
+3405.9060009013583,ccp8,T3,['PEC'],triangular,,,11000
+3407.3014036943123,ccp8,T3,['PEC'],triangular,,,11000
+3407.7637882987547,ccp8,T2,['DCR'],triangular,,,1440
+3409.8343751807647,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+3410.775213587311,ccp8,T2,['DCR'],triangular,,,1440
+3410.8656425748545,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+3416.2182391047677,ccp8,T3,['PEC'],triangular,,,11000
+3417.0179083837697,ccp8,T3,['PEC'],triangular,,,11000
+3418.3602924369984,ccp8,T3,['PEC'],triangular,,,11000
+3421.2932354499485,ccp6,T3,['PEC'],triangular,,,11000
+3422.5914753765132,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+3423.4927920456516,ccp2,T3,['PEC'],triangular,,,11000
+3424.052124855374,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+3424.146019567978,ccp2,T3,['PEC'],triangular,,,11000
+3424.3960872657794,ccp6,T3,['PEC'],triangular,,,11000
+3425.4554455674734,ccp6,T3,['PEC'],triangular,,,11000
+3427.7087378060496,ccp2,T3,['PEC'],triangular,,,11000
+3428.7129765238506,ccp6,T3,['PEC'],triangular,,,11000
+3429.018500409081,ccp6,T2,['DCR'],triangular,,,1440
+3429.5641495766,ccp2,T3,['PEC'],triangular,,,11000
+3432.3653542564166,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+3433.853466746687,ccp6,T3,['PEC'],triangular,,,11000
+3433.9272139912014,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+3434.3907687634746,ccp2,T2,"['DCR', 'DCS']",triangular,,,1440
+3438.2517136778456,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+3439.7404315822914,ccp6,T3,['PEC'],triangular,,,11000
+3440.448630514291,ccp6,T3,['PEC'],triangular,,,11000
+3443.7445521122618,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+3445.3124641358886,ccp6,T2,['DCR'],triangular,,,1440
+3445.413924450594,ccp2,T3,['PEC'],triangular,,,11000
+3445.43581046307,ccp2,T3,['PEC'],triangular,,,11000
+3445.80322387779,ccp2,T3,['PEC'],triangular,,,11000
+3447.365368011285,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+3447.501542917784,ccp6,T2,['DCR'],triangular,,,1440
+3541.348916953139,ccp9,T3,['PEC'],triangular,,,11000
+3549.303928141003,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+3550.794901608802,ccp9,T3,['PEC'],triangular,,,11000
+3555.019821041633,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+3555.8308796945857,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+3556.679130601111,ccp9,T3,['PEC'],triangular,,,11000
+3559.289595173675,ccp9,T3,['PEC'],triangular,,,11000
+3560.8576840057262,ccp9,T3,['PEC'],triangular,,,11000
+3561.909575830135,ccp9,T3,['PEC'],triangular,,,11000
+3563.6676932429696,ccp9,T3,['PEC'],triangular,,,11000
+3564.374223528374,ccp9,T3,['PEC'],triangular,,,11000
+3564.657633939507,ccp9,T3,['PEC'],triangular,,,11000
+3571.517727708317,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+3572.0558663837696,ccp3,T3,['PEC'],triangular,,,11000
+3575.015546610295,ccp9,T3,['PEC'],triangular,,,11000
+3575.7230857338313,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+3578.31250603222,ccp3,T3,['PEC'],triangular,,,11000
+3578.4404595073747,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+3580.594008397545,ccp9,T3,['PEC'],triangular,,,11000
+3580.7392903659465,ccp9,T3,['PEC'],triangular,,,11000
+3582.5283384367117,ccp9,T3,['PEC'],triangular,,,11000
+3582.707730959061,ccp3,T3,['PEC'],triangular,,,11000
+3583.576542541755,ccp9,T2,"['DCR', 'DCS']",triangular,,,1440
+3586.2329623436003,ccp3,T2,['DCR'],triangular,,,1440
+3586.7665890676417,ccp3,T1,['DCR'],triangular,,,60
+3588.2377864813984,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+3590.163098174919,ccp9,T3,['PEC'],triangular,,,11000
+3594.8405581684165,ccp9,T2,['DCR'],triangular,,,1440
+3595.3274511828045,ccp3,T3,['PEC'],triangular,,,11000
+3595.674173785585,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+3597.193857790079,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+3597.5777571844055,ccp9,T3,['PEC'],triangular,,,11000
+3597.618626303275,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+3597.990856843836,ccp9,T1,['DCR'],triangular,,,60
+3598.1146886270426,ccp9,T3,['PEC'],triangular,,,11000
+3599.3401547281037,ccp3,T3,['PEC'],triangular,,,11000
+3601.219420284043,ccp1,T3,['PEC'],triangular,,,11000
+3601.4217248110704,ccp1,T3,['PEC'],triangular,,,11000
+3601.5675273172096,ccp1,T3,['PEC'],triangular,,,11000
+3602.9595424036042,ccp7,T2,['DCR'],triangular,,,1440
+3604.41398685773,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+3606.7497267909494,ccp1,T2,['DCR'],triangular,,,1440
+3606.8936190162162,ccp1,T3,['PEC'],triangular,,,11000
+3609.037237643244,ccp7,T3,['PEC'],triangular,,,11000
+3612.45492124677,ccp7,T3,['PEC'],triangular,,,11000
+3616.4098233562336,ccp1,T3,['PEC'],triangular,,,11000
+3618.3129140389333,ccp1,T3,['PEC'],triangular,,,11000
+3619.4802796941412,ccp7,T3,['PEC'],triangular,,,11000
+3620.315572965087,ccp1,T3,['PEC'],triangular,,,11000
+3620.5146244445186,ccp1,T3,['PEC'],triangular,,,11000
+3621.033946408463,ccp1,T3,['PEC'],triangular,,,11000
+3623.105487887759,ccp7,T3,['PEC'],triangular,,,11000
+3623.236216252701,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+3625.4194677543055,ccp7,T3,['PEC'],triangular,,,11000
+3625.486867384967,ccp1,T3,['PEC'],triangular,,,11000
+3627.9353168188204,ccp7,T3,['PEC'],triangular,,,11000
+3628.052657802875,ccp7,T3,['PEC'],triangular,,,11000
+3628.853783969463,ccp1,T3,['PEC'],triangular,,,11000
+3750.3055135627083,ccp8,T3,['PEC'],triangular,,,11000
+3750.9010582163346,ccp8,T3,['PEC'],triangular,,,11000
+3757.750616818456,ccp8,T3,['PEC'],triangular,,,11000
+3757.803263894565,ccp8,T2,['DCR'],triangular,,,1440
+3758.326481237745,ccp8,T3,['PEC'],triangular,,,11000
+3761.4777721322616,ccp8,T2,['DCR'],triangular,,,1440
+3768.034359012779,ccp8,T3,['PEC'],triangular,,,11000
+3768.4784200288022,ccp8,T3,['PEC'],triangular,,,11000
+3769.2555861873757,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+3774.684444934682,ccp8,T2,"['DCR', 'DCS']",triangular,,,1440
+3774.9303363232566,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+3777.3866664924044,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+3778.711293961035,ccp8,T2,"['DCR', 'DCS']",triangular,,,1440
+3902.3342917264117,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+3905.4873177378668,ccp1,T3,['PEC'],triangular,,,11000
+3908.204885868017,ccp1,T3,['PEC'],triangular,,,11000
+3912.6806480490927,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+3913.530761276471,ccp1,T3,['PEC'],triangular,,,11000
+3914.099048536831,ccp1,T3,['PEC'],triangular,,,11000
+3917.8225250534283,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+3921.5087213864936,ccp1,T2,['DCR'],triangular,,,1440
+3923.8727923517677,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+3924.0697705690145,ccp1,T3,['PEC'],triangular,,,11000
+3924.9867144520304,ccp1,T2,['DCR'],triangular,,,1440
+3925.9614199260136,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+3927.095128962909,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+3936.426381782029,ccp2,T3,['PEC'],triangular,,,11000
+3937.4555832569145,ccp2,T2,['DCR'],triangular,,,1440
+3942.472124894093,ccp2,T3,['PEC'],triangular,,,11000
+3943.619162242052,ccp2,T2,['DCR'],triangular,,,1440
+3944.3496215089694,ccp2,T3,['PEC'],triangular,,,11000
+3944.643144913627,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+3946.5078755844374,ccp2,T3,['PEC'],triangular,,,11000
+3947.6562273132377,ccp2,T3,['PEC'],triangular,,,11000
+3948.861110494855,ccp2,T2,['DCR'],triangular,,,1440
+3956.5371905795455,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+3959.1869943119996,ccp2,T3,['PEC'],triangular,,,11000
+3959.3171558742442,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+3960.110994927736,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+3975.6673185121113,ccp4,T2,['DCR'],triangular,,,1440
+3976.553167891196,ccp4,T2,['DCR'],triangular,,,1440
+3976.739162452322,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+3981.7549602368026,ccp4,T3,['PEC'],triangular,,,11000
+3982.693398326465,ccp4,T3,['PEC'],triangular,,,11000
+3987.2207637305773,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+3988.6586341784314,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+3988.78169177647,ccp4,T3,['PEC'],triangular,,,11000
+4051.3383432416276,ccp3,T2,['DCR'],triangular,,,1440
+4054.706567473507,ccp3,T3,['PEC'],triangular,,,11000
+4054.862772935458,ccp3,T3,['PEC'],triangular,,,11000
+4056.4282429060167,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+4057.3791854414467,ccp3,T3,['PEC'],triangular,,,11000
+4058.427030053911,ccp3,T3,['PEC'],triangular,,,11000
+4063.579197489059,ccp3,T3,['PEC'],triangular,,,11000
+4065.1305107999665,ccp3,T3,['PEC'],triangular,,,11000
+4066.4022027153933,ccp3,T3,['PEC'],triangular,,,11000
+4073.0193514301577,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+4076.8671707480703,ccp3,T3,['PEC'],triangular,,,11000
+4081.1670759778685,ccp8,T2,['DCR'],triangular,,,1440
+4081.180847826513,ccp8,T3,['PEC'],triangular,,,11000
+4082.2241541898647,ccp3,T3,['PEC'],triangular,,,11000
+4083.329308165527,ccp8,T3,['PEC'],triangular,,,11000
+4083.635484907981,ccp8,T3,['PEC'],triangular,,,11000
+4086.5169587822893,ccp3,T3,['PEC'],triangular,,,11000
+4086.78345151042,ccp3,T2,['DCR'],triangular,,,1440
+4087.7655133787425,ccp8,T3,['PEC'],triangular,,,11000
+4090.026482955484,ccp8,T3,['PEC'],triangular,,,11000
+4090.77696356582,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+4090.9040510045247,ccp8,T2,['DCR'],triangular,,,1440
+4091.0872363233907,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+4092.044890255002,ccp3,T3,['PEC'],triangular,,,11000
+4092.715205430373,ccp3,T3,['PEC'],triangular,,,11000
+4094.2461958711583,ccp8,T3,['PEC'],triangular,,,11000
+4095.327254070684,ccp8,T2,['DCR'],triangular,,,1440
+4095.4897168554676,ccp3,T2,['DCR'],triangular,,,1440
+4098.091226665859,ccp8,T3,['PEC'],triangular,,,11000
+4099.1608543465745,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+4103.108304916022,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+4103.407857872905,ccp3,T3,['PEC'],triangular,,,11000
+4105.528790951551,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+4107.758596511284,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+4108.621240166938,ccp8,T3,['PEC'],triangular,,,11000
+4144.3236957088875,ccp5,T2,['DCR'],triangular,,,1440
+4146.980285880434,ccp5,T2,['DCR'],triangular,,,1440
+4159.142984082539,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+4160.304652295111,ccp5,T3,['PEC'],triangular,,,11000
+4164.221091768786,ccp5,T3,['PEC'],triangular,,,11000
+4165.44005491063,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+4165.91093433317,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+4169.327997394132,ccp5,T3,['PEC'],triangular,,,11000
+4235.50362689971,ccp4,T3,['PEC'],triangular,,,11000
+4235.55835736037,ccp4,T2,['DCR'],triangular,,,1440
+4236.2137989124,ccp4,T3,['PEC'],triangular,,,11000
+4240.076354447522,ccp4,T3,['PEC'],triangular,,,11000
+4245.2244096451195,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+4251.249023440416,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+4252.399277384415,ccp4,T2,['DCR'],triangular,,,1440
+4253.734400906848,ccp4,T3,['PEC'],triangular,,,11000
+4382.249527958247,ccp9,T3,['PEC'],triangular,,,11000
+4385.258717916718,ccp9,T3,['PEC'],triangular,,,11000
+4388.270359643302,ccp9,T3,['PEC'],triangular,,,11000
+4392.707236146722,ccp9,T3,['PEC'],triangular,,,11000
+4392.824198326805,ccp9,T1,['DCR'],triangular,,,60
+4396.264760414286,ccp9,T3,['PEC'],triangular,,,11000
+4397.667669244714,ccp9,T3,['PEC'],triangular,,,11000
+4401.12804961181,ccp9,T3,['PEC'],triangular,,,11000
+4404.078610789218,ccp9,T3,['PEC'],triangular,,,11000
+4407.13768655544,ccp9,T2,['DCR'],triangular,,,1440
+4408.373389632939,ccp9,T3,['PEC'],triangular,,,11000
+4408.87749112019,ccp9,T3,['PEC'],triangular,,,11000
+4412.585553458438,ccp8,T3,['PEC'],triangular,,,11000
+4415.014883694092,ccp8,T3,['PEC'],triangular,,,11000
+4422.225249346816,ccp8,T3,['PEC'],triangular,,,11000
+4423.311437705386,ccp8,T3,['PEC'],triangular,,,11000
+4425.448285629004,ccp8,T3,['PEC'],triangular,,,11000
+4425.589169209664,ccp8,T2,['DCR'],triangular,,,1440
+4429.322223955553,ccp8,T2,['DCR'],triangular,,,1440
+4431.992778143543,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+4433.046170813603,ccp8,T3,['PEC'],triangular,,,11000
+4433.665493657537,ccp8,T2,"['DCR', 'DCS']",triangular,,,1440
+4434.002317861877,ccp8,T3,['PEC'],triangular,,,11000
+4435.134653295401,ccp8,T3,['PEC'],triangular,,,11000
+4438.013779086477,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+4442.446260309327,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+4445.469660238107,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+4449.316021261175,ccp3,T3,['PEC'],triangular,,,11000
+4453.699186462107,ccp3,T3,['PEC'],triangular,,,11000
+4454.225468080307,ccp3,T3,['PEC'],triangular,,,11000
+4454.973639640315,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+4459.03329977247,ccp3,T2,"['DCR', 'DCS']",triangular,,,1440
+4460.649127912791,ccp3,T3,['PEC'],triangular,,,11000
+4461.115378300935,ccp3,T3,['PEC'],triangular,,,11000
+4462.653655219822,ccp3,T3,['PEC'],triangular,,,11000
+4620.309249948525,ccp5,T3,['PEC'],triangular,,,11000
+4620.517241630676,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+4621.432952222175,ccp5,T3,['PEC'],triangular,,,11000
+4621.885559720476,ccp4,T3,['PEC'],triangular,,,11000
+4622.818189199652,ccp4,T2,['DCR'],triangular,,,1440
+4623.066019968377,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+4624.150322901144,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+4625.487096624721,ccp5,T3,['PEC'],triangular,,,11000
+4625.7954702418265,ccp5,T3,['PEC'],triangular,,,11000
+4626.591569101975,ccp4,T3,['PEC'],triangular,,,11000
+4627.310781647909,ccp4,T3,['PEC'],triangular,,,11000
+4628.771706906122,ccp5,T3,['PEC'],triangular,,,11000
+4628.85532967053,ccp5,T3,['PEC'],triangular,,,11000
+4629.608713255862,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+4630.311636991058,ccp5,T3,['PEC'],triangular,,,11000
+4630.819902248579,ccp4,T3,['PEC'],triangular,,,11000
+4631.643369736428,ccp4,T3,['PEC'],triangular,,,11000
+4632.584432059714,ccp5,T2,"['DCR', 'DCS']",triangular,,,1440
+4634.687949189113,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+4636.643482990688,ccp4,T3,['PEC'],triangular,,,11000
+4638.104749765476,ccp5,T3,['PEC'],triangular,,,11000
+4639.812789835478,ccp4,T3,['PEC'],triangular,,,11000
+4639.933078073644,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+4640.465923015488,ccp5,T2,['DCR'],triangular,,,1440
+4642.091035298041,ccp4,T2,['DCR'],triangular,,,1440
+4642.376168834937,ccp5,T2,"['DCR', 'DCS']",triangular,,,1440
+4642.670381649012,ccp5,T2,['DCR'],triangular,,,1440
+4643.390610716021,ccp4,T2,['DCR'],triangular,,,1440
+4644.695002714398,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+4645.133728648991,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+4646.878347819034,ccp4,T3,['PEC'],triangular,,,11000
+4647.039094397744,ccp5,T2,['DCR'],triangular,,,1440
+4649.608362748959,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+4649.784164575787,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+4713.6326806406605,ccp1,T3,['PEC'],triangular,,,11000
+4714.653689893881,ccp1,T3,['PEC'],triangular,,,11000
+4715.505407403063,ccp1,T2,"['DCR', 'DCS']",triangular,,,1440
+4717.9087037044455,ccp1,T3,['PEC'],triangular,,,11000
+4719.776778009581,ccp1,T2,['DCR'],triangular,,,1440
+4729.084322190305,ccp1,T3,['PEC'],triangular,,,11000
+4731.122799998181,ccp1,T2,['DCR'],triangular,,,1440
+4732.613269554869,ccp1,T3,['PEC'],triangular,,,11000
+4735.378445152007,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+4741.842499960645,ccp7,T3,['PEC'],triangular,,,11000
+4742.400735548962,ccp9,T3,['PEC'],triangular,,,11000
+4746.099268499798,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+4747.185766048555,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+4747.354229085136,ccp9,T2,['DCR'],triangular,,,1440
+4747.808982806573,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+4748.267081426051,ccp9,T3,['PEC'],triangular,,,11000
+4748.432010098636,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+4750.024870641353,ccp7,T3,['PEC'],triangular,,,11000
+4750.687662613003,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+4750.949933442561,ccp7,T3,['PEC'],triangular,,,11000
+4751.81798013605,ccp7,T3,['PEC'],triangular,,,11000
+4752.005860160074,ccp9,T3,['PEC'],triangular,,,11000
+4752.957438608177,ccp9,T3,['PEC'],triangular,,,11000
+4753.483406439565,ccp9,T3,['PEC'],triangular,,,11000
+4755.017238439927,ccp7,T3,['PEC'],triangular,,,11000
+4755.328495960487,ccp7,T3,['PEC'],triangular,,,11000
+4761.583611859807,ccp7,T3,['PEC'],triangular,,,11000
+4762.1272271701155,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+4762.325560007047,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+4762.906134539376,ccp7,T3,['PEC'],triangular,,,11000
+4765.47965789314,ccp9,T2,['DCR'],triangular,,,1440
+4767.623189315237,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+4768.31227091693,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+4769.392057554875,ccp7,T3,['PEC'],triangular,,,11000
+4769.645349162096,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+4770.114694843817,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+4771.218845899762,ccp5,T3,['PEC'],triangular,,,11000
+4772.272797565594,ccp5,T3,['PEC'],triangular,,,11000
+4773.011678190954,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+4774.164449801323,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+4775.375050878395,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+4777.125630434301,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+4779.363024059735,ccp5,T3,['PEC'],triangular,,,11000
+4779.556501273588,ccp5,T2,['DCR'],triangular,,,1440
+4785.106261232369,ccp5,T3,['PEC'],triangular,,,11000
+4786.24073267395,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+4787.710213727699,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+4791.598152225479,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+4793.349243571042,ccp5,T3,['PEC'],triangular,,,11000
+4794.52923002571,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+4794.996157004122,ccp5,T3,['PEC'],triangular,,,11000
+4797.059507942573,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+4798.635346260349,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+4832.538865848657,ccp6,T3,['PEC'],triangular,,,11000
+4832.9570686988845,ccp1,T3,['PEC'],triangular,,,11000
+4832.961891337573,ccp1,T3,['PEC'],triangular,,,11000
+4833.483374285064,ccp1,T3,['PEC'],triangular,,,11000
+4834.431172465534,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+4837.656227533954,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+4839.073777459653,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+4841.371258776919,ccp6,T3,['PEC'],triangular,,,11000
+4842.67533736112,ccp1,T3,['PEC'],triangular,,,11000
+4843.888848440208,ccp1,T3,['PEC'],triangular,,,11000
+4848.180053441467,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+4848.279066199875,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+4848.393813282439,ccp6,T3,['PEC'],triangular,,,11000
+4848.590145336128,ccp1,T2,['DCR'],triangular,,,1440
+4850.260410045513,ccp6,T3,['PEC'],triangular,,,11000
+4851.132735846107,ccp6,T3,['PEC'],triangular,,,11000
+4852.01406335469,ccp6,T2,['DCR'],triangular,,,1440
+4854.7524847973455,ccp1,T2,['DCR'],triangular,,,1440
+4855.089612935585,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+4855.458649201943,ccp6,T3,['PEC'],triangular,,,11000
+4857.946607000076,ccp6,T3,['PEC'],triangular,,,11000
+4921.489301445904,ccp8,T3,['PEC'],triangular,,,11000
+4923.794593761181,ccp9,T2,['DCR'],triangular,,,1440
+4925.156287164992,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+4926.615497087933,ccp9,T3,['PEC'],triangular,,,11000
+4927.713554611938,ccp8,T3,['PEC'],triangular,,,11000
+4929.673463564939,ccp9,T2,['DCR'],triangular,,,1440
+4929.968721155276,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+4931.530045037581,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+4932.888829306334,ccp8,T3,['PEC'],triangular,,,11000
+4933.265176843273,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+4933.438081251199,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+4934.203877501916,ccp9,T3,['PEC'],triangular,,,11000
+4934.445092754885,ccp8,T3,['PEC'],triangular,,,11000
+4935.612622086262,ccp9,T2,['DCR'],triangular,,,1440
+4937.037072120018,ccp8,T3,['PEC'],triangular,,,11000
+4937.905520609223,ccp9,T3,['PEC'],triangular,,,11000
+4937.956580501195,ccp8,T3,['PEC'],triangular,,,11000
+4938.009001790555,ccp9,T3,['PEC'],triangular,,,11000
+4938.868185264003,ccp8,T3,['PEC'],triangular,,,11000
+4939.3679908577715,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+4939.743122695982,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+4944.8870840263935,ccp8,T3,['PEC'],triangular,,,11000
+4947.651321950578,ccp9,T3,['PEC'],triangular,,,11000
+4949.629711003393,ccp9,T2,['DCR'],triangular,,,1440
+5040.688168690078,ccp6,T3,['PEC'],triangular,,,11000
+5040.742209564011,ccp6,T3,['PEC'],triangular,,,11000
+5049.292722571305,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+5052.142332539476,ccp6,T3,['PEC'],triangular,,,11000
+5054.731783895785,ccp6,T3,['PEC'],triangular,,,11000
+5056.457752585749,ccp6,T3,['PEC'],triangular,,,11000
+5058.401158845952,ccp6,T3,['PEC'],triangular,,,11000
+5059.178568632876,ccp6,T2,['DCR'],triangular,,,1440
+5065.439132271565,ccp6,T3,['PEC'],triangular,,,11000
+5069.164414872325,ccp6,T3,['PEC'],triangular,,,11000
+5069.839319533309,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+5190.459951197741,ccp5,T3,['PEC'],triangular,,,11000
+5190.600380260283,ccp5,T2,"['DCR', 'DCS']",triangular,,,1440
+5190.971420162849,ccp5,T3,['PEC'],triangular,,,11000
+5191.372311643955,ccp5,T3,['PEC'],triangular,,,11000
+5192.860970510291,ccp5,T3,['PEC'],triangular,,,11000
+5195.181396804598,ccp5,T2,"['DCR', 'DCS']",triangular,,,1440
+5198.79875081722,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+5199.68504319572,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+5200.124126899829,ccp5,T3,['PEC'],triangular,,,11000
+5200.990433806636,ccp5,T3,['PEC'],triangular,,,11000
+5201.358015227122,ccp5,T3,['PEC'],triangular,,,11000
+5201.8893138456915,ccp5,T3,['PEC'],triangular,,,11000
+5203.958048814005,ccp5,T3,['PEC'],triangular,,,11000
+5207.010264796106,ccp5,T3,['PEC'],triangular,,,11000
+5207.32504994256,ccp5,T3,['PEC'],triangular,,,11000
+5210.055889157903,ccp5,T2,['DCR'],triangular,,,1440
+5210.919972156632,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+5216.771744434714,ccp5,T3,['PEC'],triangular,,,11000
+5342.469572588825,ccp4,T3,['PEC'],triangular,,,11000
+5344.319958401941,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+5346.767497897239,ccp4,T3,['PEC'],triangular,,,11000
+5347.756739516288,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+5349.793058511796,ccp4,T3,['PEC'],triangular,,,11000
+5351.877039121404,ccp4,T2,['DCR'],triangular,,,1440
+5352.215054297413,ccp4,T3,['PEC'],triangular,,,11000
+5354.1243671491775,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+5355.277317229809,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+5356.667777389722,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+5357.102345366956,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+5359.855018090571,ccp4,T3,['PEC'],triangular,,,11000
+5362.209957051707,ccp4,T3,['PEC'],triangular,,,11000
+5363.248809192622,ccp4,T3,['PEC'],triangular,,,11000
+5365.6741953861765,ccp4,T3,['PEC'],triangular,,,11000
+5373.050421061567,ccp7,T3,['PEC'],triangular,,,11000
+5373.747534764259,ccp7,T2,['DCR'],triangular,,,1440
+5378.604324216473,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+5379.414213289342,ccp7,T3,['PEC'],triangular,,,11000
+5382.435741767773,ccp7,T3,['PEC'],triangular,,,11000
+5383.934205836825,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+5384.670006178518,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+5385.493621820477,ccp7,T3,['PEC'],triangular,,,11000
+5386.667563310486,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+5386.815286933256,ccp7,T3,['PEC'],triangular,,,11000
+5391.333739631683,ccp7,T3,['PEC'],triangular,,,11000
+5391.849740405259,ccp7,T3,['PEC'],triangular,,,11000
+5396.934542914917,ccp7,T3,['PEC'],triangular,,,11000
+5397.236577895251,ccp7,T2,['DCR'],triangular,,,1440
+5463.3599144363425,ccp3,T3,['PEC'],triangular,,,11000
+5463.622047915627,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+5465.671113383921,ccp3,T3,['PEC'],triangular,,,11000
+5468.439117241076,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+5468.601666694035,ccp3,T3,['PEC'],triangular,,,11000
+5476.799508172465,ccp3,T2,"['DCR', 'DCS']",triangular,,,1440
+5477.9633828891565,ccp3,T2,"['DCR', 'DCS']",triangular,,,1440
+5485.091633585716,ccp3,T3,['PEC'],triangular,,,11000
+5487.814385679053,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+5520.83975813906,ccp3,T2,['DCR'],triangular,,,1440
+5522.583242509315,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+5522.75856907205,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+5523.958281540862,ccp6,T3,['PEC'],triangular,,,11000
+5524.17017328427,ccp6,T2,['DCR'],triangular,,,1440
+5524.313802526212,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+5526.381163687356,ccp3,T3,['PEC'],triangular,,,11000
+5528.688818774607,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+5529.865895681676,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+5530.066081377005,ccp6,T3,['PEC'],triangular,,,11000
+5530.190905940639,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+5530.286380961574,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+5532.239892080893,ccp3,T3,['PEC'],triangular,,,11000
+5533.700719090259,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+5534.49061739513,ccp3,T2,['DCR'],triangular,,,1440
+5537.728875019977,ccp6,T3,['PEC'],triangular,,,11000
+5538.391225080301,ccp3,T3,['PEC'],triangular,,,11000
+5539.961727471062,ccp3,T3,['PEC'],triangular,,,11000
+5543.5089801734575,ccp3,T3,['PEC'],triangular,,,11000
+5544.427216575411,ccp6,T3,['PEC'],triangular,,,11000
+5550.943428665653,ccp2,T3,['PEC'],triangular,,,11000
+5551.525615593376,ccp2,T3,['PEC'],triangular,,,11000
+5555.50179847113,ccp2,T2,['DCR'],triangular,,,1440
+5555.748195189063,ccp2,T3,['PEC'],triangular,,,11000
+5556.167422397487,ccp2,T3,['PEC'],triangular,,,11000
+5564.841240387448,ccp2,T3,['PEC'],triangular,,,11000
+5566.102484468384,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+5567.679896473805,ccp2,T3,['PEC'],triangular,,,11000
+5572.342324658555,ccp2,T2,"['DCR', 'DCS']",triangular,,,1440
+5575.77780009906,ccp2,T3,['PEC'],triangular,,,11000
+5582.5302419076015,ccp1,T3,['PEC'],triangular,,,11000
+5583.595776128453,ccp1,T3,['PEC'],triangular,,,11000
+5585.993084926027,ccp1,T3,['PEC'],triangular,,,11000
+5586.667440237252,ccp1,T3,['PEC'],triangular,,,11000
+5589.406016307186,ccp1,T3,['PEC'],triangular,,,11000
+5594.251906563243,ccp1,T2,['DCR'],triangular,,,1440
+5596.972023032482,ccp1,T3,['PEC'],triangular,,,11000
+5604.722365890381,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+5608.736572948044,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+5610.283902363723,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+5613.052940625379,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+5613.753997037832,ccp2,T3,['PEC'],triangular,,,11000
+5615.733278668503,ccp8,T3,['PEC'],triangular,,,11000
+5617.219131840691,ccp8,T3,['PEC'],triangular,,,11000
+5617.944683470154,ccp2,T3,['PEC'],triangular,,,11000
+5618.027580384254,ccp2,T3,['PEC'],triangular,,,11000
+5619.463528124908,ccp8,T3,['PEC'],triangular,,,11000
+5619.873166107951,ccp8,T3,['PEC'],triangular,,,11000
+5621.475054635134,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+5623.307442853557,ccp2,T2,"['DCR', 'DCS']",triangular,,,1440
+5624.3654413651875,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+5627.621197959592,ccp8,T2,"['DCR', 'DCS']",triangular,,,1440
+5627.953776105571,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+5629.033345687965,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+5629.353509709199,ccp8,T2,['DCR'],triangular,,,1440
+5629.525186267591,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+5630.230493315442,ccp2,T3,['PEC'],triangular,,,11000
+5630.352805267754,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+5631.207382302723,ccp2,T2,['DCR'],triangular,,,1440
+5633.1319117208,ccp2,T2,['DCR'],triangular,,,1440
+5636.108975593932,ccp8,T2,['DCR'],triangular,,,1440
+5640.546577679811,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+5641.108341076767,ccp2,T3,['PEC'],triangular,,,11000
+5642.723122902487,ccp7,T3,['PEC'],triangular,,,11000
+5643.4292384210485,ccp7,T3,['PEC'],triangular,,,11000
+5646.210434286495,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+5646.643815412864,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+5646.6826977326355,ccp2,T3,['PEC'],triangular,,,11000
+5646.791603729313,ccp2,T2,['DCR'],triangular,,,1440
+5648.115216530222,ccp2,T2,['DCR'],triangular,,,1440
+5649.671718874391,ccp7,T3,['PEC'],triangular,,,11000
+5650.368292289174,ccp7,T3,['PEC'],triangular,,,11000
+5652.213795876034,ccp2,T3,['PEC'],triangular,,,11000
+5653.81719519024,ccp2,T3,['PEC'],triangular,,,11000
+5655.9256097584675,ccp7,T3,['PEC'],triangular,,,11000
+5656.151858626172,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+5656.949277462792,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+5660.506027833914,ccp2,T3,['PEC'],triangular,,,11000
+5661.883514687324,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+5664.629732172352,ccp7,T2,['DCR'],triangular,,,1440
+5667.229067568989,ccp2,T3,['PEC'],triangular,,,11000
+5668.361573047172,ccp2,T3,['PEC'],triangular,,,11000
+5668.758904477369,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+5669.540169923737,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+5703.119267845837,ccp4,T2,['DCR'],triangular,,,1440
+5705.238644743504,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+5708.696592527129,ccp4,T3,['PEC'],triangular,,,11000
+5709.291289709311,ccp4,T3,['PEC'],triangular,,,11000
+5712.133693725813,ccp4,T3,['PEC'],triangular,,,11000
+5712.638840384953,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+5717.390959858322,ccp4,T3,['PEC'],triangular,,,11000
+5718.346803565168,ccp4,T2,['DCR'],triangular,,,1440
+5719.7824989099345,ccp4,T3,['PEC'],triangular,,,11000
+5720.301910791014,ccp4,T3,['PEC'],triangular,,,11000
+5722.364785098548,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+5725.7430716402005,ccp4,T3,['PEC'],triangular,,,11000
+5729.190145806195,ccp4,T3,['PEC'],triangular,,,11000
+5729.330418384182,ccp4,T3,['PEC'],triangular,,,11000
+5884.104527526484,ccp1,T3,['PEC'],triangular,,,11000
+5885.644766595316,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+5885.776006581627,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+5891.296101969632,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+5897.415877765191,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+5899.149943452742,ccp1,T3,['PEC'],triangular,,,11000
+5904.700964861275,ccp1,T3,['PEC'],triangular,,,11000
+5905.394581699022,ccp1,T3,['PEC'],triangular,,,11000
+5906.054199136617,ccp1,T3,['PEC'],triangular,,,11000
+5907.2078802625765,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+5907.583842759442,ccp1,T2,"['DCR', 'DCS']",triangular,,,1440
+6002.381215471948,ccp6,T3,['PEC'],triangular,,,11000
+6006.610397715027,ccp6,T2,['DCR'],triangular,,,1440
+6010.566899514042,ccp6,T2,['DCR'],triangular,,,1440
+6015.858691103465,ccp6,T3,['PEC'],triangular,,,11000
+6018.986661752139,ccp6,T3,['PEC'],triangular,,,11000
+6020.244293158166,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+6021.261103518228,ccp6,T2,['DCR'],triangular,,,1440
+6023.253642617262,ccp6,T2,['DCR'],triangular,,,1440
+6025.383767003864,ccp6,T2,['DCR'],triangular,,,1440
+6027.944680941895,ccp6,T3,['PEC'],triangular,,,11000
+6033.825807034391,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+6035.21077120351,ccp5,T3,['PEC'],triangular,,,11000
+6035.624459711019,ccp5,T3,['PEC'],triangular,,,11000
+6035.880414458067,ccp5,T3,['PEC'],triangular,,,11000
+6037.891013137364,ccp5,T3,['PEC'],triangular,,,11000
+6038.088687410556,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+6039.028703900515,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+6040.1624777562465,ccp5,T3,['PEC'],triangular,,,11000
+6041.182796037771,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+6041.98402469416,ccp5,T3,['PEC'],triangular,,,11000
+6051.78988690701,ccp5,T3,['PEC'],triangular,,,11000
+6053.630253631911,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+6054.299210996731,ccp5,T3,['PEC'],triangular,,,11000
+6057.228721418906,ccp5,T3,['PEC'],triangular,,,11000
+6150.038587538723,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+6150.143011290035,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+6150.456456638069,ccp3,T3,['PEC'],triangular,,,11000
+6150.784745949719,ccp3,T2,['DCR'],triangular,,,1440
+6150.930996242303,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+6151.416055411962,ccp2,T3,['PEC'],triangular,,,11000
+6153.451762258618,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+6154.672143301876,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+6155.216872039886,ccp3,T3,['PEC'],triangular,,,11000
+6156.650249845519,ccp2,T2,['DCR'],triangular,,,1440
+6157.285842981833,ccp2,T3,['PEC'],triangular,,,11000
+6157.431427212607,ccp2,T3,['PEC'],triangular,,,11000
+6159.2854769854175,ccp2,T3,['PEC'],triangular,,,11000
+6159.846201907572,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+6161.145405833395,ccp3,T3,['PEC'],triangular,,,11000
+6161.834874115077,ccp2,T3,['PEC'],triangular,,,11000
+6163.438897360818,ccp2,T3,['PEC'],triangular,,,11000
+6164.4274563126455,ccp2,T3,['PEC'],triangular,,,11000
+6165.673635037814,ccp2,T2,['DCR'],triangular,,,1440
+6168.110326295759,ccp2,T3,['PEC'],triangular,,,11000
+6170.075532093635,ccp2,T2,"['DCR', 'DCS']",triangular,,,1440
+6171.781443377021,ccp3,T2,['DCR'],triangular,,,1440
+6174.894277603697,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+6174.904461377296,ccp2,T3,['PEC'],triangular,,,11000
+6176.1984888883835,ccp2,T3,['PEC'],triangular,,,11000
+6176.343759521826,ccp3,T2,['DCR'],triangular,,,1440
+6177.28555958658,ccp3,T2,['DCR'],triangular,,,1440
+6178.429089860038,ccp3,T3,['PEC'],triangular,,,11000
+6179.12960521006,ccp2,T3,['PEC'],triangular,,,11000
+6211.22414013315,ccp6,T3,['PEC'],triangular,,,11000
+6212.302736995444,ccp6,T3,['PEC'],triangular,,,11000
+6213.429416735721,ccp6,T3,['PEC'],triangular,,,11000
+6214.217053712506,ccp6,T2,['DCR'],triangular,,,1440
+6214.56432588891,ccp6,T3,['PEC'],triangular,,,11000
+6219.53315795983,ccp6,T3,['PEC'],triangular,,,11000
+6221.03591129898,ccp6,T3,['PEC'],triangular,,,11000
+6226.227956279271,ccp6,T3,['PEC'],triangular,,,11000
+6228.471187479726,ccp6,T2,['DCR'],triangular,,,1440
+6234.858183853942,ccp6,T2,['DCR'],triangular,,,1440
+6241.765990112154,ccp5,T3,['PEC'],triangular,,,11000
+6241.978101330217,ccp5,T3,['PEC'],triangular,,,11000
+6241.991231782449,ccp7,T3,['PEC'],triangular,,,11000
+6243.230118850027,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+6244.501633300858,ccp5,T2,['DCR'],triangular,,,1440
+6244.506284095069,ccp5,T3,['PEC'],triangular,,,11000
+6245.734426978926,ccp5,T3,['PEC'],triangular,,,11000
+6247.750778662559,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+6252.310239694614,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+6255.696358624318,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+6257.092466156009,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+6258.952890868483,ccp7,T2,['DCR'],triangular,,,1440
+6259.238746808564,ccp7,T2,"['DCR', 'DCS']",triangular,,,1440
+6261.867387764008,ccp7,T2,['DCR'],triangular,,,1440
+6261.939884237059,ccp5,T3,['PEC'],triangular,,,11000
+6262.319326070009,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+6262.3753663485895,ccp7,T3,['PEC'],triangular,,,11000
+6262.97156007241,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+6263.063913448645,ccp5,T2,"['DCR', 'DCS']",triangular,,,1440
+6264.491960300489,ccp7,T3,['PEC'],triangular,,,11000
+6265.889611963262,ccp7,T3,['PEC'],triangular,,,11000
+6265.958670991382,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+6267.576898561534,ccp5,T3,['PEC'],triangular,,,11000
+6269.78142901393,ccp7,T2,['DCR'],triangular,,,1440
+6269.814586806614,ccp7,T3,['PEC'],triangular,,,11000
+6269.911797060864,ccp5,T2,['DCR'],triangular,,,1440
+6274.863048556431,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+6275.6583975929725,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+6277.818324394046,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+6280.320544360384,ccp1,T3,['PEC'],triangular,,,11000
+6284.738904292135,ccp1,T2,"['DCR', 'DCS']",triangular,,,1440
+6288.014861017335,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+6291.2459370653305,ccp1,T3,['PEC'],triangular,,,11000
+6295.780604471941,ccp1,T3,['PEC'],triangular,,,11000
+6296.730878898868,ccp1,T3,['PEC'],triangular,,,11000
+6298.122127244021,ccp1,T3,['PEC'],triangular,,,11000
+6299.789513855451,ccp1,T3,['PEC'],triangular,,,11000
+6362.900148610185,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+6369.695214589484,ccp3,T3,['PEC'],triangular,,,11000
+6371.472356963597,ccp3,T3,['PEC'],triangular,,,11000
+6372.6121753674315,ccp3,T3,['PEC'],triangular,,,11000
+6374.219829417315,ccp3,T3,['PEC'],triangular,,,11000
+6376.513775780931,ccp3,T3,['PEC'],triangular,,,11000
+6380.604931876768,ccp3,T3,['PEC'],triangular,,,11000
+6380.765816431896,ccp3,T2,['DCR'],triangular,,,1440
+6381.643713259611,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+6384.037028670368,ccp3,T2,['DCR'],triangular,,,1440
+6384.293179024241,ccp3,T2,"['DCR', 'DCS']",triangular,,,1440
+6386.512597324437,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+6450.962740521125,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+6452.309192500971,ccp9,T3,['PEC'],triangular,,,11000
+6452.660879702527,ccp9,T3,['PEC'],triangular,,,11000
+6458.559538930168,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+6459.145771902013,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+6462.144728507004,ccp9,T3,['PEC'],triangular,,,11000
+6462.148355995435,ccp9,T3,['PEC'],triangular,,,11000
+6466.9970334305945,ccp9,T3,['PEC'],triangular,,,11000
+6470.875008659982,ccp9,T3,['PEC'],triangular,,,11000
+6476.5667287226315,ccp9,T2,"['DCR', 'DCS']",triangular,,,1440
+6479.82160460193,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+6511.062172215006,ccp1,T3,['PEC'],triangular,,,11000
+6512.925376122664,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+6513.07162584095,ccp1,T3,['PEC'],triangular,,,11000
+6513.57754287107,ccp1,T2,"['DCR', 'DCS']",triangular,,,1440
+6514.049119589239,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+6515.564294085484,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+6516.038915746745,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+6518.234974549586,ccp9,T3,['PEC'],triangular,,,11000
+6518.727013954124,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+6519.974942052958,ccp1,T3,['PEC'],triangular,,,11000
+6520.915180594537,ccp4,T3,['PEC'],triangular,,,11000
+6521.2021289264785,ccp1,T3,['PEC'],triangular,,,11000
+6522.039267768834,ccp9,T3,['PEC'],triangular,,,11000
+6522.118942967767,ccp9,T3,['PEC'],triangular,,,11000
+6523.284743032247,ccp9,T3,['PEC'],triangular,,,11000
+6523.734255952912,ccp1,T2,['DCR'],triangular,,,1440
+6525.129837728948,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+6528.331121145941,ccp1,T3,['PEC'],triangular,,,11000
+6528.611254450078,ccp1,T3,['PEC'],triangular,,,11000
+6529.024367678642,ccp9,T3,['PEC'],triangular,,,11000
+6529.145814120243,ccp9,T2,['DCR'],triangular,,,1440
+6529.746199356502,ccp1,T2,['DCR'],triangular,,,1440
+6529.783186422762,ccp9,T2,['DCR'],triangular,,,1440
+6529.956512458646,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+6530.547870069173,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+6530.648057836655,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+6532.1872591647825,ccp1,T3,['PEC'],triangular,,,11000
+6532.697404993706,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+6534.503353708658,ccp9,T3,['PEC'],triangular,,,11000
+6534.694700924948,ccp4,T3,['PEC'],triangular,,,11000
+6534.78421553634,ccp4,T3,['PEC'],triangular,,,11000
+6536.686625656446,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+6537.042808786587,ccp9,T3,['PEC'],triangular,,,11000
+6537.31189850969,ccp4,T3,['PEC'],triangular,,,11000
+6538.203955589351,ccp1,T3,['PEC'],triangular,,,11000
+6539.278154137217,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+6572.303047189547,ccp8,T3,['PEC'],triangular,,,11000
+6578.978618381086,ccp8,T3,['PEC'],triangular,,,11000
+6579.600786754987,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+6584.226337045845,ccp8,T3,['PEC'],triangular,,,11000
+6586.566306888293,ccp8,T3,['PEC'],triangular,,,11000
+6594.238571281214,ccp8,T3,['PEC'],triangular,,,11000
+6599.107278428844,ccp8,T2,"['DCR', 'DCS']",triangular,,,1440
+6631.487319499699,ccp5,T3,['PEC'],triangular,,,11000
+6637.975624817674,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+6641.30902986932,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+6641.477925559658,ccp5,T3,['PEC'],triangular,,,11000
+6646.534365162614,ccp5,T3,['PEC'],triangular,,,11000
+6646.812889134162,ccp5,T3,['PEC'],triangular,,,11000
+6648.991944906904,ccp5,T3,['PEC'],triangular,,,11000
+6651.353241343707,ccp5,T3,['PEC'],triangular,,,11000
+6651.522569153658,ccp5,T3,['PEC'],triangular,,,11000
+6655.883574544971,ccp5,T3,['PEC'],triangular,,,11000
+6656.602077171674,ccp5,T2,['DCR'],triangular,,,1440
+6658.528265282572,ccp5,T2,['DCR'],triangular,,,1440
+6658.815037495631,ccp5,T3,['PEC'],triangular,,,11000
+6690.432656873765,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+6693.703706490899,ccp4,T2,['DCR'],triangular,,,1440
+6694.906769028137,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+6701.492106318845,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+6703.875384093736,ccp4,T3,['PEC'],triangular,,,11000
+6704.142747780579,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+6704.864087826451,ccp4,T3,['PEC'],triangular,,,11000
+6705.2060631123395,ccp4,T3,['PEC'],triangular,,,11000
+6707.818054170427,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+6710.386979276916,ccp4,T3,['PEC'],triangular,,,11000
+6712.828900485174,ccp4,T3,['PEC'],triangular,,,11000
+6713.069351103963,ccp4,T3,['PEC'],triangular,,,11000
+6713.348705155797,ccp4,T3,['PEC'],triangular,,,11000
+6719.206884669136,ccp4,T2,['DCR'],triangular,,,1440
+6782.640677909138,ccp7,T3,['PEC'],triangular,,,11000
+6783.398483754773,ccp7,T3,['PEC'],triangular,,,11000
+6786.781835946965,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+6790.490118446397,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+6790.6268938295525,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+6791.753824995276,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+6793.241674877892,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+6795.1550290658215,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+6800.6393115697,ccp7,T3,['PEC'],triangular,,,11000
+6801.818552424573,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+6809.29552780787,ccp7,T3,['PEC'],triangular,,,11000
+6809.656926073543,ccp7,T2,['DCR'],triangular,,,1440
+6812.024194809742,ccp7,T3,['PEC'],triangular,,,11000
+6817.559158518117,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+6821.3923110793585,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+6823.561840047836,ccp7,T3,['PEC'],triangular,,,11000
+6823.609167832707,ccp7,T3,['PEC'],triangular,,,11000
+6825.489663563879,ccp7,T3,['PEC'],triangular,,,11000
+6830.812523975847,ccp7,T3,['PEC'],triangular,,,11000
+6835.155530207639,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+6836.491763795377,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+6836.50960414938,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+6838.513040834581,ccp7,T3,['PEC'],triangular,,,11000
+6839.840042120724,ccp7,T3,['PEC'],triangular,,,11000
+6841.4278165293135,ccp2,T2,"['DCR', 'DCS']",triangular,,,1440
+6846.115100023225,ccp2,T2,['DCR'],triangular,,,1440
+6851.0608882949355,ccp2,T3,['PEC'],triangular,,,11000
+6853.159427067723,ccp2,T2,['DCR'],triangular,,,1440
+6853.93192576241,ccp2,T3,['PEC'],triangular,,,11000
+6854.2317974537655,ccp2,T3,['PEC'],triangular,,,11000
+6855.829897164286,ccp2,T2,['DCR'],triangular,,,1440
+6857.330676135565,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+6861.381342944741,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+6861.65688229777,ccp2,T3,['PEC'],triangular,,,11000
+6862.141457763942,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+6862.629335905244,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+6863.738700734596,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+6864.733496383295,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+6865.037302287232,ccp2,T2,['DCR'],triangular,,,1440
+6871.812720464343,ccp8,T3,['PEC'],triangular,,,11000
+6873.064660626873,ccp8,T2,['DCR'],triangular,,,1440
+6873.6391692853485,ccp8,T3,['PEC'],triangular,,,11000
+6875.857001013064,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+6878.135468885379,ccp8,T2,['DCR'],triangular,,,1440
+6879.850581346796,ccp9,T3,['PEC'],triangular,,,11000
+6880.218257806373,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+6880.718483270335,ccp9,T3,['PEC'],triangular,,,11000
+6882.775782630027,ccp9,T3,['PEC'],triangular,,,11000
+6883.232322720518,ccp9,T3,['PEC'],triangular,,,11000
+6883.644683844601,ccp8,T2,['DCR'],triangular,,,1440
+6884.243824045496,ccp9,T2,['DCR'],triangular,,,1440
+6887.198988788129,ccp9,T3,['PEC'],triangular,,,11000
+6887.268099050767,ccp9,T3,['PEC'],triangular,,,11000
+6889.855945094381,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+6893.093275832728,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+6990.748684190142,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+6992.1278129988805,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+6992.977479092461,ccp3,T3,['PEC'],triangular,,,11000
+6994.02526294512,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+6994.697166542641,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+6995.345192574332,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+6995.417174530903,ccp3,T3,['PEC'],triangular,,,11000
+6996.5592153628495,ccp3,T3,['PEC'],triangular,,,11000
+6998.443216035132,ccp3,T2,['DCR'],triangular,,,1440
+7001.489262910099,ccp4,T3,['PEC'],triangular,,,11000
+7002.506458171248,ccp4,T1,['DCR'],triangular,,,60
+7003.479283030777,ccp4,T2,['DCR'],triangular,,,1440
+7005.219753681604,ccp4,T2,['DCR'],triangular,,,1440
+7008.237304155512,ccp3,T3,['PEC'],triangular,,,11000
+7009.070144027403,ccp4,T2,['DCR'],triangular,,,1440
+7010.994987506387,ccp4,T3,['PEC'],triangular,,,11000
+7011.439426308662,ccp4,T3,['PEC'],triangular,,,11000
+7011.716021034348,ccp3,T2,"['DCR', 'DCS']",triangular,,,1440
+7013.268277338376,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+7014.716518664973,ccp3,T3,['PEC'],triangular,,,11000
+7016.254705946328,ccp4,T3,['PEC'],triangular,,,11000
+7017.462339532831,ccp4,T3,['PEC'],triangular,,,11000
+7018.043994025806,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+7018.0521460477985,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+7019.7973985120125,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+7019.843972735179,ccp4,T3,['PEC'],triangular,,,11000
+7110.867121880725,ccp2,T2,['DCR'],triangular,,,1440
+7114.7427609829565,ccp2,T3,['PEC'],triangular,,,11000
+7120.220305275965,ccp2,T3,['PEC'],triangular,,,11000
+7121.5611744124035,ccp2,T3,['PEC'],triangular,,,11000
+7121.967416456767,ccp2,T2,['DCR'],triangular,,,1440
+7122.978788368071,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+7123.487451153341,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+7123.968057464982,ccp2,T3,['PEC'],triangular,,,11000
+7125.877681955518,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+7126.943699148761,ccp2,T3,['PEC'],triangular,,,11000
+7134.677133145221,ccp2,T3,['PEC'],triangular,,,11000
+7136.466117891725,ccp2,T3,['PEC'],triangular,,,11000
+7137.648938418346,ccp2,T3,['PEC'],triangular,,,11000
+7138.147673687764,ccp2,T2,['DCR'],triangular,,,1440
+7139.783485829969,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+7171.326759218702,ccp6,T3,['PEC'],triangular,,,11000
+7172.106071093711,ccp8,T3,['PEC'],triangular,,,11000
+7178.589755266163,ccp6,T3,['PEC'],triangular,,,11000
+7179.30269345714,ccp6,T3,['PEC'],triangular,,,11000
+7182.819787010756,ccp8,T3,['PEC'],triangular,,,11000
+7185.369158981004,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+7185.678915962833,ccp6,T3,['PEC'],triangular,,,11000
+7186.66820247578,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+7188.1944145953275,ccp6,T2,['DCR'],triangular,,,1440
+7193.105187162687,ccp6,T3,['PEC'],triangular,,,11000
+7193.397510919886,ccp8,T3,['PEC'],triangular,,,11000
+7196.5454203656955,ccp6,T3,['PEC'],triangular,,,11000
+7197.245602294601,ccp8,T3,['PEC'],triangular,,,11000
+7197.56565473192,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+7199.703732319714,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+7201.499944847308,ccp8,T3,['PEC'],triangular,,,11000
+7204.274591748083,ccp8,T3,['PEC'],triangular,,,11000
+7204.363501660764,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+7208.935387643836,ccp8,T2,['DCR'],triangular,,,1440
+7212.3512361184,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+7214.356716971147,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+7220.834101811722,ccp8,T3,['PEC'],triangular,,,11000
+7222.482497178302,ccp8,T2,['DCR'],triangular,,,1440
+7223.958555893911,ccp8,T3,['PEC'],triangular,,,11000
+7224.2481461011,ccp8,T3,['PEC'],triangular,,,11000
+7224.793463115238,ccp8,T3,['PEC'],triangular,,,11000
+7290.289892433909,ccp2,T2,"['DCR', 'DCS']",triangular,,,1440
+7290.553783401696,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+7291.549086719649,ccp2,T3,['PEC'],triangular,,,11000
+7294.0083057943175,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+7297.045959335711,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+7298.22431550647,ccp2,T2,['DCR'],triangular,,,1440
+7301.034669581566,ccp2,T3,['PEC'],triangular,,,11000
+7307.310680480156,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+7307.849783668857,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+7314.743277120367,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+7317.377044104863,ccp2,T2,['DCR'],triangular,,,1440
+7317.819618187173,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+7318.196658272483,ccp2,T3,['PEC'],triangular,,,11000
+7319.502753544978,ccp2,T3,['PEC'],triangular,,,11000
+7323.966900241887,ccp5,T3,['PEC'],triangular,,,11000
+7327.414208638581,ccp5,T2,"['DCR', 'DCS']",triangular,,,1440
+7330.312653300841,ccp5,T3,['PEC'],triangular,,,11000
+7331.210733745003,ccp5,T2,"['DCR', 'DCS']",triangular,,,1440
+7332.227819236156,ccp5,T2,['DCR'],triangular,,,1440
+7333.807978948679,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+7337.719661381364,ccp5,T3,['PEC'],triangular,,,11000
+7338.224578763114,ccp5,T2,"['DCR', 'DCS']",triangular,,,1440
+7338.786588998199,ccp5,T2,['DCR'],triangular,,,1440
+7343.609355022075,ccp5,T3,['PEC'],triangular,,,11000
+7351.41042034888,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+7351.665221853525,ccp2,T2,['DCR'],triangular,,,1440
+7351.98282937533,ccp2,T3,['PEC'],triangular,,,11000
+7355.196381493188,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+7358.214144031766,ccp2,T3,['PEC'],triangular,,,11000
+7362.389950975556,ccp2,T3,['PEC'],triangular,,,11000
+7363.349656778084,ccp2,T3,['PEC'],triangular,,,11000
+7364.929781677953,ccp2,T3,['PEC'],triangular,,,11000
+7366.366915320359,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+7369.904748696793,ccp2,T3,['PEC'],triangular,,,11000
+7373.15188669313,ccp2,T2,['DCR'],triangular,,,1440
+7375.891504039658,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+7377.1829073417975,ccp2,T3,['PEC'],triangular,,,11000
+7411.0138441343715,ccp3,T3,['PEC'],triangular,,,11000
+7411.572000277861,ccp9,T3,['PEC'],triangular,,,11000
+7412.3591974150395,ccp9,T3,['PEC'],triangular,,,11000
+7413.776307242808,ccp3,T3,['PEC'],triangular,,,11000
+7415.028658045494,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+7419.674651782116,ccp3,T3,['PEC'],triangular,,,11000
+7420.197472449319,ccp3,T2,['DCR'],triangular,,,1440
+7420.477441053102,ccp9,T3,['PEC'],triangular,,,11000
+7421.7017145152695,ccp9,T2,['DCR'],triangular,,,1440
+7422.206939384333,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+7422.673187443275,ccp3,T2,['DCR'],triangular,,,1440
+7422.793006431651,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+7424.1111069121425,ccp9,T3,['PEC'],triangular,,,11000
+7425.261712160699,ccp9,T2,['DCR'],triangular,,,1440
+7425.65182005166,ccp9,T2,['DCR'],triangular,,,1440
+7428.056020951169,ccp9,T3,['PEC'],triangular,,,11000
+7430.134381703329,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+7432.005604161634,ccp9,T3,['PEC'],triangular,,,11000
+7432.23482107776,ccp9,T3,['PEC'],triangular,,,11000
+7433.628243465363,ccp3,T3,['PEC'],triangular,,,11000
+7433.972972828724,ccp3,T2,['DCR'],triangular,,,1440
+7435.952809040112,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+7436.458261377503,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+7439.1262093232335,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+7439.705442097782,ccp3,T3,['PEC'],triangular,,,11000
+7440.173636031361,ccp1,T2,['DCR'],triangular,,,1440
+7440.516960164391,ccp1,T3,['PEC'],triangular,,,11000
+7441.36875295539,ccp1,T2,['DCR'],triangular,,,1440
+7445.360449817481,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+7448.53120747571,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+7453.378208375321,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+7453.657798727978,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+7455.955820528293,ccp1,T3,['PEC'],triangular,,,11000
+7460.567043513986,ccp1,T3,['PEC'],triangular,,,11000
+7460.910760751298,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+7464.377184150623,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+7464.925175319448,ccp1,T2,['DCR'],triangular,,,1440
+7470.962404203274,ccp3,T3,['PEC'],triangular,,,11000
+7472.702363989028,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+7475.340591520955,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+7475.547484105219,ccp3,T3,['PEC'],triangular,,,11000
+7476.734348271728,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+7480.417654633091,ccp3,T2,['DCR'],triangular,,,1440
+7481.536188707253,ccp3,T3,['PEC'],triangular,,,11000
+7483.21167745673,ccp3,T3,['PEC'],triangular,,,11000
+7493.745288307412,ccp3,T2,['DCR'],triangular,,,1440
+7495.869992475187,ccp3,T2,['DCR'],triangular,,,1440
+7496.1953192290675,ccp3,T2,"['DCR', 'DCS']",triangular,,,1440
+7500.8240195547205,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+7501.453032818399,ccp4,T3,['PEC'],triangular,,,11000
+7501.548344761661,ccp4,T3,['PEC'],triangular,,,11000
+7501.603146936369,ccp4,T3,['PEC'],triangular,,,11000
+7503.143455960877,ccp4,T2,['DCR'],triangular,,,1440
+7503.687969346905,ccp4,T3,['PEC'],triangular,,,11000
+7506.98185186248,ccp4,T2,['DCR'],triangular,,,1440
+7507.969532977952,ccp4,T3,['PEC'],triangular,,,11000
+7508.870522839854,ccp4,T3,['PEC'],triangular,,,11000
+7511.773217768246,ccp4,T3,['PEC'],triangular,,,11000
+7517.13079922055,ccp4,T3,['PEC'],triangular,,,11000
+7521.742470756628,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+7620.651581972467,ccp1,T3,['PEC'],triangular,,,11000
+7624.636318111413,ccp1,T3,['PEC'],triangular,,,11000
+7625.42647618217,ccp1,T2,"['DCR', 'DCS']",triangular,,,1440
+7626.614579332565,ccp1,T3,['PEC'],triangular,,,11000
+7627.190773569577,ccp1,T2,['DCR'],triangular,,,1440
+7636.074593931977,ccp1,T3,['PEC'],triangular,,,11000
+7636.403726348053,ccp1,T3,['PEC'],triangular,,,11000
+7642.283923466962,ccp1,T3,['PEC'],triangular,,,11000
+7642.729872378435,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+7643.383229424539,ccp1,T3,['PEC'],triangular,,,11000
+7645.50099246412,ccp1,T3,['PEC'],triangular,,,11000
+7649.2737854464685,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+7683.021692325596,ccp7,T2,"['DCR', 'DCS']",triangular,,,1440
+7683.4290182906225,ccp7,T3,['PEC'],triangular,,,11000
+7686.774743374661,ccp7,T3,['PEC'],triangular,,,11000
+7689.389713270649,ccp7,T3,['PEC'],triangular,,,11000
+7691.565919049577,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+7702.158982104006,ccp7,T2,['DCR'],triangular,,,1440
+7705.901896585045,ccp7,T3,['PEC'],triangular,,,11000
+7706.300525115941,ccp7,T3,['PEC'],triangular,,,11000
+7707.20639453666,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+7708.496998523759,ccp7,T3,['PEC'],triangular,,,11000
+7709.183709484301,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+7921.927284873549,ccp5,T3,['PEC'],triangular,,,11000
+7922.377188227467,ccp6,T3,['PEC'],triangular,,,11000
+7925.6542050879725,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+7927.20553930933,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+7927.613709760885,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+7930.126278393285,ccp5,T3,['PEC'],triangular,,,11000
+7930.774351987638,ccp6,T3,['PEC'],triangular,,,11000
+7931.7827920572145,ccp6,T3,['PEC'],triangular,,,11000
+7933.545326625471,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+7938.289256493601,ccp6,T2,['DCR'],triangular,,,1440
+7938.500603283345,ccp5,T3,['PEC'],triangular,,,11000
+7939.78386801552,ccp5,T2,['DCR'],triangular,,,1440
+7941.315991493917,ccp6,T3,['PEC'],triangular,,,11000
+7944.354624759541,ccp5,T2,['DCR'],triangular,,,1440
+7946.662537975974,ccp6,T3,['PEC'],triangular,,,11000
+7946.696641633804,ccp6,T3,['PEC'],triangular,,,11000
+7947.429039181001,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+7948.812913356469,ccp6,T3,['PEC'],triangular,,,11000
+7949.427467986106,ccp6,T3,['PEC'],triangular,,,11000
+7949.449333053883,ccp5,T3,['PEC'],triangular,,,11000
+8011.081517615315,ccp4,T3,['PEC'],triangular,,,11000
+8012.352938938649,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+8013.914635965192,ccp4,T3,['PEC'],triangular,,,11000
+8018.853264985635,ccp4,T3,['PEC'],triangular,,,11000
+8019.681702036923,ccp4,T3,['PEC'],triangular,,,11000
+8022.464169677817,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+8023.080421725207,ccp4,T3,['PEC'],triangular,,,11000
+8027.131752583167,ccp4,T3,['PEC'],triangular,,,11000
+8027.930665169808,ccp4,T3,['PEC'],triangular,,,11000
+8030.7656779521385,ccp4,T3,['PEC'],triangular,,,11000
+8033.910100794571,ccp4,T3,['PEC'],triangular,,,11000
+8038.848882636497,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+8071.863485181724,ccp6,T2,['DCR'],triangular,,,1440
+8074.99252642437,ccp6,T2,['DCR'],triangular,,,1440
+8077.847388886339,ccp6,T3,['PEC'],triangular,,,11000
+8079.367545271511,ccp6,T3,['PEC'],triangular,,,11000
+8083.121871027183,ccp6,T2,['DCR'],triangular,,,1440
+8085.9815686931815,ccp6,T3,['PEC'],triangular,,,11000
+8089.988057757255,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+8092.445735550086,ccp6,T3,['PEC'],triangular,,,11000
+8095.253852271539,ccp6,T2,['DCR'],triangular,,,1440
+8097.62521570334,ccp6,T2,"['DCR', 'DCS']",triangular,,,1440
+8097.727467967385,ccp6,T3,['PEC'],triangular,,,11000
+8134.165662785719,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+8138.941016317903,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+8140.207701102477,ccp2,T2,['DCR'],triangular,,,1440
+8142.084303153212,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+8142.58856104907,ccp2,T3,['PEC'],triangular,,,11000
+8145.780528350579,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+8147.633448946434,ccp2,T2,"['DCR', 'DCS']",triangular,,,1440
+8147.684669924754,ccp2,T3,['PEC'],triangular,,,11000
+8148.959089789709,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+8152.588574007882,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+8152.658747676022,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+8152.91141806886,ccp2,T3,['PEC'],triangular,,,11000
+8153.432151598179,ccp2,T2,['DCR'],triangular,,,1440
+8165.008172459178,ccp1,T3,"['PEC', 'DCS']",triangular,,,11000
+8165.17793859083,ccp1,T3,['PEC'],triangular,,,11000
+8165.865274762348,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+8173.53820131625,ccp1,T3,['PEC'],triangular,,,11000
+8174.052203242773,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+8175.10799041592,ccp1,T3,['PEC'],triangular,,,11000
+8178.93432337177,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+8179.23502369088,ccp1,T3,['PEC'],triangular,,,11000
+8180.738980515534,ccp1,T2,['DCR'],triangular,,,1440
+8185.200105005824,ccp1,T3,['PEC'],triangular,,,11000
+8186.289540904183,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+8186.795252973322,ccp1,T3,['PEC'],triangular,,,11000
+8190.414900684324,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+8192.520205005017,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+8193.920221465474,ccp7,T3,['PEC'],triangular,,,11000
+8196.751242878747,ccp7,T3,['PEC'],triangular,,,11000
+8197.523477770761,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+8198.195034753126,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+8199.54174594962,ccp7,T3,['PEC'],triangular,,,11000
+8201.730041238154,ccp7,T2,['DCR'],triangular,,,1440
+8201.736311519955,ccp7,T2,"['DCR', 'DCS']",triangular,,,1440
+8214.748208240566,ccp7,T3,['PEC'],triangular,,,11000
+8219.159469805685,ccp7,T3,['PEC'],triangular,,,11000
+8223.23014528282,ccp9,T3,['PEC'],triangular,,,11000
+8223.610374063353,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+8223.820989029666,ccp9,T3,['PEC'],triangular,,,11000
+8226.045360942642,ccp9,T2,['DCR'],triangular,,,1440
+8228.178132271738,ccp9,T3,['PEC'],triangular,,,11000
+8234.416878984197,ccp9,T3,['PEC'],triangular,,,11000
+8235.696777233596,ccp9,T3,['PEC'],triangular,,,11000
+8236.813958664612,ccp9,T3,['PEC'],triangular,,,11000
+8238.573482268228,ccp9,T3,['PEC'],triangular,,,11000
+8241.154696997151,ccp9,T2,['DCR'],triangular,,,1440
+8241.413549245874,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+8242.118901855129,ccp9,T3,['PEC'],triangular,,,11000
+8247.315631330088,ccp9,T2,['DCR'],triangular,,,1440
+8247.506329273217,ccp9,T3,['PEC'],triangular,,,11000
+8251.316629985628,ccp7,T3,['PEC'],triangular,,,11000
+8261.566103626004,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+8262.2022356971,ccp7,T3,['PEC'],triangular,,,11000
+8263.151247999243,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+8264.346737478065,ccp7,T3,['PEC'],triangular,,,11000
+8266.975109504856,ccp7,T3,['PEC'],triangular,,,11000
+8269.996268003299,ccp7,T3,['PEC'],triangular,,,11000
+8272.235234599502,ccp7,T3,['PEC'],triangular,,,11000
+8272.274767936588,ccp7,T3,['PEC'],triangular,,,11000
+8274.087251844285,ccp7,T3,['PEC'],triangular,,,11000
+8278.4192026886,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+8342.649461812432,ccp6,T3,['PEC'],triangular,,,11000
+8343.863252222518,ccp5,T2,['DCR'],triangular,,,1440
+8346.129536719205,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+8346.483370650418,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+8346.495601375613,ccp5,T3,['PEC'],triangular,,,11000
+8348.234300374454,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+8348.818595452689,ccp5,T3,['PEC'],triangular,,,11000
+8352.306035721092,ccp5,T3,['PEC'],triangular,,,11000
+8353.14158210309,ccp6,T3,['PEC'],triangular,,,11000
+8355.666270389056,ccp5,T2,['DCR'],triangular,,,1440
+8356.167170531859,ccp5,T3,['PEC'],triangular,,,11000
+8356.7303764635,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+8361.7365742025,ccp6,T2,['DCR'],triangular,,,1440
+8362.963240894072,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+8363.091356524475,ccp6,T3,['PEC'],triangular,,,11000
+8364.260119654258,ccp5,T3,['PEC'],triangular,,,11000
+8365.309388847421,ccp6,T2,['DCR'],triangular,,,1440
+8366.31461055462,ccp5,T3,['PEC'],triangular,,,11000
+8368.977157666446,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+8400.193793316132,ccp3,T3,['PEC'],triangular,,,11000
+8406.056532110684,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+8408.99814525219,ccp3,T2,['DCR'],triangular,,,1440
+8409.581806487935,ccp3,T3,['PEC'],triangular,,,11000
+8410.086120427319,ccp3,T2,['DCR'],triangular,,,1440
+8413.163464447789,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+8419.178505115338,ccp3,T3,['PEC'],triangular,,,11000
+8420.388948636359,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+8421.888873590155,ccp3,T3,['PEC'],triangular,,,11000
+8422.2732432108,ccp3,T3,['PEC'],triangular,,,11000
+8423.36308074577,ccp3,T2,['DCR'],triangular,,,1440
+8491.429493205698,ccp9,T2,"['DCR', 'DCS']",triangular,,,1440
+8491.557032135304,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+8492.559519797585,ccp9,T3,['PEC'],triangular,,,11000
+8492.83753694539,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+8495.652386518079,ccp4,T3,['PEC'],triangular,,,11000
+8496.279970338612,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+8497.713013606148,ccp4,T3,['PEC'],triangular,,,11000
+8499.300831087794,ccp9,T3,['PEC'],triangular,,,11000
+8501.438830785088,ccp4,T3,['PEC'],triangular,,,11000
+8503.53146559325,ccp4,T3,['PEC'],triangular,,,11000
+8503.776639684314,ccp4,T3,['PEC'],triangular,,,11000
+8505.182431571684,ccp4,T1,['DCR'],triangular,,,60
+8505.499250048206,ccp8,T3,['PEC'],triangular,,,11000
+8506.564696571093,ccp8,T3,['PEC'],triangular,,,11000
+8506.835144943232,ccp9,T3,['PEC'],triangular,,,11000
+8506.984185117695,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+8506.99557940366,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+8508.37938299284,ccp4,T3,['PEC'],triangular,,,11000
+8508.884239001081,ccp8,T3,['PEC'],triangular,,,11000
+8509.980221709535,ccp9,T2,"['DCR', 'DCS']",triangular,,,1440
+8509.984817838958,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+8512.987701051467,ccp8,T2,"['DCR', 'DCS']",triangular,,,1440
+8513.020797531592,ccp9,T3,['PEC'],triangular,,,11000
+8513.564621793834,ccp8,T3,['PEC'],triangular,,,11000
+8515.919144551126,ccp9,T3,['PEC'],triangular,,,11000
+8516.765403263202,ccp8,T3,['PEC'],triangular,,,11000
+8517.118834470566,ccp9,T3,['PEC'],triangular,,,11000
+8517.2623609129,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+8517.299716783627,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+8517.36158343108,ccp8,T3,['PEC'],triangular,,,11000
+8517.52715211023,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+8518.245818160427,ccp4,T3,['PEC'],triangular,,,11000
+8518.421283187541,ccp8,T3,['PEC'],triangular,,,11000
+8518.575496981515,ccp4,T3,['PEC'],triangular,,,11000
+8518.762044495968,ccp9,T2,['DCR'],triangular,,,1440
+8580.637147139547,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+8582.968374408536,ccp8,T3,['PEC'],triangular,,,11000
+8584.806731053603,ccp8,T3,['PEC'],triangular,,,11000
+8589.7089399082,ccp8,T3,['PEC'],triangular,,,11000
+8592.103214395533,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+8596.55756759999,ccp8,T3,['PEC'],triangular,,,11000
+8604.233514897633,ccp8,T3,['PEC'],triangular,,,11000
+8606.86001699868,ccp8,T2,['DCR'],triangular,,,1440
+8608.314088160056,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+8608.95104766763,ccp8,T3,['PEC'],triangular,,,11000
+8641.705234954938,ccp9,T3,['PEC'],triangular,,,11000
+8642.336374211553,ccp3,T3,['PEC'],triangular,,,11000
+8642.532805056899,ccp9,T3,['PEC'],triangular,,,11000
+8644.751302552493,ccp3,T3,['PEC'],triangular,,,11000
+8647.901278250689,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+8648.238621519013,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+8648.737663295722,ccp9,T3,['PEC'],triangular,,,11000
+8649.874121233388,ccp9,T2,"['DCR', 'DCS']",triangular,,,1440
+8650.207175190117,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+8651.216761848806,ccp3,T3,['PEC'],triangular,,,11000
+8652.1332572997,ccp3,T3,['PEC'],triangular,,,11000
+8652.152721754508,ccp9,T3,['PEC'],triangular,,,11000
+8653.612162523286,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+8655.096462337466,ccp3,T3,['PEC'],triangular,,,11000
+8655.606292894683,ccp9,T2,['DCR'],triangular,,,1440
+8656.380867470658,ccp3,T2,['DCR'],triangular,,,1440
+8657.382977904294,ccp9,T3,['PEC'],triangular,,,11000
+8662.114441531958,ccp3,T3,['PEC'],triangular,,,11000
+8662.855436550413,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+8663.099870695702,ccp9,T3,['PEC'],triangular,,,11000
+8666.636280346002,ccp9,T3,['PEC'],triangular,,,11000
+8666.639864723471,ccp3,T2,['DCR'],triangular,,,1440
+8667.755805939029,ccp9,T2,['DCR'],triangular,,,1440
+8667.84619084836,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+8667.920151515029,ccp3,T2,['DCR'],triangular,,,1440
+8668.987802502616,ccp3,T3,['PEC'],triangular,,,11000
+8823.093672002235,ccp5,T3,['PEC'],triangular,,,11000
+8826.360756570108,ccp5,T2,['DCR'],triangular,,,1440
+8830.30887739353,ccp5,T2,['DCR'],triangular,,,1440
+8831.985707237056,ccp5,T2,['DCR'],triangular,,,1440
+8832.819605730165,ccp5,T3,['PEC'],triangular,,,11000
+8837.65949384739,ccp5,T3,['PEC'],triangular,,,11000
+8839.255673254356,ccp5,T3,['PEC'],triangular,,,11000
+8840.426740221694,ccp5,T3,['PEC'],triangular,,,11000
+8840.569720900025,ccp5,T3,['PEC'],triangular,,,11000
+8847.793481557022,ccp5,T2,['DCR'],triangular,,,1440
+8847.890601167946,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+8848.127260482943,ccp5,T2,['DCR'],triangular,,,1440
+8851.241510639482,ccp2,T3,['PEC'],triangular,,,11000
+8851.501624204113,ccp2,T3,['PEC'],triangular,,,11000
+8854.624679794406,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+8860.709736444258,ccp2,T3,['PEC'],triangular,,,11000
+8863.94130258281,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+8871.953917068477,ccp2,T1,"['DCR', 'DCS']",triangular,,,60
+8910.001363046951,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+8910.00344100703,ccp7,T2,['DCR'],triangular,,,1440
+8911.081372769722,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+8914.654480280667,ccp7,T3,['PEC'],triangular,,,11000
+8922.385051337962,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+8928.191102508654,ccp7,T2,['DCR'],triangular,,,1440
+8930.487443222231,ccp7,T2,['DCR'],triangular,,,1440
+8934.84603411208,ccp7,T3,['PEC'],triangular,,,11000
+8937.07704733451,ccp7,T3,['PEC'],triangular,,,11000
+8939.999090075304,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+8940.337992139792,ccp3,T3,['PEC'],triangular,,,11000
+8943.706388009958,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+8944.67517157668,ccp8,T2,['DCR'],triangular,,,1440
+8945.502051063839,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+8946.086622308585,ccp3,T2,['DCR'],triangular,,,1440
+8946.178402024945,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+8952.37691844752,ccp8,T2,['DCR'],triangular,,,1440
+8953.546579590131,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+8953.660744341352,ccp8,T3,['PEC'],triangular,,,11000
+8954.703860593341,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+8954.817130588755,ccp3,T3,['PEC'],triangular,,,11000
+8956.38054904231,ccp8,T3,['PEC'],triangular,,,11000
+8957.500304257796,ccp8,T2,['DCR'],triangular,,,1440
+8961.267419641596,ccp3,T2,"['DCR', 'DCS']",triangular,,,1440
+8961.439499925722,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+8961.498841909062,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+8961.951216965177,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+8964.268531140637,ccp3,T1,"['DCR', 'DCS']",triangular,,,60
+8964.70293722031,ccp8,T2,['DCR'],triangular,,,1440
+8966.138701902775,ccp8,T2,"['DCR', 'DCS']",triangular,,,1440
+8968.006159900484,ccp8,T3,['PEC'],triangular,,,11000
+8968.624232713839,ccp3,T3,['PEC'],triangular,,,11000
+8976.32538061335,ccp5,T3,['PEC'],triangular,,,11000
+8977.173935486224,ccp5,T2,"['DCR', 'DCS']",triangular,,,1440
+8977.640397516896,ccp5,T3,['PEC'],triangular,,,11000
+8979.631742366173,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+8984.037407873278,ccp5,T3,['PEC'],triangular,,,11000
+8986.901473890292,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+8989.583580297432,ccp5,T2,['DCR'],triangular,,,1440
+8990.808644063476,ccp5,T3,['PEC'],triangular,,,11000
+8992.63552421868,ccp5,T2,['DCR'],triangular,,,1440
+8993.058665220595,ccp5,T3,['PEC'],triangular,,,11000
+8994.614895362605,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+8998.000040586881,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+9001.408444810811,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+9005.187668735995,ccp7,T3,['PEC'],triangular,,,11000
+9014.78245152483,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+9014.993140856703,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+9016.092880755317,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+9022.748108978154,ccp7,T2,['DCR'],triangular,,,1440
+9023.208909185349,ccp7,T3,['PEC'],triangular,,,11000
+9024.678991746472,ccp7,T3,['PEC'],triangular,,,11000
+9026.426602627549,ccp7,T3,['PEC'],triangular,,,11000
+9029.603536440049,ccp7,T3,['PEC'],triangular,,,11000
+9120.76132284105,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+9126.10557238272,ccp4,T3,['PEC'],triangular,,,11000
+9127.160993587568,ccp4,T3,['PEC'],triangular,,,11000
+9130.940280155399,ccp4,T3,['PEC'],triangular,,,11000
+9133.60244282855,ccp4,T3,['PEC'],triangular,,,11000
+9134.822441345135,ccp4,T2,"['DCR', 'DCS']",triangular,,,1440
+9137.69001083929,ccp4,T3,['PEC'],triangular,,,11000
+9141.498465294717,ccp4,T3,['PEC'],triangular,,,11000
+9145.113786633498,ccp4,T3,['PEC'],triangular,,,11000
+9151.838730595191,ccp1,T2,['DCR'],triangular,,,1440
+9155.760914706045,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+9160.370325773942,ccp1,T3,['PEC'],triangular,,,11000
+9161.223023472634,ccp1,T3,['PEC'],triangular,,,11000
+9164.444002493885,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+9169.801908660802,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+9174.36103380077,ccp1,T3,['PEC'],triangular,,,11000
+9178.573848254437,ccp1,T3,['PEC'],triangular,,,11000
+9180.937300478274,ccp2,T3,['PEC'],triangular,,,11000
+9184.230284306721,ccp2,T3,['PEC'],triangular,,,11000
+9193.083248110544,ccp2,T3,['PEC'],triangular,,,11000
+9193.492961077623,ccp2,T2,['DCR'],triangular,,,1440
+9198.327891294566,ccp2,T2,['DCR'],triangular,,,1440
+9205.784184721786,ccp2,T3,"['PEC', 'DCS']",triangular,,,11000
+9210.038175235086,ccp6,T3,['PEC'],triangular,,,11000
+9212.961680157377,ccp6,T1,['DCR'],triangular,,,60
+9217.320822555766,ccp6,T3,['PEC'],triangular,,,11000
+9225.588678374736,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+9228.845963957894,ccp6,T3,['PEC'],triangular,,,11000
+9229.614821267798,ccp6,T3,['PEC'],triangular,,,11000
+9232.555977859272,ccp6,T3,['PEC'],triangular,,,11000
+9235.499800878382,ccp6,T2,['DCR'],triangular,,,1440
+9235.672685955058,ccp6,T2,['DCR'],triangular,,,1440
+9238.46661525619,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+9238.794580135773,ccp6,T3,['PEC'],triangular,,,11000
+9271.340557564663,ccp1,T2,['DCR'],triangular,,,1440
+9273.929126417312,ccp1,T3,['PEC'],triangular,,,11000
+9278.754130718184,ccp1,T3,['PEC'],triangular,,,11000
+9280.244148356676,ccp1,T3,['PEC'],triangular,,,11000
+9286.875672980192,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+9291.081716340566,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+9296.070733875693,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+9297.502780370985,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+9330.428576102602,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+9333.30865069049,ccp8,T3,['PEC'],triangular,,,11000
+9333.819811671216,ccp8,T2,['DCR'],triangular,,,1440
+9336.879119729352,ccp8,T3,['PEC'],triangular,,,11000
+9340.404973815082,ccp8,T3,['PEC'],triangular,,,11000
+9346.67856421976,ccp8,T3,['PEC'],triangular,,,11000
+9348.774622455596,ccp8,T3,['PEC'],triangular,,,11000
+9354.21818639236,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+9357.287184481493,ccp8,T3,['PEC'],triangular,,,11000
+9359.753005083809,ccp8,T3,['PEC'],triangular,,,11000
+9359.955738460136,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+9460.77313294659,ccp2,T2,['DCR'],triangular,,,1440
+9467.699459563422,ccp2,T3,['PEC'],triangular,,,11000
+9467.911901565907,ccp2,T3,['PEC'],triangular,,,11000
+9471.503547288512,ccp2,T2,"['DCR', 'DCS']",triangular,,,1440
+9473.541826404251,ccp2,T3,['PEC'],triangular,,,11000
+9479.469543377889,ccp2,T3,['PEC'],triangular,,,11000
+9513.588376919213,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+9517.08111275489,ccp3,T3,['PEC'],triangular,,,11000
+9527.648933087969,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+9528.373718073559,ccp3,T3,['PEC'],triangular,,,11000
+9530.870997114896,ccp3,T3,['PEC'],triangular,,,11000
+9532.6208068545,ccp3,T2,['DCR'],triangular,,,1440
+9532.965037765187,ccp3,T3,['PEC'],triangular,,,11000
+9535.344816314742,ccp3,T3,['PEC'],triangular,,,11000
+9536.717572576092,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+9536.931802372177,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+9538.686341379607,ccp3,T3,"['PEC', 'DCS']",triangular,,,11000
+9600.012979516383,ccp5,T3,['PEC'],triangular,,,11000
+9601.55900032891,ccp6,T3,['PEC'],triangular,,,11000
+9602.947420763645,ccp6,T3,['PEC'],triangular,,,11000
+9603.025167518646,ccp5,T2,['DCR'],triangular,,,1440
+9603.518188807406,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+9603.874910534765,ccp5,T3,['PEC'],triangular,,,11000
+9604.158261711364,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+9606.516306270116,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+9607.569631666061,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+9607.723063861613,ccp4,T3,['PEC'],triangular,,,11000
+9608.267577641831,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+9608.361003560409,ccp4,T3,['PEC'],triangular,,,11000
+9608.885879341306,ccp6,T3,['PEC'],triangular,,,11000
+9609.741726708364,ccp5,T3,['PEC'],triangular,,,11000
+9610.311600340448,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+9612.641229868814,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+9613.11848668232,ccp5,T3,['PEC'],triangular,,,11000
+9613.413420366529,ccp5,T2,['DCR'],triangular,,,1440
+9613.69447944941,ccp5,T1,"['DCR', 'DCS']",triangular,,,60
+9615.906031538647,ccp6,T2,['DCR'],triangular,,,1440
+9616.972503103902,ccp4,T3,['PEC'],triangular,,,11000
+9617.44595844659,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+9617.782161400675,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+9618.594905555194,ccp6,T3,['PEC'],triangular,,,11000
+9619.037152499275,ccp5,T3,"['PEC', 'DCS']",triangular,,,11000
+9621.427766433764,ccp4,T2,['DCR'],triangular,,,1440
+9625.441325559734,ccp6,T3,"['PEC', 'DCS']",triangular,,,11000
+9626.169703250096,ccp4,T2,['DCR'],triangular,,,1440
+9626.805667817684,ccp6,T3,['PEC'],triangular,,,11000
+9627.66541858347,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+9628.28253969878,ccp6,T3,['PEC'],triangular,,,11000
+9630.225240239659,ccp9,T2,['DCR'],triangular,,,1440
+9631.41759247601,ccp9,T2,"['DCR', 'DCS']",triangular,,,1440
+9631.68159429804,ccp9,T3,['PEC'],triangular,,,11000
+9632.37541657271,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+9636.142809344878,ccp9,T3,['PEC'],triangular,,,11000
+9639.263077541527,ccp9,T2,['DCR'],triangular,,,1440
+9644.767062470984,ccp9,T3,['PEC'],triangular,,,11000
+9646.411960427675,ccp9,T3,['PEC'],triangular,,,11000
+9646.698697695105,ccp9,T3,['PEC'],triangular,,,11000
+9647.50909221424,ccp9,T3,['PEC'],triangular,,,11000
+9649.104629686375,ccp9,T2,['DCR'],triangular,,,1440
+9649.410048155034,ccp9,T3,['PEC'],triangular,,,11000
+9658.194492425246,ccp9,T3,['PEC'],triangular,,,11000
+9658.941797456166,ccp9,T3,['PEC'],triangular,,,11000
+9659.370632451226,ccp9,T2,['DCR'],triangular,,,1440
+9661.424562957849,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+9662.711302495632,ccp8,T3,['PEC'],triangular,,,11000
+9666.007986506118,ccp8,T3,"['PEC', 'DCS']",triangular,,,11000
+9667.550890550168,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+9668.413771715448,ccp8,T3,['PEC'],triangular,,,11000
+9679.559560590384,ccp8,T3,['PEC'],triangular,,,11000
+9681.464464036571,ccp8,T2,['DCR'],triangular,,,1440
+9684.309883381402,ccp8,T3,['PEC'],triangular,,,11000
+9684.94355561929,ccp8,T2,"['DCR', 'DCS']",triangular,,,1440
+9685.461561496917,ccp8,T1,"['DCR', 'DCS']",triangular,,,60
+9687.758908444233,ccp8,T2,"['DCR', 'DCS']",triangular,,,1440
+9780.069054822292,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+9782.051403105515,ccp9,T2,['DCR'],triangular,,,1440
+9787.094521887175,ccp7,T3,['PEC'],triangular,,,11000
+9788.035495082297,ccp9,T2,['DCR'],triangular,,,1440
+9789.079545917071,ccp7,T3,['PEC'],triangular,,,11000
+9790.839665273797,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+9791.551164224593,ccp7,T3,"['PEC', 'DCS']",triangular,,,11000
+9791.694641203492,ccp9,T3,['PEC'],triangular,,,11000
+9792.105167015832,ccp9,T2,['DCR'],triangular,,,1440
+9792.960844596095,ccp9,T1,"['DCR', 'DCS']",triangular,,,60
+9794.20006104417,ccp9,T3,['PEC'],triangular,,,11000
+9796.08990510492,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+9798.370057623362,ccp7,T3,['PEC'],triangular,,,11000
+9799.420177419013,ccp7,T3,['PEC'],triangular,,,11000
+9799.542625651558,ccp9,T3,['PEC'],triangular,,,11000
+9803.413258064258,ccp7,T3,['PEC'],triangular,,,11000
+9804.415671906172,ccp7,T3,['PEC'],triangular,,,11000
+9805.072482376847,ccp7,T1,"['DCR', 'DCS']",triangular,,,60
+9805.565898221317,ccp9,T2,['DCR'],triangular,,,1440
+9806.220890785831,ccp9,T3,"['PEC', 'DCS']",triangular,,,11000
+9807.258555773831,ccp9,T3,['PEC'],triangular,,,11000
+9808.559123585881,ccp9,T3,['PEC'],triangular,,,11000
+9809.49723282003,ccp9,T3,['PEC'],triangular,,,11000
+9809.722845026208,ccp9,T2,['DCR'],triangular,,,1440
+9840.383057166495,ccp6,T2,['DCR'],triangular,,,1440
+9840.573798426043,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+9844.79944137204,ccp6,T3,['PEC'],triangular,,,11000
+9848.275530748384,ccp6,T2,['DCR'],triangular,,,1440
+9854.089614138531,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+9855.360611098995,ccp6,T1,"['DCR', 'DCS']",triangular,,,60
+9859.802041919289,ccp6,T2,['DCR'],triangular,,,1440
+9865.893340365372,ccp6,T3,['PEC'],triangular,,,11000
+9866.064991103969,ccp6,T2,['DCR'],triangular,,,1440
+9869.340017696242,ccp6,T3,['PEC'],triangular,,,11000
+9870.164859780556,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+9872.618295823715,ccp1,T3,['PEC'],triangular,,,11000
+9876.281157014448,ccp1,T2,['DCR'],triangular,,,1440
+9888.155076630235,ccp1,T3,['PEC'],triangular,,,11000
+9888.76107815406,ccp1,T2,['DCR'],triangular,,,1440
+9888.874682109195,ccp1,T3,['PEC'],triangular,,,11000
+9891.734177327173,ccp1,T1,"['DCR', 'DCS']",triangular,,,60
+9892.552698580603,ccp1,T3,['PEC'],triangular,,,11000
+10021.90550430793,ccp4,T3,['PEC'],triangular,,,11000
+10023.76585206013,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+10024.230412746565,ccp4,T2,['DCR'],triangular,,,1440
+10025.402012909251,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+10034.462065071371,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+10042.017228264187,ccp4,T1,"['DCR', 'DCS']",triangular,,,60
+10044.938235574464,ccp4,T3,"['PEC', 'DCS']",triangular,,,11000
+10048.415735851995,ccp4,T1,"['DCR', 'DCS']",triangular,,,60

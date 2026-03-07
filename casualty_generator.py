@@ -105,6 +105,13 @@ def _lifetime_df_to_factories(diagnosis_mix_df: pd.DataFrame) -> Dict[str, Calla
         if dist_type == "uniform":
             low, high = row["lifetime_low"], row["lifetime_high"]
             factories[triage] = lambda l=low, h=high: sim.Uniform(l, h)
+        elif dist_type == "triangular":
+            low = row["lifetime_low"]
+            high = row["lifetime_high"]
+            mode = row.get("lifetime_mode", (low + high) / 2)
+            if pd.isna(mode):
+                mode = (low + high) / 2
+            factories[triage] = lambda l=low, m=mode, h=high: sim.Triangular(l, h, m)
         elif dist_type == "exponential":
             mean = row["lifetime_mean"]
             factories[triage] = lambda m=mean: sim.Exponential(m)
@@ -128,12 +135,41 @@ def save_casualties_df(
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     save_df = casualties_df.copy()
-    save_df["lifetime_low"] = save_df["lifetime_dist"].apply(
-        lambda d: d._lowerbound if hasattr(d, "_lowerbound") else None
-    )
-    save_df["lifetime_high"] = save_df["lifetime_dist"].apply(
-        lambda d: d._upperbound if hasattr(d, "_upperbound") else None
-    )
+
+    def get_dist_type(d):
+        cls_name = type(d).__name__.lower()
+        if "triangular" in cls_name:
+            return "triangular"
+        elif "uniform" in cls_name:
+            return "uniform"
+        elif "exponential" in cls_name:
+            return "exponential"
+        elif "normal" in cls_name:
+            return "normal"
+        return "uniform"
+
+    def get_low(d):
+        for attr in ["_lowerbound", "low", "a", "min"]:
+            if hasattr(d, attr):
+                return getattr(d, attr)
+        return None
+
+    def get_high(d):
+        for attr in ["_upperbound", "high", "b", "max"]:
+            if hasattr(d, attr):
+                return getattr(d, attr)
+        return None
+
+    def get_mode(d):
+        for attr in ["_mode", "mode", "c"]:
+            if hasattr(d, attr):
+                return getattr(d, attr)
+        return None
+
+    save_df["lifetime_dist_type"] = save_df["lifetime_dist"].apply(get_dist_type)
+    save_df["lifetime_low"] = save_df["lifetime_dist"].apply(get_low)
+    save_df["lifetime_high"] = save_df["lifetime_dist"].apply(get_high)
+    save_df["lifetime_mode"] = save_df["lifetime_dist"].apply(get_mode)
 
     save_cols = [c for c in save_df.columns if c != "lifetime_dist"]
     save_df[save_cols].to_csv(output_path, index=False)
