@@ -254,6 +254,21 @@ def run_simulation_with_logging(
     return env, transport_df, data["distance_matrix"], data["facility_df"], data["ambulance_df"]
 
 
+def generate_ambulance_colors(ambulance_ids: list) -> dict:
+    """Generate unique colors for each ambulance using a colormap."""
+    import matplotlib.cm as cm
+
+    n = len(ambulance_ids)
+    # Use a colormap with good distinction
+    cmap = cm.get_cmap('tab20', n) if n <= 20 else cm.get_cmap('hsv', n)
+
+    colors = {}
+    for i, amb_id in enumerate(sorted(ambulance_ids)):
+        colors[amb_id] = cmap(i / max(n - 1, 1))[:3]  # RGB tuple
+
+    return colors
+
+
 def create_transport_video(
     distance_matrix: pd.DataFrame,
     facility_df: pd.DataFrame,
@@ -280,6 +295,9 @@ def create_transport_video(
         dpi: Resolution of the video
     """
     positions = compute_positions_from_distance_matrix(distance_matrix)
+
+    # Generate unique colors for each ambulance
+    amb_colors = generate_ambulance_colors(ambulance_df['amb_id'].tolist())
 
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -403,7 +421,7 @@ def create_transport_video(
         """Get positions and patient data for all ambulances at time t."""
         state = get_state_at_time(t)
 
-        amb_data = []  # List of (x, y, [patient_triages])
+        amb_data = []  # List of (amb_id, x, y, [patient_triages], in_transit)
 
         for amb_id, amb_state in state.items():
             if amb_state.get('in_transit', False):
@@ -425,13 +443,13 @@ def create_transport_video(
                     x, y = positions.get(amb_state.get('location', amb_state.get('from_loc')), (0, 0))
 
                 patients = amb_state.get('patients', [])
-                amb_data.append((x, y, patients, True))  # True = in transit
+                amb_data.append((amb_id, x, y, patients, True))  # True = in transit
             else:
                 loc = amb_state.get('location')
                 if loc and loc in positions:
                     x, y = positions[loc]
                     patients = amb_state.get('patients', [])
-                    amb_data.append((x, y, patients, False))  # False = stationary
+                    amb_data.append((amb_id, x, y, patients, False))  # False = stationary
 
         return amb_data
 
@@ -457,15 +475,23 @@ def create_transport_video(
         n_in_transit = 0
         n_patients_moving = 0
 
-        for x, y, patients, in_transit in amb_data:
+        for amb_id, x, y, patients, in_transit in amb_data:
             if in_transit:
                 n_in_transit += 1
                 n_patients_moving += len(patients)
 
-            # Draw ambulance as a white square with black border
-            amb_color = '#4a90d9' if in_transit else '#cccccc'
-            amb_artist = ax.scatter(x, y, c=amb_color, marker='s', s=120,
-                                   edgecolors='#333333', linewidths=2, zorder=10)
+            # Draw ambulance with its unique color
+            base_color = amb_colors.get(amb_id, (0.5, 0.5, 0.5))
+            # Dim the color if stationary
+            if in_transit:
+                color = base_color
+                edge_width = 2
+            else:
+                color = tuple(c * 0.5 + 0.3 for c in base_color)  # Lighter/faded
+                edge_width = 1
+
+            amb_artist = ax.scatter(x, y, c=[color], marker='s', s=120,
+                                   edgecolors='black', linewidths=edge_width, zorder=10)
             ambulance_artists.append(amb_artist)
 
             # Draw patients as colored dots around/on the ambulance
