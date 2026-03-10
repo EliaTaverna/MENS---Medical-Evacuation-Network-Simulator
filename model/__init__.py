@@ -13,7 +13,7 @@ from model.ambulance import Ambulance
 from model.c2 import TransportC2
 from model.spawner import CasualtySpawner
 from model.builder import ModelBuilder, ModelConnector
-from model.runner import run_model, load_data_from_csv
+from model.runner import run_model, load_data_from_xlsx
 from model.policies import (
     unload_planned,
     load_planned,
@@ -48,7 +48,7 @@ __all__ = [
     "ModelConnector",
     # Runner
     "run_model",
-    "load_data_from_csv",
+    "load_data_from_xlsx",
     # Policies
     "unload_planned",
     "load_planned",

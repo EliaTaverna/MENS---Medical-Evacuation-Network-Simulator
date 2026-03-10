@@ -52,12 +52,12 @@ def load_casualty_generation_config(
     config_dir: Union[str, Path] = DEFAULT_CONFIG_DIR,
 ) -> dict:
     """
-    Load casualty generation configuration from YAML + CSV files.
+    Load casualty generation configuration from YAML + XLSX files.
 
     Expected files in config_dir:
         - config.yaml: parameters (par_total, n_days, facility_ids, etc.)
-        - diagnosis_mix.csv: triage, frequency, lifetime_distribution, lifetime_low, lifetime_high
-        - prescriptions.csv: label, frequency, prescription
+        - diagnosis_mix.xlsx: triage, frequency, lifetime_distribution, lifetime_low, lifetime_high
+        - prescriptions.xlsx: label, frequency, prescription
     """
     config_dir = Path(config_dir)
 
@@ -70,10 +70,10 @@ def load_casualty_generation_config(
     facility_weights = None  # equal distribution by default
 
     # Load diagnosis mix (includes lifetime info)
-    diagnosis_mix_df = pd.read_csv(config_dir / "diagnosis_mix.csv")
+    diagnosis_mix_df = pd.read_excel(config_dir / "diagnosis_mix.xlsx")
 
     # Load prescriptions
-    rx_df = pd.read_csv(config_dir / "prescriptions.csv")
+    rx_df = pd.read_excel(config_dir / "prescriptions.xlsx")
     rx_df["prescription"] = rx_df["prescription"].apply(eval)
 
     # Extract lifetime distributions from diagnosis_mix_df
@@ -128,9 +128,9 @@ def save_casualties_df(
     casualties_df: pd.DataFrame,
     output_path: Union[str, Path] = None,
 ) -> Path:
-    """Save casualties dataframe to CSV, extracting lifetime bounds."""
+    """Save casualties dataframe to XLSX, extracting lifetime bounds."""
     if output_path is None:
-        output_path = DEFAULT_OUTPUT_DIR / "casualties.csv"
+        output_path = DEFAULT_OUTPUT_DIR / "casualties.xlsx"
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -172,7 +172,7 @@ def save_casualties_df(
     save_df["lifetime_mode"] = save_df["lifetime_dist"].apply(get_mode)
 
     save_cols = [c for c in save_df.columns if c != "lifetime_dist"]
-    save_df[save_cols].to_csv(output_path, index=False)
+    save_df[save_cols].to_excel(output_path, index=False)
     print(f"Saved casualties dataframe to: {output_path}")
     return output_path
 
@@ -503,7 +503,7 @@ def generate_casualties_df_from_waves(
 if __name__ == "__main__":
 
     SAVE_OUTPUT = True
-    OUTPUT_PATH = "data/simulation_initiation/casualties.csv"
+    OUTPUT_PATH = "data/simulation_initiation/casualties.xlsx"
 
     # Load configuration from files
     print(f"Loading config from: {DEFAULT_CONFIG_DIR}")

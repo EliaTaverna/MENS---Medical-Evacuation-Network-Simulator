@@ -1,7 +1,0 @@
-label,frequency,prescription
-T1,0.95,"['DCR', 'DCS']"
-T1,0.05,"['DCR']"
-T2,0.20,"['DCR', 'DCS']"
-T2,0.80,"['DCR']"
-T3,0.20,"['PEC', 'DCS']"
-T3,0.80,"['PEC']"

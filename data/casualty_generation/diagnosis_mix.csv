@@ -1,4 +1,0 @@
-triage,frequency,lifetime_distribution,lifetime_low,lifetime_mode,lifetime_high
-T1,0.15,triangular,40,60,80
-T2,0.20,triangular,1200,1440,1680
-T3,0.65,triangular,10000,11000,12000

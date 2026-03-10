@@ -14,6 +14,7 @@ class AXP(sim.Component):
         self.ambulances_here = []
 
     def arrive(self, amb):
+
         """Register an ambulance's arrival at this AXP."""
         if amb not in self.ambulances_here:
             self.ambulances_here.append(amb)
