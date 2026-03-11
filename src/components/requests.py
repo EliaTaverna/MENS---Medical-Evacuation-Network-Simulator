@@ -4,8 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from model.patient import Patient
-    from model.facility import Facility
+    from src.components.patient import Patient
+    from src.components.facility import Facility
 
 
 class TransportRequest:

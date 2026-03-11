@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import salabim as sim
 
-from casualty_generator import (
+from src.helpers.casualty_generator import (
     _normalize_probs,
     _lifetime_df_to_factories,
     place_waves_randomly_per_day,

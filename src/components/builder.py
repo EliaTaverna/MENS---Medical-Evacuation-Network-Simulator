@@ -3,11 +3,11 @@
 from __future__ import annotations
 import pandas as pd
 
-from model.axp import AXP
-from model.facility import Facility
-from model.unit import Unit
-from model.ambulance import Ambulance
-from model.c2 import TransportC2
+from src.components.axp import AXP
+from src.components.facility import Facility
+from src.components.unit import Unit
+from src.components.ambulance import Ambulance
+from src.components.c2 import TransportC2
 
 
 class ModelBuilder:
@@ -36,7 +36,7 @@ class ModelBuilder:
         self.env.c2_by_id = {}
         levers = getattr(self.env, "levers", {})
         for r in c2_df.itertuples(index=False):
-            corridors_matrix = getattr(r, "corridors_matrix", pd.DataFrame())
+            corridors_matrix = getattr(r, "corridors", pd.DataFrame())
             ambulances_eligibility = getattr(r, "ambulances_eligibility", pd.DataFrame())
             self.env.c2_by_id[r.c2_id] = TransportC2(
                 name=r.c2_id,

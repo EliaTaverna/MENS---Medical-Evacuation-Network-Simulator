@@ -6,11 +6,11 @@ import salabim as sim
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from model.ambulance import Ambulance
-    from model.facility import Facility
+    from src.components.ambulance import Ambulance
+    from src.components.facility import Facility
 
-from model.requests import TransportRequest
-from model.policies import (
+from src.components.requests import TransportRequest
+from src.policies.policies import (
     FACILITY_ELIGIBILITY_POLICIES,
     FACILITY_ASSIGNMENT_POLICIES,
     AMBULANCE_ELIGIBILITY_POLICIES,

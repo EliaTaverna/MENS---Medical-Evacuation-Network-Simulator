@@ -7,11 +7,11 @@ import salabim as sim
 from typing import Callable, Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from model.ambulance import Ambulance
-    from model.facility import Facility
-    from model.c2 import TransportC2
+    from src.components.ambulance import Ambulance
+    from src.components.facility import Facility
+    from src.components.c2 import TransportC2
 
-from model.requests import PlanStep
+from src.components.requests import PlanStep
 
 
 # ============================================================
@@ -49,7 +49,7 @@ def fac_eligibility_base(env: sim.Environment, requests_df: pd.DataFrame, corrid
     """
     Add column 'eligible_facilities' (list[str]) to requests_df.
 
-    corridors_matrix: DataFrame with facilities as both index and columns.
+    corridors: DataFrame with facilities as both index and columns.
     Value 1 if row facility can send to column facility, 0 otherwise.
     """
     df = requests_df.copy()
@@ -249,6 +249,10 @@ def craft_plans(
 
         if not patients:
             continue
+
+        # Mark actual request objects as assigned
+        for req in req_objs:
+            req.status = "assigned"
 
         pickup_step = PlanStep(facility=pickup_fac, unload_patients=[], load_patients=patients)
         dropoff_step = PlanStep(facility=dropoff_fac, unload_patients=patients, load_patients=[])

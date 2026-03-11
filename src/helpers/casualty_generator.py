@@ -44,8 +44,8 @@ def _normalize_probs(p: np.ndarray) -> np.ndarray:
 # ============================================================
 
 _THIS_DIR = Path(__file__).parent
-DEFAULT_CONFIG_DIR = _THIS_DIR / "data" / "casualty_generation"
-DEFAULT_OUTPUT_DIR = _THIS_DIR / "data" / "simulation_initiation"
+DEFAULT_CONFIG_DIR = _THIS_DIR / "data" / "single_run" / "input" / "casualty_generation_settings"
+DEFAULT_OUTPUT_DIR = _THIS_DIR / "data" / "single_run" / "input" / "casualty_dataframes"
 
 
 def load_casualty_generation_config(
@@ -62,7 +62,7 @@ def load_casualty_generation_config(
     config_dir = Path(config_dir)
 
     # Load parameters from YAML
-    with open(config_dir / "config.yaml", "r", encoding="utf-8") as f:
+    with open(config_dir / "sampling_settings" / "config.yaml", "r", encoding="utf-8") as f:
         params = yaml.safe_load(f)
 
     # Facility IDs from YAML
@@ -70,10 +70,10 @@ def load_casualty_generation_config(
     facility_weights = None  # equal distribution by default
 
     # Load diagnosis mix (includes lifetime info)
-    diagnosis_mix_df = pd.read_excel(config_dir / "diagnosis_mix.xlsx")
+    diagnosis_mix_df = pd.read_excel(config_dir / "diagnosis" / "diagnosis_mix.xlsx")
 
     # Load prescriptions
-    rx_df = pd.read_excel(config_dir / "prescriptions.xlsx")
+    rx_df = pd.read_excel(config_dir / "prescriptions" / "prescriptions.xlsx")
     rx_df["prescription"] = rx_df["prescription"].apply(eval)
 
     # Extract lifetime distributions from diagnosis_mix_df
@@ -503,7 +503,7 @@ def generate_casualties_df_from_waves(
 if __name__ == "__main__":
 
     SAVE_OUTPUT = True
-    OUTPUT_PATH = "data/simulation_initiation/casualties.xlsx"
+    OUTPUT_PATH = "../../data/single_run/input/casualty_dataframes/casualties.xlsx"
 
     # Load configuration from files
     print(f"Loading config from: {DEFAULT_CONFIG_DIR}")

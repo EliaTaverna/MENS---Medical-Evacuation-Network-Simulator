@@ -5,10 +5,10 @@ import salabim as sim
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from model.patient import Patient
-    from model.requests import PlanStep
+    from src.components.patient import Patient
+    from src.components.requests import PlanStep
 
-from model.axp import AXP
+from src.components.axp import AXP
 
 
 class Ambulance(sim.Component):

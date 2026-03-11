@@ -6,9 +6,9 @@ import salabim as sim
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from model.patient import Patient
+    from src.components.patient import Patient
 
-from model.requests import TransportRequest
+from src.components.requests import TransportRequest
 
 
 class Facility(sim.Component):

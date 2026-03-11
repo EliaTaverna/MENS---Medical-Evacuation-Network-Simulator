@@ -109,17 +109,18 @@ class FacilityStateLogger(sim.Component):
         t = float(self.env.now())
 
         for fac_id, fac in self.env.facility_by_id.items():
-            # Count patients waiting in queue by triage
+            # Count patients waiting in entry_lines (for treatment) by triage
             waiting = {'T1': 0, 'T2': 0, 'T3': 0}
             for service_type, queue in fac.entry_lines.items():
                 for p in queue:
                     if p.triage in waiting:
                         waiting[p.triage] += 1
 
-            # Count patients waiting for transport by triage
+            # Count all transport requests by triage (pending or assigned, not yet picked up)
+            transport_requests = {'T1': 0, 'T2': 0, 'T3': 0}
             for req in fac.exit_queue:
-                if req.patient.triage in waiting:
-                    waiting[req.patient.triage] += 1
+                if req.patient.triage in transport_requests:
+                    transport_requests[req.patient.triage] += 1
 
             # Count total patients in care
             total_in_care = sum(unit.in_service for unit in fac.units.values() if unit is not None)
@@ -130,6 +131,9 @@ class FacilityStateLogger(sim.Component):
                 'T1_waiting': waiting['T1'],
                 'T2_waiting': waiting['T2'],
                 'T3_waiting': waiting['T3'],
+                'T1_transport': transport_requests['T1'],
+                'T2_transport': transport_requests['T2'],
+                'T3_transport': transport_requests['T3'],
                 'total_in_care': total_in_care,
             })
 
@@ -215,6 +219,7 @@ def create_transport_video(
     figsize: tuple = (16, 10),
     save_path: str = "transport_simulation.mp4",
     dpi: int = 150,
+    duration: float = None,
 ):
     """
     Create an MP4 video showing ambulances moving with patient dots.
@@ -230,6 +235,7 @@ def create_transport_video(
         figsize: Figure size
         save_path: Path to save the MP4 file
         dpi: Resolution of the video
+        duration: Video duration in minutes (None = until last transport event)
     """
     positions = compute_positions_from_distance_matrix(distance_matrix)
     amb_colors = generate_ambulance_colors(ambulance_df['amb_id'].tolist())
@@ -298,7 +304,15 @@ def create_transport_video(
         }
 
     events_sorted = transport_events.sort_values('time').to_dict('records') if len(transport_events) > 0 else []
-    max_time = transport_events['time'].max() if len(transport_events) > 0 else 100
+    if duration is not None:
+        max_time = duration
+    elif facility_states_df is not None and len(facility_states_df) > 0:
+        # Use last facility state snapshot (covers treatment completion)
+        max_time = facility_states_df['time'].max()
+    elif len(transport_events) > 0:
+        max_time = transport_events['time'].max()
+    else:
+        max_time = 100
     n_frames = int(max_time / time_scale) + 1
 
     # Build facility states lookup
@@ -313,6 +327,9 @@ def create_transport_video(
                 'T1_waiting': row['T1_waiting'],
                 'T2_waiting': row['T2_waiting'],
                 'T3_waiting': row['T3_waiting'],
+                'T1_transport': row.get('T1_transport', 0),
+                'T2_transport': row.get('T2_transport', 0),
+                'T3_transport': row.get('T3_transport', 0),
                 'total_in_care': row['total_in_care'],
             }
 
@@ -395,8 +412,8 @@ def create_transport_video(
                 loc = amb_state.get('location')
                 if loc and loc in positions:
                     x, y = positions[loc]
-                    patients = amb_state.get('patients', [])
-                    amb_data.append((amb_id, x, y, patients, False))
+                    # Don't show patients when idle - they're shown at the facility instead
+                    amb_data.append((amb_id, x, y, [], False))
 
         return amb_data
 
@@ -443,7 +460,7 @@ def create_transport_video(
                 n_patients = len(patients)
                 for i, triage in enumerate(patients):
                     angle = (2 * np.pi * i / max(n_patients, 1)) + np.pi/4
-                    offset = 1.5
+                    offset = 0.4
                     px = x + offset * np.cos(angle)
                     py = y + offset * np.sin(angle)
 
@@ -452,7 +469,7 @@ def create_transport_video(
                                                edgecolors='black', linewidths=0.5, zorder=11)
                     patient_artists.append(patient_artist)
 
-        # Draw facility patient counts
+        # Draw facility patient counts and patient dots
         for fac_id in facility_df['facility_id'].tolist():
             if fac_id not in positions:
                 continue
@@ -462,15 +479,37 @@ def create_transport_video(
                 t1w = state['T1_waiting']
                 t2w = state['T2_waiting']
                 t3w = state['T3_waiting']
+                t1tr = state['T1_transport']
+                t2tr = state['T2_transport']
+                t3tr = state['T3_transport']
                 total_c = state['total_in_care']
-                total_w = t1w + t2w + t3w
-                if total_w > 0 or total_c > 0:
-                    text = f"W:{t1w}/{t2w}/{t3w}\nC:{total_c}"
-                    txt = ax.text(x, y + 2.5, text, fontsize=6, ha='center', va='bottom',
-                                 bbox=dict(boxstyle='round,pad=0.2', facecolor='white',
-                                          edgecolor='gray', alpha=0.85),
-                                 zorder=15)
-                    facility_text_artists.append(txt)
+            else:
+                t1w = t2w = t3w = t1tr = t2tr = t3tr = total_c = 0
+
+            text = f"W:{t1w}/{t2w}/{t3w}\nC:{total_c}\nTR:{t1tr}/{t2tr}/{t3tr}"
+            txt = ax.text(x, y + 2.5, text, fontsize=6, ha='center', va='bottom',
+                         bbox=dict(boxstyle='round,pad=0.2', facecolor='white',
+                                  edgecolor='gray', alpha=0.85),
+                         zorder=15)
+            facility_text_artists.append(txt)
+
+            # Draw patient dots at facility (waiting + transport requests)
+            patient_list = []
+            patient_list.extend(['T1'] * t1w + ['T1'] * t1tr)
+            patient_list.extend(['T2'] * t2w + ['T2'] * t2tr)
+            patient_list.extend(['T3'] * t3w + ['T3'] * t3tr)
+
+            n_patients = len(patient_list)
+            for i, triage in enumerate(patient_list):
+                angle = (2 * np.pi * i / max(n_patients, 1)) - np.pi/2
+                offset = 0.5 + 0.15 * (i // 8)  # Expand outward for many patients
+                px = x + offset * np.cos(angle)
+                py = y + offset * np.sin(angle)
+
+                color = TRIAGE_COLORS.get(triage, '#888888')
+                patient_artist = ax.scatter(px, py, c=color, marker='o', s=40,
+                                           edgecolors='black', linewidths=0.5, zorder=6)
+                patient_artists.append(patient_artist)
 
         hours = int(t // 60)
         mins = int(t % 60)

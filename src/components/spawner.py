@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 import salabim as sim
 
-from model.patient import Patient
+from src.components.patient import Patient
 
 
 class CasualtySpawner(sim.Component):
