@@ -7,6 +7,7 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 os.chdir(_REPO_ROOT)
 sys.path.insert(0, str(_REPO_ROOT))
 
+import numpy as np
 import pandas as pd
 import salabim as sim
 import shutil
@@ -140,6 +141,16 @@ def run_simulation(
     env.transport_events = []
     env.facility_states = []
 
+    # Track waiting times: list of (triage, facility_type, wait_type, duration)
+    # wait_type: "care" or "transport"
+    env.wait_times = []
+
+    # Track unit utilization: dict of unit_id -> list of (start_time, end_time)
+    env.unit_busy_periods = {}
+
+    # Track all patients with their triages (for statistics)
+    env.all_patients = {}  # patient_id -> Patient object
+
     env.levers = levers
     env.unload_policy = {"unload_planned": unload_planned}
     env.load_policy = {"load_planned": load_planned}
@@ -178,6 +189,137 @@ def run_simulation(
 
     Ambulance._travel_to = patched_travel_to
 
+    # Patch Facility to track transport wait times
+    from src.components.facility import Facility
+    original_patient_handed_over = Facility.patient_handed_over
+
+    def patched_patient_handed_over(self, p):
+        # Record when patient starts waiting for transport
+        if p.unit_needed not in self.entry_lines:
+            p._transport_wait_start = self.env.now()
+            p._transport_wait_facility_type = self.facility_type
+        original_patient_handed_over(self, p)
+
+    Facility.patient_handed_over = patched_patient_handed_over
+
+    original_facility_process = Facility.process
+
+    def patched_facility_process(self):
+        while True:
+            self.passivate()
+            amb = self._amb
+            self._amb = None
+
+            unload_fn = self.env.unload_policy[self.unload_key]
+            for p in unload_fn(amb, self):
+                amb.onboard.remove(p)
+                self.patient_handed_over(p)
+
+            load_fn = self.env.load_policy[self.load_key]
+            for p in load_fn(amb, self):
+                # Record transport wait time
+                if hasattr(p, "_transport_wait_start") and p._transport_wait_start is not None:
+                    wait_duration = self.env.now() - p._transport_wait_start
+                    self.env.wait_times.append({
+                        "triage": p.triage,
+                        "facility_type": p._transport_wait_facility_type,
+                        "wait_type": "transport",
+                        "duration": wait_duration,
+                    })
+                    p._transport_wait_start = None
+
+                # remove the assigned request from exit_queue
+                for req in list(self.exit_queue):
+                    if req.patient is p and req.status == "assigned":
+                        self.exit_queue.remove(req)
+                        break
+                # Pause death clock - patient is being transported
+                p.pause_death_clock()
+                amb.onboard.append(p)
+                p.patient_state = "in_transport"
+
+            amb.activate()
+
+    Facility.process = patched_facility_process
+
+    # Patch Unit to track care wait times
+    from src.components.unit import Unit, UnitService
+    original_unit_process = Unit.process
+
+    def patched_unit_process(self):
+        while True:
+            q = self.facility.entry_lines[self.service_type]
+
+            while self.in_service < self.capacity and len(q) > 0:
+                priority = {"T1": 0, "T2": 1, "T3": 2}
+
+                idx = min(
+                    range(len(q)),
+                    key=lambda i: (priority.get(q[i].triage, 99), q[i]._unit_queue_entry_time)
+                )
+                p = q.pop(idx)
+
+                # Pause death clock - treatment is starting
+                p.pause_death_clock()
+
+                # Check if patient died while waiting
+                if p.is_dead:
+                    continue
+
+                # realized waiting time
+                t_enter = getattr(p, "_unit_queue_entry_time", None)
+                if t_enter is not None:
+                    wait_duration = self.env.now() - t_enter
+                    self.wait_monitor.tally(wait_duration)
+                    # Record care wait time
+                    self.env.wait_times.append({
+                        "triage": p.triage,
+                        "facility_type": self.facility.facility_type,
+                        "wait_type": "care",
+                        "duration": wait_duration,
+                        "unit_id": self.name(),
+                    })
+
+                self.in_service += 1
+                # Track unit busy period start
+                unit_id = self.name()
+                if unit_id not in self.env.unit_busy_periods:
+                    self.env.unit_busy_periods[unit_id] = []
+                p._unit_service_start = self.env.now()
+                p._unit_service_unit_id = unit_id
+
+                UnitService(name=f"{self.name()}_svc", unit=self, patient=p)
+
+            self.passivate()
+
+    Unit.process = patched_unit_process
+
+    original_service_done = Unit.service_done
+
+    def patched_service_done(self, p):
+        # Track unit busy period end
+        if hasattr(p, "_unit_service_start") and p._unit_service_start is not None:
+            unit_id = p._unit_service_unit_id
+            self.env.unit_busy_periods[unit_id].append({
+                "start": p._unit_service_start,
+                "end": self.env.now(),
+            })
+            p._unit_service_start = None
+        original_service_done(self, p)
+
+    Unit.service_done = patched_service_done
+
+    # Patch Patient to track all patients
+    from src.components.patient import Patient
+    original_patient_setup = Patient.setup
+
+    def patched_patient_setup(self, patient_id, triage, prescription, life_time_dist, spawn_facility, injury_time):
+        original_patient_setup(self, patient_id, triage, prescription, life_time_dist, spawn_facility, injury_time)
+        # Register patient for statistics
+        self.env.all_patients[patient_id] = self
+
+    Patient.setup = patched_patient_setup
+
     try:
         # Build src
         builder = ModelBuilder(env)
@@ -211,10 +353,16 @@ def run_simulation(
 
     finally:
         Ambulance._travel_to = original_travel_to
+        Facility.patient_handed_over = original_patient_handed_over
+        Facility.process = original_facility_process
+        Unit.process = original_unit_process
+        Unit.service_done = original_service_done
+        Patient.setup = original_patient_setup
 
     # Collect results
     transport_df = pd.DataFrame(env.transport_events)
     facility_states_df = pd.DataFrame(env.facility_states)
+    wait_times_df = pd.DataFrame(env.wait_times) if env.wait_times else pd.DataFrame()
 
     safe_data = [
         (p.patient_id, p.triage, p.t_safe, p.spawn_facility.loc_id)
@@ -266,28 +414,163 @@ def run_simulation(
         "transport_df": transport_df,
         "facility_states_df": facility_states_df,
         "patient_log_df": env.patient_log_df,
+        "wait_times_df": wait_times_df,
+        "unit_busy_periods": env.unit_busy_periods,
+        "all_patients": env.all_patients,
+        "sim_duration": till,
         "run_folder": run_folder,
+        "distance_matrix": data["distance_matrix"],
     }
 
 
 def print_summary(results: dict):
     """Print simulation summary statistics."""
     log_df = results["patient_log_df"]
+    wait_times_df = results.get("wait_times_df", pd.DataFrame())
+    transport_df = results.get("transport_df", pd.DataFrame())
+    unit_busy_periods = results.get("unit_busy_periods", {})
+    sim_duration = results.get("sim_duration", 0)
+    distance_matrix = results.get("distance_matrix")
 
-    print("\n" + "=" * 60)
+    print("\n" + "=" * 70)
     print("SIMULATION RESULTS")
-    print("=" * 60)
+    print("=" * 70)
 
-    # Count unique patients by final state
-    final_states = log_df.groupby("patient_id").last()
-    n_dead = (final_states["is_dead"] == True).sum()
-    n_safe = (final_states["is_safe"] == True).sum()
+    # -----------------------------------------------------------------
+    # 1. Patient outcomes by triage
+    # -----------------------------------------------------------------
+    env = results.get("env")
+
+    # Build patient -> triage mapping from env.all_patients (most reliable source)
+    triage_map = {}
+    if env and hasattr(env, "all_patients"):
+        for pid, patient in env.all_patients.items():
+            triage_map[pid] = patient.triage
+
+    # Get final states from log
+    final_states = log_df.groupby("patient_id").last().reset_index()
+    final_states["triage"] = final_states["patient_id"].map(triage_map)
+
+    print("\n--- PATIENT OUTCOMES ---")
     n_total = len(final_states)
-
     print(f"Total patients: {n_total}")
-    print(f"Died: {n_dead} ({100*n_dead/n_total:.1f}%)")
-    print(f"Safe: {n_safe} ({100*n_safe/n_total:.1f}%)")
-    print(f"In progress: {n_total - n_dead - n_safe}")
+
+    for triage in ["T1", "T2", "T3"]:
+        subset = final_states[final_states["triage"] == triage]
+        n_triage = len(subset)
+        if n_triage == 0:
+            continue
+        n_dead = (subset["is_dead"] == True).sum()
+        n_safe = (subset["is_safe"] == True).sum()
+        n_in_progress = n_triage - n_dead - n_safe
+
+        print(f"\n  {triage}: {n_triage} patients")
+        print(f"    Deaths:      {n_dead:4d} ({100*n_dead/n_triage:5.1f}%)")
+        print(f"    Safe:        {n_safe:4d} ({100*n_safe/n_triage:5.1f}%)")
+        print(f"    In progress: {n_in_progress:4d} ({100*n_in_progress/n_triage:5.1f}%)")
+
+    # Overall totals
+    n_dead_total = (final_states["is_dead"] == True).sum()
+    n_safe_total = (final_states["is_safe"] == True).sum()
+    n_in_progress_total = n_total - n_dead_total - n_safe_total
+    print(f"\n  TOTAL:")
+    print(f"    Deaths:      {n_dead_total:4d} ({100*n_dead_total/n_total:5.1f}%)")
+    print(f"    Safe:        {n_safe_total:4d} ({100*n_safe_total/n_total:5.1f}%)")
+    print(f"    In progress: {n_in_progress_total:4d} ({100*n_in_progress_total/n_total:5.1f}%)")
+
+    # -----------------------------------------------------------------
+    # 2. Waiting time statistics
+    # -----------------------------------------------------------------
+    if not wait_times_df.empty:
+        print("\n--- WAITING TIME STATISTICS (minutes) ---")
+        print("Format: 25th percentile / Median / 75th percentile")
+
+        # Get unique facility types and wait types
+        facility_types = sorted(wait_times_df["facility_type"].unique())
+        triages = ["T1", "T2", "T3"]
+
+        for wait_type in ["care", "transport"]:
+            print(f"\n  Waiting for {wait_type.upper()}:")
+            wt_subset = wait_times_df[wait_times_df["wait_type"] == wait_type]
+
+            if wt_subset.empty:
+                print("    No data")
+                continue
+
+            for facility_type in facility_types:
+                ft_subset = wt_subset[wt_subset["facility_type"] == facility_type]
+                if ft_subset.empty:
+                    continue
+
+                print(f"\n    At {facility_type}:")
+                for triage in triages:
+                    t_subset = ft_subset[ft_subset["triage"] == triage]
+                    if t_subset.empty or len(t_subset) == 0:
+                        continue
+
+                    durations = t_subset["duration"].values
+                    p25 = np.percentile(durations, 25)
+                    p50 = np.percentile(durations, 50)
+                    p75 = np.percentile(durations, 75)
+
+                    print(f"      {triage}: {p25:6.1f} / {p50:6.1f} / {p75:6.1f}  (n={len(durations)})")
+
+    # -----------------------------------------------------------------
+    # 3. Cumulative transport time
+    # -----------------------------------------------------------------
+    if not transport_df.empty and distance_matrix is not None:
+        print("\n--- CUMULATIVE TRANSPORT TIME ---")
+
+        # Calculate travel times from transport events
+        departures = transport_df[transport_df["event"] == "departure"].copy()
+        arrivals = transport_df[transport_df["event"] == "arrival"].copy()
+
+        # Match departures to arrivals by amb_id and sequence
+        amb_travel_times = {}
+        for amb_id in transport_df["amb_id"].unique():
+            amb_deps = departures[departures["amb_id"] == amb_id].sort_values("time")
+            amb_arrs = arrivals[arrivals["amb_id"] == amb_id].sort_values("time")
+
+            total_time = 0
+            for _, arr in amb_arrs.iterrows():
+                # Find matching departure (latest departure before this arrival with same from/to)
+                matching_deps = amb_deps[
+                    (amb_deps["time"] < arr["time"]) &
+                    (amb_deps["from_loc"] == arr["from_loc"]) &
+                    (amb_deps["to_loc"] == arr["to_loc"])
+                ]
+                if not matching_deps.empty:
+                    dep = matching_deps.iloc[-1]
+                    travel_time = arr["time"] - dep["time"]
+                    total_time += travel_time
+
+            amb_travel_times[amb_id] = total_time
+
+        total_transport_time = sum(amb_travel_times.values())
+        print(f"  Total transport time (all ambulances): {total_transport_time:.1f} minutes")
+
+        print("\n  By ambulance:")
+        for amb_id, travel_time in sorted(amb_travel_times.items()):
+            print(f"    {amb_id}: {travel_time:.1f} minutes")
+
+    # -----------------------------------------------------------------
+    # 4. Unit utilization
+    # -----------------------------------------------------------------
+    if unit_busy_periods and sim_duration > 0:
+        print("\n--- UNIT UTILIZATION ---")
+
+        for unit_id, periods in sorted(unit_busy_periods.items()):
+            if not periods:
+                print(f"  {unit_id}: 0.0%")
+                continue
+
+            # Calculate total busy time
+            total_busy = sum(p["end"] - p["start"] for p in periods)
+            utilization = (total_busy / sim_duration) * 100
+
+            print(f"  {unit_id}: {utilization:.1f}% ({total_busy:.1f} min busy / {sim_duration:.1f} min total)")
+
+    print("\n" + "=" * 70)
 
 
 if __name__ == "__main__":
