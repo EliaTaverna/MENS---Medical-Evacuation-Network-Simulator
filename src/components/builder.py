@@ -32,23 +32,27 @@ class ModelBuilder:
                 assigned_facility_ids=r.assigned_facility_ids
             )
 
+    def build_eligibility_datasets(self, fac_eligibility_datasets: dict, amb_eligibility_datasets: dict):
+        """Attach pre-loaded eligibility lookup tables to the environment."""
+        self.env.fac_eligibility_datasets = fac_eligibility_datasets
+        self.env.amb_eligibility_datasets = amb_eligibility_datasets
+
     def build_c2s(self, c2_df: pd.DataFrame):
         self.env.c2_by_id = {}
         levers = getattr(self.env, "levers", {})
         for r in c2_df.itertuples(index=False):
-            corridors_matrix = getattr(r, "corridors", pd.DataFrame())
-            ambulances_eligibility = getattr(r, "ambulances_eligibility", pd.DataFrame())
             self.env.c2_by_id[r.c2_id] = TransportC2(
                 name=r.c2_id,
                 c2_id=r.c2_id,
                 facility_ids=r.facility_ids,
                 ambulance_ids=r.ambulance_ids,
-                corridors_matrix=corridors_matrix,
-                ambulances_eligibility=ambulances_eligibility,
                 lever_value_facility_eligibility=levers.get("facility_eligibility", 0),
-                lever_value_facility_assignment=levers.get("facility_assignment", 0),
                 lever_value_ambulance_eligibility=levers.get("ambulance_eligibility", 0),
-                lever_value_ambulance_assignment=levers.get("ambulance_assignment", 0),
+                alpha=levers.get("alpha", 1.0),
+                beta=levers.get("beta",  0.0),
+                gamma=levers.get("gamma", 0.0),
+                delta=levers.get("delta", 0.0),
+                random_seed=levers.get("random_seed", 42),
             )
 
     def build_facilities(self, facility_df: pd.DataFrame, units_df: pd.DataFrame):
@@ -96,9 +100,11 @@ class ModelBuilder:
             )
             self.env.amb_by_id[r.amb_id] = amb
 
-    def build_all(self, distance_matrix, axp_df, facility_df, units_df, ambulance_df, c2_df):
+    def build_all(self, distance_matrix, axp_df, facility_df, units_df, ambulance_df, c2_df,
+                  fac_eligibility_datasets=None, amb_eligibility_datasets=None):
         self.build_roads(distance_matrix)
         self.build_axps(axp_df)
+        self.build_eligibility_datasets(fac_eligibility_datasets or {}, amb_eligibility_datasets or {})
         self.build_c2s(c2_df)
         self.build_facilities(facility_df, units_df)
         self.build_units(units_df)

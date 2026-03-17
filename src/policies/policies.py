@@ -1,10 +1,9 @@
 """Policy functions and registries for C2 decision making."""
 
 from __future__ import annotations
-import random
 import pandas as pd
 import salabim as sim
-from typing import Callable, Dict, List, Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.components.ambulance import Ambulance
@@ -12,6 +11,7 @@ if TYPE_CHECKING:
     from src.components.c2 import TransportC2
 
 from src.components.requests import PlanStep
+from src.helpers.ilp import solve_ilp
 
 
 # ============================================================
@@ -31,37 +31,31 @@ def load_planned(amb, facility):
 
 
 # ============================================================
-# TYPE ALIASES
+# FACILITY ELIGIBILITY
 # ============================================================
 
-# All policy functions receive env as first argument
-FacilityEligibilityFn = Callable[["sim.Environment", pd.DataFrame, pd.DataFrame], pd.DataFrame]
-FacilityAssignmentFn = Callable[["sim.Environment", pd.DataFrame, pd.DataFrame, Optional[pd.DataFrame]], pd.DataFrame]
-AmbEligibilityFn = Callable[["sim.Environment", pd.DataFrame, pd.DataFrame, List["Ambulance"]], pd.DataFrame]
-AmbAssignmentFn = Callable[["sim.Environment", pd.DataFrame, Optional[pd.DataFrame]], pd.DataFrame]
-
-
-# ============================================================
-# FACILITY ELIGIBILITY POLICIES
-# ============================================================
-
-def fac_eligibility_base(env: sim.Environment, requests_df: pd.DataFrame, corridors_matrix: pd.DataFrame) -> pd.DataFrame:
+def fac_eligibility(env: sim.Environment, requests_df: pd.DataFrame, lever_value: int) -> pd.DataFrame:
     """
     Add column 'eligible_facilities' (list[str]) to requests_df.
 
-    corridors: DataFrame with facilities as both index and columns.
-    Value 1 if row facility can send to column facility, 0 otherwise.
+    Reads from env.fac_eligibility_datasets[lever_value].
+    Dataset format: DataFrame with issuing facilities as index, destination
+    facilities as columns; value 1 if eligible, 0 otherwise.
     """
     df = requests_df.copy()
     df["eligible_facilities"] = [[] for _ in range(len(df))]
 
-    if df.empty or corridors_matrix is None or corridors_matrix.empty:
+    if df.empty:
+        return df
+
+    matrix = (getattr(env, "fac_eligibility_datasets", {}) or {}).get(lever_value)
+    if matrix is None or matrix.empty:
         return df
 
     def get_eligible(issuing_fac_id):
-        if issuing_fac_id not in corridors_matrix.index:
+        if issuing_fac_id not in matrix.index:
             return []
-        row = corridors_matrix.loc[issuing_fac_id]
+        row = matrix.loc[issuing_fac_id]
         return [col for col in row.index if row[col] == 1]
 
     df["eligible_facilities"] = df["issuing_facility_id"].apply(get_eligible)
@@ -69,111 +63,43 @@ def fac_eligibility_base(env: sim.Environment, requests_df: pd.DataFrame, corrid
 
 
 # ============================================================
-# FACILITY ASSIGNMENT POLICIES
+# AMBULANCE ELIGIBILITY
 # ============================================================
 
-def fac_assign_template(
+def amb_eligibility(
     env: sim.Environment,
-    eligible_facilities_df: pd.DataFrame,
-    facilities_df: pd.DataFrame,
-    distance_matrix: Optional[pd.DataFrame],
-) -> pd.DataFrame:
-    """
-    Choose randomly one facility among eligible_facilities.
-
-    Adds column 'assigned_facility_id' and returns the enhanced df.
-    """
-    df = eligible_facilities_df.copy()
-
-    if "eligible_facilities" not in df.columns:
-        df["eligible_facilities"] = [[] for _ in range(len(df))]
-
-    def pick_one(xs):
-        return random.choice(xs) if isinstance(xs, list) and len(xs) > 0 else None
-
-    df["assigned_facility_id"] = df["eligible_facilities"].apply(pick_one)
-    return df
-
-
-# ============================================================
-# AMBULANCE ELIGIBILITY POLICIES
-# ============================================================
-
-def amb_eligibility_base(
-    env: sim.Environment,
-    assigned_facilities_df: pd.DataFrame,
-    ambulances_eligibility: pd.DataFrame,
+    requests_df: pd.DataFrame,
     idle_ambulances: List["Ambulance"],
+    lever_value: int,
 ) -> pd.DataFrame:
     """
-    Add column 'eligible_ambulances' (list[str]) to assigned_facilities_df.
+    Add column 'eligible_ambulances' (list[str]) to requests_df.
 
-    ambulances_eligibility: DataFrame with ambulances as index, facilities as columns.
-    Value 1 if ambulance serves that facility, 0 otherwise.
+    Reads from env.amb_eligibility_datasets[lever_value].
+    Dataset format: DataFrame with ambulance IDs as index, facility IDs as columns;
+    value 1 if that ambulance may serve requests issued from that facility.
 
-    Eligible ambulance = idle now AND serves both issuing_facility_id and assigned_facility_id.
+    Called after fac_eligibility, before solve_ilp.
     """
-    df = assigned_facilities_df.copy()
-    df["eligible_ambulances"] = [[] for _ in range(len(df))]
-
-    if df.empty:
-        return df
-
-    required_req = {"issuing_facility_id", "assigned_facility_id"}
-    if not required_req.issubset(df.columns):
-        return df
-
+    df       = requests_df.copy()
     idle_ids = [a.amb_id for a in (idle_ambulances or [])]
+    ae       = (getattr(env, "amb_eligibility_datasets", {}) or {}).get(lever_value)
 
-    # If no constraint table, every idle ambulance is eligible
-    if ambulances_eligibility is None or ambulances_eligibility.empty:
+    if ae is None or ae.empty:
         df["eligible_ambulances"] = [idle_ids[:] for _ in range(len(df))]
         return df
 
-    ae = ambulances_eligibility
+    def get_eligible(origin: str) -> list:
+        return [
+            amb_id for amb_id in idle_ids
+            if amb_id in ae.index
+            and origin in ae.columns
+            and ae.loc[amb_id, origin] == 1
+        ]
 
-    def get_eligible_ambs(row):
-        issuing = row["issuing_facility_id"]
-        assigned = row["assigned_facility_id"]
-        eligible = []
-        for amb_id in idle_ids:
-            if amb_id not in ae.index:
-                continue
-            # Ambulance must serve both pickup and dropoff facilities
-            serves_issuing = issuing in ae.columns and ae.loc[amb_id, issuing] == 1
-            serves_assigned = assigned in ae.columns and ae.loc[amb_id, assigned] == 1
-            if serves_issuing and serves_assigned:
-                eligible.append(amb_id)
-        return eligible
-
-    df["eligible_ambulances"] = df.apply(get_eligible_ambs, axis=1)
+    df["eligible_ambulances"] = df["issuing_facility_id"].apply(get_eligible)
     return df
 
-
-# ============================================================
-# AMBULANCE ASSIGNMENT POLICIES
-# ============================================================
-
-def amb_assign_template(
-    env: sim.Environment,
-    eligible_pairs_df: pd.DataFrame,
-    distance_matrix: Optional[pd.DataFrame],
-) -> pd.DataFrame:
-    """
-    Choose randomly one ambulance among eligible_ambulances.
-
-    Adds column 'assigned_amb_id' and returns the enhanced df.
-    """
-    df = eligible_pairs_df.copy()
-
-    if "eligible_ambulances" not in df.columns:
-        df["eligible_ambulances"] = [[] for _ in range(len(df))]
-
-    def pick_one(xs):
-        return random.choice(xs) if isinstance(xs, list) and len(xs) > 0 else None
-
-    df["assigned_amb_id"] = df["eligible_ambulances"].apply(pick_one)
-    return df
 
 
 # ============================================================
@@ -297,65 +223,3 @@ def dispatch_ambulances(c2: "TransportC2", plans_craft: dict[str, list["PlanStep
         amb.activate()
 
 
-# ============================================================
-# FACILITY SNAPSHOT
-# ============================================================
-
-def snapshot_facilities(facilities: List["Facility"]) -> pd.DataFrame:
-    """
-    Snapshot current facility state into a DataFrame.
-
-    Spec:
-      - One row per facility
-      - One column per service type (global set across all facilities)
-      - Cell = expected waiting time *if someone joins that service queue now*
-      - Cell = False if that service is not present in the facility
-    """
-    if not facilities:
-        return pd.DataFrame()
-
-    # 1) Collect the global set of service types across all facilities
-    all_service_types = set()
-    for fac in facilities:
-        all_service_types.update(fac.units.keys())
-    all_service_types = sorted(all_service_types)
-
-    # 2) Build rows
-    rows = []
-    for fac in facilities:
-        row = {"facility_id": fac.loc_id}
-
-        for service_type in all_service_types:
-            u = fac.units.get(service_type, None)
-
-            if u is None:
-                row[service_type] = False
-            else:
-                row[service_type] = float(u.expected_wait_if_join_now())
-
-        rows.append(row)
-
-    df = pd.DataFrame(rows)
-
-    return df
-
-
-# ============================================================
-# POLICY REGISTRIES
-# ============================================================
-
-FACILITY_ELIGIBILITY_POLICIES: Dict[int, FacilityEligibilityFn] = {
-    0: fac_eligibility_base,
-}
-
-FACILITY_ASSIGNMENT_POLICIES: Dict[int, FacilityAssignmentFn] = {
-    0: fac_assign_template,
-}
-
-AMBULANCE_ELIGIBILITY_POLICIES: Dict[int, AmbEligibilityFn] = {
-    0: amb_eligibility_base,
-}
-
-AMBULANCE_ASSIGNMENT_POLICIES: Dict[int, AmbAssignmentFn] = {
-    0: amb_assign_template,
-}

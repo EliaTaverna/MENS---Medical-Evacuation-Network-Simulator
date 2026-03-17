@@ -14,6 +14,7 @@ from src.components.ambulance import Ambulance
 from src.components.axp import AXP
 from src.components.c2 import TransportC2
 from src.helpers.helpers_run import load_data_from_xlsx
+from src.helpers.snapshot import snapshot_facilities
 from src.helpers.scenario import (
     load_scenario,
     load_data_from_scenario,
@@ -23,17 +24,10 @@ from src.helpers.scenario import (
 from src.policies.policies import (
     unload_planned,
     load_planned,
-    fac_eligibility_base,
-    fac_assign_template,
-    amb_eligibility_base,
-    amb_assign_template,
+    fac_eligibility,
+    amb_eligibility,
     craft_plans,
     dispatch_ambulances,
-    snapshot_facilities,
-    FACILITY_ELIGIBILITY_POLICIES,
-    FACILITY_ASSIGNMENT_POLICIES,
-    AMBULANCE_ELIGIBILITY_POLICIES,
-    AMBULANCE_ASSIGNMENT_POLICIES,
 )
 
 __all__ = [
@@ -58,18 +52,13 @@ __all__ = [
     "load_data_from_scenario",
     "load_casualty_config_from_scenario",
     "load_casualties_from_scenario",
+    # Helpers
+    "snapshot_facilities",
     # Policies
     "unload_planned",
     "load_planned",
-    "fac_eligibility_base",
-    "fac_assign_template",
-    "amb_eligibility_base",
-    "amb_assign_template",
+    "fac_eligibility",
+    "amb_eligibility",
     "craft_plans",
     "dispatch_ambulances",
-    "snapshot_facilities",
-    "FACILITY_ELIGIBILITY_POLICIES",
-    "FACILITY_ASSIGNMENT_POLICIES",
-    "AMBULANCE_ELIGIBILITY_POLICIES",
-    "AMBULANCE_ASSIGNMENT_POLICIES",
 ]

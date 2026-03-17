@@ -92,15 +92,15 @@ def create_minimal_dataframes(
         "c2_id": "C2",
     }])
 
-    # Corridors matrix (which facility can send to which)
-    corridors_matrix = pd.DataFrame(
+    # Facility eligibility dataset (lever 0 = strict corridors)
+    fac_elig_matrix = pd.DataFrame(
         [[0, 1], [0, 0]],  # F1 can send to F2, F2 can't send anywhere
         index=["F1", "F2"],
         columns=["F1", "F2"],
     )
 
-    # Ambulance eligibility (which ambulances serve which facilities)
-    ambulances_eligibility = pd.DataFrame(
+    # Ambulance eligibility dataset (lever 0 = strict)
+    amb_elig_matrix = pd.DataFrame(
         [[1, 1]],  # AMB1 serves both F1 and F2
         index=["AMB1"],
         columns=["F1", "F2"],
@@ -111,8 +111,6 @@ def create_minimal_dataframes(
         "c2_id": "C2",
         "facility_ids": ["F1", "F2"],
         "ambulance_ids": ["AMB1"],
-        "corridors": corridors_matrix,
-        "ambulances_eligibility": ambulances_eligibility,
     }])
 
     return {
@@ -122,6 +120,8 @@ def create_minimal_dataframes(
         "units_df": units_df,
         "ambulance_df": ambulance_df,
         "c2_df": c2_df,
+        "fac_eligibility_datasets": {0: fac_elig_matrix},
+        "amb_eligibility_datasets": {0: amb_elig_matrix},
     }
 
 
@@ -339,7 +339,9 @@ def run_test_simulation(data, casualties_df, till=100, trace=False):
             data["facility_df"],
             data["units_df"],
             data["ambulance_df"],
-            data["c2_df"]
+            data["c2_df"],
+            fac_eligibility_datasets=data.get("fac_eligibility_datasets"),
+            amb_eligibility_datasets=data.get("amb_eligibility_datasets"),
         )
 
         connector = ModelConnector(env)
@@ -518,15 +520,13 @@ def test_care_wait_time():
         "c2_id": "C2",
     }])
 
-    corridors_matrix = pd.DataFrame([[0]], index=["F2"], columns=["F2"])
-    ambulances_eligibility = pd.DataFrame([[1]], index=["AMB1"], columns=["F2"])
+    fac_elig_matrix = pd.DataFrame([[0]], index=["F2"], columns=["F2"])
+    amb_elig_matrix = pd.DataFrame([[1]], index=["AMB1"], columns=["F2"])
 
     c2_df = pd.DataFrame([{
         "c2_id": "C2",
         "facility_ids": ["F2"],
         "ambulance_ids": ["AMB1"],
-        "corridors": corridors_matrix,
-        "ambulances_eligibility": ambulances_eligibility,
     }])
 
     data = {
@@ -536,6 +536,8 @@ def test_care_wait_time():
         "units_df": units_df,
         "ambulance_df": ambulance_df,
         "c2_df": c2_df,
+        "fac_eligibility_datasets": {0: fac_elig_matrix},
+        "amb_eligibility_datasets": {0: amb_elig_matrix},
     }
 
     # Two patients arriving at time 0
@@ -696,13 +698,13 @@ def test_patient_death():
         "c2_id": "C2",
     }])
 
-    corridors_matrix = pd.DataFrame(
+    fac_elig_matrix = pd.DataFrame(
         [[0, 1], [0, 0]],
         index=["F1", "F2"],
         columns=["F1", "F2"],
     )
 
-    ambulances_eligibility = pd.DataFrame(
+    amb_elig_matrix = pd.DataFrame(
         [[1, 1]],
         index=["AMB1"],
         columns=["F1", "F2"],
@@ -712,8 +714,6 @@ def test_patient_death():
         "c2_id": "C2",
         "facility_ids": ["F1", "F2"],
         "ambulance_ids": ["AMB1"],
-        "corridors": corridors_matrix,
-        "ambulances_eligibility": ambulances_eligibility,
     }])
 
     data = {
@@ -723,6 +723,8 @@ def test_patient_death():
         "units_df": units_df,
         "ambulance_df": ambulance_df,
         "c2_df": c2_df,
+        "fac_eligibility_datasets": {0: fac_elig_matrix},
+        "amb_eligibility_datasets": {0: amb_elig_matrix},
     }
 
     # T1 patient with 5 min lifetime (will die waiting for ambulance that takes 60 min)
@@ -828,15 +830,13 @@ def test_unit_utilization():
         "c2_id": "C2",
     }])
 
-    corridors_matrix = pd.DataFrame([[0]], index=["F2"], columns=["F2"])
-    ambulances_eligibility = pd.DataFrame([[1]], index=["AMB1"], columns=["F2"])
+    fac_elig_matrix = pd.DataFrame([[0]], index=["F2"], columns=["F2"])
+    amb_elig_matrix = pd.DataFrame([[1]], index=["AMB1"], columns=["F2"])
 
     c2_df = pd.DataFrame([{
         "c2_id": "C2",
         "facility_ids": ["F2"],
         "ambulance_ids": ["AMB1"],
-        "corridors": corridors_matrix,
-        "ambulances_eligibility": ambulances_eligibility,
     }])
 
     data = {
@@ -846,6 +846,8 @@ def test_unit_utilization():
         "units_df": units_df,
         "ambulance_df": ambulance_df,
         "c2_df": c2_df,
+        "fac_eligibility_datasets": {0: fac_elig_matrix},
+        "amb_eligibility_datasets": {0: amb_elig_matrix},
     }
 
     # Two patients at t=0 and t=30 (so they don't overlap)
@@ -941,15 +943,13 @@ def test_wait_time_percentiles():
         "c2_id": "C2",
     }])
 
-    corridors_matrix = pd.DataFrame([[0]], index=["F2"], columns=["F2"])
-    ambulances_eligibility = pd.DataFrame([[1]], index=["AMB1"], columns=["F2"])
+    fac_elig_matrix = pd.DataFrame([[0]], index=["F2"], columns=["F2"])
+    amb_elig_matrix = pd.DataFrame([[1]], index=["AMB1"], columns=["F2"])
 
     c2_df = pd.DataFrame([{
         "c2_id": "C2",
         "facility_ids": ["F2"],
         "ambulance_ids": ["AMB1"],
-        "corridors": corridors_matrix,
-        "ambulances_eligibility": ambulances_eligibility,
     }])
 
     data = {
@@ -959,6 +959,8 @@ def test_wait_time_percentiles():
         "units_df": units_df,
         "ambulance_df": ambulance_df,
         "c2_df": c2_df,
+        "fac_eligibility_datasets": {0: fac_elig_matrix},
+        "amb_eligibility_datasets": {0: amb_elig_matrix},
     }
 
     # 4 patients arriving at t=0 (capacity=1, service=10min each)
@@ -1053,15 +1055,13 @@ def test_multiple_triage_categories():
         "c2_id": "C2",
     }])
 
-    corridors_matrix = pd.DataFrame([[0]], index=["F2"], columns=["F2"])
-    ambulances_eligibility = pd.DataFrame([[1]], index=["AMB1"], columns=["F2"])
+    fac_elig_matrix = pd.DataFrame([[0]], index=["F2"], columns=["F2"])
+    amb_elig_matrix = pd.DataFrame([[1]], index=["AMB1"], columns=["F2"])
 
     c2_df = pd.DataFrame([{
         "c2_id": "C2",
         "facility_ids": ["F2"],
         "ambulance_ids": ["AMB1"],
-        "corridors": corridors_matrix,
-        "ambulances_eligibility": ambulances_eligibility,
     }])
 
     data = {
@@ -1071,6 +1071,8 @@ def test_multiple_triage_categories():
         "units_df": units_df,
         "ambulance_df": ambulance_df,
         "c2_df": c2_df,
+        "fac_eligibility_datasets": {0: fac_elig_matrix},
+        "amb_eligibility_datasets": {0: amb_elig_matrix},
     }
 
     # Mix of triage categories - T1 gets priority

@@ -12,8 +12,8 @@ components:
   c2: "components/c2/c2.xlsx"
 
 policy_matrixes:
-  corridors: "policy_matrixes/corridors/corridors_matrix.xlsx"
-  ambulances_eligibility: "policy_matrixes/ambulances_eligibility/ambulances_eligibility.xlsx"
+  corridors: "policy_matrixes/corridors/facility_eligibility_1.xlsx"
+  ambulances_eligibility: "policy_matrixes/ambulances_eligibility/ambulance_eligibility_1.xlsx"
 
 casualty_generation:
   config: "casualty_generation_settings/sampling_settings/config.yaml"
