@@ -52,6 +52,7 @@ class ModelBuilder:
                 gamma=levers.get("gamma", 0.0),
                 delta=levers.get("delta", 0.0),
                 random_seed=levers.get("random_seed", 42),
+                dispatch_policy=levers.get("dispatch_policy", "ilp"),
             )
 
     def build_facilities(self, facility_df: pd.DataFrame, units_df: pd.DataFrame):

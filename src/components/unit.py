@@ -20,14 +20,18 @@ class Unit(sim.Component):
         # expected waiting times at queue-join moments
         self.ewait_monitor = sim.Monitor(name=f"{self.name()}_wait_expected_at_join")
 
-    def _uniform_ab(self, d):
-        """Extract (a, b) bounds from a Uniform distribution."""
-        for a_name, b_name in [("_lowerbound", "_upperbound"), ("a", "b"), ("low", "high"), ("min", "max"), ("lower", "upper")]:
+    def _dist_mean(self, d) -> float:
+        """Get the mean service time from a distribution or dict of distributions."""
+        if isinstance(d, dict):
+            means = [self._dist_mean(v) for v in d.values()]
+            return sum(means) / len(means)
+        if hasattr(d, "_mean"):
+            return float(d._mean)
+        # Fallback for Uniform via bounds
+        for a_name, b_name in [("_lowerbound", "_upperbound"), ("a", "b"), ("low", "high")]:
             if hasattr(d, a_name) and hasattr(d, b_name):
-                a = float(getattr(d, a_name))
-                b = float(getattr(d, b_name))
-                return a, b
-        raise AttributeError("Could not read (a,b) from Uniform distribution; add attribute mapping here.")
+                return (float(getattr(d, a_name)) + float(getattr(d, b_name))) / 2.0
+        return 1.0
 
     def expected_wait_if_join_now(self) -> float:
         """Calculate expected waiting time if a patient joins the queue now."""
@@ -38,11 +42,7 @@ class Unit(sim.Component):
         if M == 0:
             return float("inf")
 
-        # Uniform(a,b)
-        a, b = self._uniform_ab(self.service_time_dist)
-
-        ES = (a + b) / 2.0
-
+        ES = self._dist_mean(self.service_time_dist)
         return (n * ES) / M
 
     def process(self):
@@ -105,6 +105,16 @@ class UnitService(sim.Component):
         self.patient = patient
 
     def process(self):
-        self.hold(self.unit.service_time_dist.sample())
+        dist = self.unit.service_time_dist
+        if isinstance(dist, dict):
+            triage = getattr(self.patient, "triage", "")
+            if "T1_BCAS" in triage or "T2_BCAS" in triage:
+                d = dist.get("severe", next(iter(dist.values())))
+            else:
+                d = dist.get("mild", next(iter(dist.values())))
+            duration = max(1.0, d.sample())
+        else:
+            duration = dist.sample()
+        self.hold(duration)
         self.unit.service_done(self.patient)
         self.cancel()

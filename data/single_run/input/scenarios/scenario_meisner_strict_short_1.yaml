@@ -22,8 +22,9 @@ casualty_generation:
   diagnosis_mix: casualty_generation_settings/diagnosis/diagnosis_mix_meisner.xlsx
   prescriptions: casualty_generation_settings/prescriptions/prescriptions_meisner.xlsx
 levers:
-  facility_eligibility: 1
-  ambulance_eligibility: 1
+  dispatch_policy: greedy   # "greedy" (Meisner-like) or "ilp"
+  facility_eligibility: 0
+  ambulance_eligibility: 0
   triage_weights:
     T1_BCAS: 0.0
     T2_BCAS: 0.0

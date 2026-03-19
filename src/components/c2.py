@@ -16,9 +16,14 @@ from src.policies.policies import (
     craft_plans,
     dispatch_ambulances,
 )
-from src.helpers.ilp import solve_ilp
+from src.helpers.ilp import solve_ilp, solve_greedy
 
-_BATCH_WINDOW = 2  # simulated minutes to wait before running ILP
+_BATCH_WINDOW = 2  # simulated minutes to wait before running dispatch
+
+_DISPATCH_SOLVERS = {
+    "ilp":    solve_ilp,
+    "greedy": solve_greedy,
+}
 
 
 class TransportC2(sim.Component):
@@ -50,6 +55,7 @@ class TransportC2(sim.Component):
         gamma: float = 0.0,
         delta: float = 0.0,
         random_seed: int = 42,
+        dispatch_policy: str = "ilp",
     ):
         self.c2_id = c2_id
         self.facility_ids = list(facility_ids)
@@ -72,6 +78,7 @@ class TransportC2(sim.Component):
         self.gamma       = float(gamma)
         self.delta       = float(delta)
         self.random_seed = int(random_seed)
+        self.dispatch_policy = dispatch_policy
 
     # --------------------------------------------------------
     # inbound events
@@ -139,8 +146,9 @@ class TransportC2(sim.Component):
                 lever_value=self.lever_value_ambulance_eligibility,
             )
 
-            # step 3: solve ILP
-            assigned_df = solve_ilp(
+            # step 3: solve (ILP or greedy)
+            solver = _DISPATCH_SOLVERS.get(self.dispatch_policy, solve_ilp)
+            assigned_df = solver(
                 env=self.env,
                 requests_df=elig_df,
                 idle_ambulances=self.idle_ambulances,
