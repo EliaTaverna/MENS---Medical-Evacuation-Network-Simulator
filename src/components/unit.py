@@ -50,15 +50,9 @@ class Unit(sim.Component):
             q = self.facility.entry_lines[self.service_type]
 
             while self.in_service < self.capacity and len(q) > 0:
-                def triage_priority(t):
-                    if "T1" in t: return 0
-                    if "T2" in t: return 1
-                    if "T3" in t: return 2
-                    return 99
-
                 idx = min(
                     range(len(q)),
-                    key=lambda i: (triage_priority(q[i].triage), q[i]._unit_queue_entry_time)
+                    key=lambda i: q[i]._unit_queue_entry_time,
                 )
                 p = q.pop(idx)
 

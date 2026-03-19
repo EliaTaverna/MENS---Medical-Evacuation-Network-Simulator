@@ -1,0 +1,40 @@
+name: scenario_2
+description: Base scenario with default configuration
+components:
+  distance_matrix: components/distances/distance_matrix.xlsx
+  axp: components/AXPs/axp.xlsx
+  facilities: components/facilities/facilities.xlsx
+  units: components/units/units.xlsx
+  ambulances: components/ambulances/ambulances.xlsx
+  c2: components/c2/c2.xlsx
+policy_matrixes:
+  facility_eligibility:
+    0: policy_matrixes/facility_eligibility/facility_eligibility_0.xlsx
+    1: policy_matrixes/facility_eligibility/facility_eligibility_1.xlsx
+  ambulance_eligibility:
+    0: policy_matrixes/ambulance_eligibility/ambulance_eligibility_0.xlsx
+    1: policy_matrixes/ambulance_eligibility/ambulance_eligibility_1.xlsx
+casualty_generation:
+  from_dataset: true
+  casualties_dataframe: casualty_dataframes/one_casualty_1.xlsx
+  config: casualty_generation_settings/sampling_settings/config.yaml
+  diagnosis_mix: casualty_generation_settings/diagnosis/diagnosis_mix.xlsx
+  prescriptions: casualty_generation_settings/prescriptions/prescriptions_meisner.xlsx
+levers:
+  facility_eligibility: 0
+  ambulance_eligibility: 0
+  joint_assignment: 0
+simulation:
+  till: 500
+  casualty_seed: null
+  trace: false
+video:
+  enabled: true
+  fps: 24
+  time_scale: 5.0
+  dpi: 100
+  state_log_interval: 5.0
+  duration: null
+logs:
+  enabled: true
+  path: simulation_logs
