@@ -26,11 +26,11 @@ class Facility(sim.Component):
         self.units = {st: None for st in self.service_types}
         self.entry_lines = {st: [] for st in self.service_types}
         self.exit_queue: List[TransportRequest] = []
-        self._amb = None
+        self._amb_queue: List = []
 
     def ambulance_arrives(self, amb):
         """Called when an ambulance arrives at this facility."""
-        self._amb = amb
+        self._amb_queue.append(amb)
         self.activate()
 
     def patient_handed_over(self, p: Patient):
@@ -72,9 +72,9 @@ class Facility(sim.Component):
 
     def process(self):
         while True:
-            self.passivate()
-            amb = self._amb
-            self._amb = None
+            while not self._amb_queue:
+                self.passivate()
+            amb = self._amb_queue.pop(0)
 
             unload_fn = self.env.unload_policy[self.unload_key]
             for p in unload_fn(amb, self):

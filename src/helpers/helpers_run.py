@@ -129,11 +129,26 @@ def load_data_from_xlsx(data_folder: str = "data/single_run/input", load_casualt
 # SINGLE RUN HELPERS
 # ============================================================
 
+_DEFAULT_OUTPUTS = {
+    "patient_log":       True,
+    "safe_patients":     True,
+    "transport_events":  True,
+    "wait_times":        True,
+    "facility_states":   False,  # expensive — only needed when make_video=True
+}
+
+
 def resolve_settings(scenario: dict, **overrides) -> dict:
     """Merge scenario defaults with caller overrides. Overrides win when not None."""
     sim_s = scenario.get("simulation", {})
     vid_s = scenario.get("video", {})
     log_s = scenario.get("logs", {})
+
+    # Merge outputs: defaults <- scenario outputs section <- overrides
+    out_s = scenario.get("outputs", {})
+    outputs = {k: out_s.get(k, v) for k, v in _DEFAULT_OUTPUTS.items()}
+    if overrides.get("outputs"):
+        outputs.update(overrides["outputs"])
 
     def pick(override, default):
         return override if override is not None else default
@@ -155,6 +170,7 @@ def resolve_settings(scenario: dict, **overrides) -> dict:
         "video_duration":       vid_s.get("duration"),
         "state_log_interval":   pick(overrides.get("state_log_interval"),   vid_s.get("state_log_interval", 5.0)),
         "save_logs":            pick(overrides.get("save_logs"),            log_s.get("enabled", True)),
+        "outputs":              outputs,
     }
 
 
@@ -183,20 +199,21 @@ def load_or_generate_casualties(scenario: dict, casualty_seed: int = None) -> pd
         config = load_casualty_config_from_scenario(scenario)
         if casualty_seed is not None:
             config["seed"] = casualty_seed
-        casualties_df, _ = generate_casualties_df_from_waves(
-            facility_ids=config["facility_ids"],
+        full_df, _ = generate_casualties_df_from_waves(
+            spawn_map=config["spawn_map"],
             par_total=config["par_total"],
             n_days=config["n_days"],
             waves_per_day=config["waves_per_day"],
             wave_duration_min=config["wave_duration_min"],
-            rate_per_day=config["rate_per_day"],
             diagnosis_mix_df=config["diagnosis_mix_df"],
             rx_df=config["rx_df"],
-            facility_weights=config["facility_weights"],
             lifetime_factory_by_triage=config["lifetime_factory_by_triage"],
             seed=config["seed"],
         )
-        print(f"Generated {len(casualties_df)} casualties")
+        casualties_df = full_df[
+            ~full_df["triage"].str.startswith(("KIA", "MIA"))
+        ].copy().reset_index(drop=True)
+        print(f"Generated {len(casualties_df)} casualties (excl. KIA/MIA from {len(full_df)} total)")
     return casualties_df
 
 
@@ -209,13 +226,14 @@ def prepare_run(
 
     Returns (data, settings, run_folder) ready to pass directly to run_simulation.
     """
-    from src import load_scenario, load_data_from_scenario
+    from src import load_scenario, load_data_from_scenario, load_triage_weights_from_scenario
     scenario = load_scenario(scenario_path)
     print(f"Loaded scenario: {scenario.get('name', Path(scenario_path).stem)}")
     s = resolve_settings(scenario, **overrides)
     run_folder = create_run_folder(scenario, scenario_path, output_folder)
     data = load_data_from_scenario(scenario)
     data["casualties_df"] = load_or_generate_casualties(scenario, s["casualty_seed"])
+    data["triage_weights"] = load_triage_weights_from_scenario(scenario)
     return data, s, run_folder
 
 
@@ -248,17 +266,37 @@ def collect_results(env, observer, data: dict, settings: dict, run_folder: Path)
         "sim_duration": settings["till"],
         "run_folder": run_folder,
         "distance_matrix": data["distance_matrix"],
+        "outputs": settings.get("outputs", _DEFAULT_OUTPUTS),
     }
 
 
 def save_logs(results: dict) -> None:
-    """Save simulation logs to xlsx files in the run folder."""
+    """Save simulation logs to xlsx files in the run folder.
+
+    Which files are written is controlled by results["outputs"], which mirrors
+    the scenario's ``outputs:`` section (defaults defined in _DEFAULT_OUTPUTS).
+    """
     run_folder = results["run_folder"]
-    results["patient_log_df"].to_excel(run_folder / "patient_log.xlsx", index=False)
-    results["transport_df"].to_excel(run_folder / "transport_events.xlsx", index=False)
-    results["facility_states_df"].to_excel(run_folder / "facility_states.xlsx", index=False)
-    results["safe_df"].to_excel(run_folder / "safe_patients.xlsx", index=False)
-    print(f"Logs saved to {run_folder}/")
+    outputs = results.get("outputs", _DEFAULT_OUTPUTS)
+    saved = []
+
+    if outputs.get("patient_log", True):
+        results["patient_log_df"].to_excel(run_folder / "patient_log.xlsx", index=False)
+        saved.append("patient_log.xlsx")
+    if outputs.get("safe_patients", True):
+        results["safe_df"].to_excel(run_folder / "safe_patients.xlsx", index=False)
+        saved.append("safe_patients.xlsx")
+    if outputs.get("transport_events", True):
+        results["transport_df"].to_excel(run_folder / "transport_events.xlsx", index=False)
+        saved.append("transport_events.xlsx")
+    if outputs.get("wait_times", True) and not results["wait_times_df"].empty:
+        results["wait_times_df"].to_excel(run_folder / "wait_times.xlsx", index=False)
+        saved.append("wait_times.xlsx")
+    if outputs.get("facility_states", False) and not results["facility_states_df"].empty:
+        results["facility_states_df"].to_excel(run_folder / "facility_states.xlsx", index=False)
+        saved.append("facility_states.xlsx")
+
+    print(f"Logs saved to {run_folder}/: {', '.join(saved)}")
 
 
 def make_video(data: dict, results: dict, settings: dict) -> None:
@@ -317,7 +355,8 @@ def print_summary(results: dict):
     n_total = len(final_states)
     print(f"Total patients: {n_total}")
 
-    for triage in ["T1", "T2", "T3"]:
+    triages_in_data = sorted(final_states["triage"].dropna().unique())
+    for triage in triages_in_data:
         subset = final_states[final_states["triage"] == triage]
         n_triage = len(subset)
         if n_triage == 0:
@@ -347,7 +386,7 @@ def print_summary(results: dict):
         print("Format: 25th percentile / Median / 75th percentile")
 
         facility_types = sorted(wait_times_df["facility_type"].unique())
-        triages = ["T1", "T2", "T3"]
+        triages = sorted(wait_times_df["triage"].dropna().unique())
 
         for wait_type in ["care", "transport"]:
             print(f"\n  Waiting for {wait_type.upper()}:")

@@ -20,6 +20,7 @@ from src.helpers.scenario import (
     load_data_from_scenario,
     load_casualty_config_from_scenario,
     load_casualties_from_scenario,
+    load_triage_weights_from_scenario,
 )
 from src.policies.policies import (
     unload_planned,
@@ -52,6 +53,7 @@ __all__ = [
     "load_data_from_scenario",
     "load_casualty_config_from_scenario",
     "load_casualties_from_scenario",
+    "load_triage_weights_from_scenario",
     # Helpers
     "snapshot_facilities",
     # Policies

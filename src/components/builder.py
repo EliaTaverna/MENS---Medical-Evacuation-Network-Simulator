@@ -48,7 +48,6 @@ class ModelBuilder:
                 ambulance_ids=r.ambulance_ids,
                 lever_value_facility_eligibility=levers.get("facility_eligibility", 0),
                 lever_value_ambulance_eligibility=levers.get("ambulance_eligibility", 0),
-                alpha=levers.get("alpha", 1.0),
                 beta=levers.get("beta",  0.0),
                 gamma=levers.get("gamma", 0.0),
                 delta=levers.get("delta", 0.0),

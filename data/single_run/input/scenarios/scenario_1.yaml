@@ -19,11 +19,17 @@ casualty_generation:
   casualties_dataframe: casualty_dataframes/casualties.xlsx
   config: casualty_generation_settings/sampling_settings/config.yaml
   diagnosis_mix: casualty_generation_settings/diagnosis/diagnosis_mix.xlsx
-  prescriptions: casualty_generation_settings/prescriptions/prescriptions.xlsx
+  prescriptions: casualty_generation_settings/prescriptions/prescriptions_meisner.xlsx
 levers:
   facility_eligibility: 0
   ambulance_eligibility: 0
-  alpha: 1.0
+  triage_weights:
+    T1_BCAS: 3.0
+    T2_BCAS: 2.0
+    T3_BCAS: 1.0
+    T1_DNBI: 3.0
+    T2_DNBI: 2.0
+    T3_DNBI: 1.0
   beta: 0.0
   gamma: 0.0
   delta: 0.0

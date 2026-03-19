@@ -46,7 +46,6 @@ class TransportC2(sim.Component):
         ambulance_ids: list[str],
         lever_value_facility_eligibility: int = 0,
         lever_value_ambulance_eligibility: int = 0,
-        alpha: float = 1.0,
         beta:  float = 0.0,
         gamma: float = 0.0,
         delta: float = 0.0,
@@ -69,7 +68,6 @@ class TransportC2(sim.Component):
         self.lever_value_ambulance_eligibility = int(lever_value_ambulance_eligibility)
 
         # ILP objective weights
-        self.alpha       = float(alpha)
         self.beta        = float(beta)
         self.gamma       = float(gamma)
         self.delta       = float(delta)
@@ -147,7 +145,6 @@ class TransportC2(sim.Component):
                 requests_df=elig_df,
                 idle_ambulances=self.idle_ambulances,
                 distance_matrix=self.env.distance_matrix,
-                alpha=self.alpha,
                 beta=self.beta,
                 gamma=self.gamma,
                 delta=self.delta,

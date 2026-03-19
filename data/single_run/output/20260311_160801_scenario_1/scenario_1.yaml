@@ -18,7 +18,7 @@ policy_matrixes:
 casualty_generation:
   config: "casualty_generation_settings/sampling_settings/config.yaml"
   diagnosis_mix: "casualty_generation_settings/diagnosis/diagnosis_mix.xlsx"
-  prescriptions: "casualty_generation_settings/prescriptions/prescriptions.xlsx"
+  prescriptions: "casualty_generation_settings/prescriptions/prescriptions_meisner.xlsx"
 
 levers:
   facility_eligibility: 0

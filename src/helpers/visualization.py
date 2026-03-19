@@ -36,6 +36,12 @@ TRIAGE_COLORS = {
     'T1': '#ff0000',  # Red - most urgent
     'T2': '#ffcc00',  # Yellow - urgent
     'T3': '#00cc00',  # Green - less urgent
+    'T1_BCAS': '#ff0000',
+    'T2_BCAS': '#ffcc00',
+    'T3_BCAS': '#00cc00',
+    'T1_DNBI': '#ff6666',
+    'T2_DNBI': '#ffdd66',
+    'T3_DNBI': '#66dd66',
 }
 
 
@@ -65,6 +71,55 @@ def compute_positions_from_distance_matrix(distance_matrix: pd.DataFrame) -> dic
     coords = mds.fit_transform(dist_array)
 
     return {loc: (coords[i, 0], coords[i, 1]) for i, loc in enumerate(locations)}
+
+
+def compute_positions_hierarchical(distance_matrix: pd.DataFrame, facility_df: pd.DataFrame) -> dict:
+    """
+    Infer 2D positions via MDS (preserving real distances), then rotate so the
+    CCP-centroid → Role2-centroid axis points along +x (horizontal layout:
+    CCPs on the right, Role1 in the middle, Role2 on the left).
+    """
+    locations = list(distance_matrix.index)
+    dist_array = distance_matrix.values.astype(float)
+
+    # Replace any inf/nan with large values and symmetrise
+    dist_array = np.nan_to_num(dist_array, nan=1000.0, posinf=1000.0, neginf=0.0)
+    dist_array = (dist_array + dist_array.T) / 2
+    np.fill_diagonal(dist_array, 0)
+
+    # MDS → raw 2-D coordinates that preserve real distances
+    mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42,
+              normalized_stress='auto', n_init=4)
+    coords = mds.fit_transform(dist_array)
+    raw = {loc: coords[i] for i, loc in enumerate(locations)}
+
+    # Build facility-type map
+    fac_type_map = {}
+    if facility_df is not None:
+        for _, row in facility_df.iterrows():
+            fac_type_map[str(row['facility_id'])] = str(row['facility_type'])
+    for loc in locations:
+        if loc not in fac_type_map:
+            fac_type_map[loc] = 'AXP' if str(loc).upper().startswith('AXP') else 'Unknown'
+
+    # Centroids of CCPs and Role-2s (used to find the evacuation axis)
+    ccp_pts = np.array([raw[l] for l in locations if fac_type_map.get(l) == 'CCP'])
+    r2_pts  = np.array([raw[l] for l in locations if fac_type_map.get(l) in ('Role2', 'Role3')])
+
+    if len(ccp_pts) > 0 and len(r2_pts) > 0:
+        ccp_center = ccp_pts.mean(axis=0)
+        r2_center  = r2_pts.mean(axis=0)
+        axis = r2_center - ccp_center          # vector pointing from CCPs toward Role2
+        # angle to rotate so that `axis` aligns with -x (Role2 on left, CCPs on right)
+        angle = np.arctan2(axis[1], axis[0])   # atan2(y,x) gives angle from +x
+        angle = angle + np.pi                  # flip so CCPs end up on the right
+        cos_a, sin_a = np.cos(-angle), np.sin(-angle)
+        R = np.array([[cos_a, -sin_a],
+                      [sin_a,  cos_a]])
+    else:
+        R = np.eye(2)
+
+    return {loc: tuple(R @ raw[loc]) for loc in locations}
 
 
 def get_facility_type(facility_id: str, facility_df: pd.DataFrame) -> str:
@@ -110,17 +165,26 @@ class FacilityStateLogger(sim.Component):
 
         for fac_id, fac in self.env.facility_by_id.items():
             # Count patients waiting in entry_lines (for treatment) by triage
+            # Use substring match so T1_BCAS / T1_DNBI etc. all map to T1
+            def triage_key(t):
+                for k in ('T1', 'T2', 'T3'):
+                    if k in t:
+                        return k
+                return None
+
             waiting = {'T1': 0, 'T2': 0, 'T3': 0}
             for service_type, queue in fac.entry_lines.items():
                 for p in queue:
-                    if p.triage in waiting:
-                        waiting[p.triage] += 1
+                    k = triage_key(p.triage)
+                    if k:
+                        waiting[k] += 1
 
             # Count all transport requests by triage (pending or assigned, not yet picked up)
             transport_requests = {'T1': 0, 'T2': 0, 'T3': 0}
             for req in fac.exit_queue:
-                if req.patient.triage in transport_requests:
-                    transport_requests[req.patient.triage] += 1
+                k = triage_key(req.patient.triage)
+                if k:
+                    transport_requests[k] += 1
 
             # Count total patients in care
             total_in_care = sum(unit.in_service for unit in fac.units.values() if unit is not None)
@@ -147,10 +211,10 @@ def plot_network_static(
     facility_df: pd.DataFrame,
     ambulance_df: pd.DataFrame = None,
     title: str = "MEDEVAC Network",
-    figsize: tuple = (14, 10),
+    figsize: tuple = (22, 12),
 ):
     """Create a static plot of the MEDEVAC network."""
-    positions = compute_positions_from_distance_matrix(distance_matrix)
+    positions = compute_positions_hierarchical(distance_matrix, facility_df)
 
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -170,10 +234,10 @@ def plot_network_static(
         fac_type = get_facility_type(loc_id, facility_df)
         color = FACILITY_COLORS.get(fac_type, FACILITY_COLORS['Unknown'])
         marker = FACILITY_MARKERS.get(fac_type, 'o')
-        size = 200 if fac_type in ['Role2', 'Role3'] else 150
+        size = 250 if fac_type in ['Role2', 'Role3'] else 180
 
         ax.scatter(x, y, c=color, marker=marker, s=size, edgecolors='black', linewidths=1, zorder=5)
-        ax.annotate(loc_id, (x, y), xytext=(5, 5), textcoords='offset points', fontsize=8)
+        ax.annotate(loc_id, (x, y), xytext=(10, 6), textcoords='offset points', fontsize=8, fontweight='bold')
 
     # Draw ambulance starting positions if provided
     if ambulance_df is not None:
@@ -197,7 +261,6 @@ def plot_network_static(
     ax.set_title(title)
     ax.set_xlabel('X (km)')
     ax.set_ylabel('Y (km)')
-    ax.set_aspect('equal')
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
@@ -216,9 +279,9 @@ def create_transport_video(
     facility_states_df: pd.DataFrame = None,
     fps: int = 30,
     time_scale: float = 5.0,
-    figsize: tuple = (16, 10),
+    figsize: tuple = (32, 18),
     save_path: str = "transport_simulation.mp4",
-    dpi: int = 150,
+    dpi: int = 120,
     duration: float = None,
 ):
     """
@@ -237,7 +300,7 @@ def create_transport_video(
         dpi: Resolution of the video
         duration: Video duration in minutes (None = until last transport event)
     """
-    positions = compute_positions_from_distance_matrix(distance_matrix)
+    positions = compute_positions_hierarchical(distance_matrix, facility_df)
     amb_colors = generate_ambulance_colors(ambulance_df['amb_id'].tolist())
 
     fig, ax = plt.subplots(figsize=figsize)
@@ -259,40 +322,19 @@ def create_transport_video(
         fac_type = get_facility_type(loc_id, facility_df)
         color = FACILITY_COLORS.get(fac_type, FACILITY_COLORS['Unknown'])
         marker = FACILITY_MARKERS.get(fac_type, 'o')
-        size = 250 if fac_type in ['Role2', 'Role3'] else 180
+        size = 280 if fac_type in ['Role2', 'Role3'] else 200
         ax.scatter(x, y, c=color, marker=marker, s=size, edgecolors='black', linewidths=1.5, zorder=5)
-        ax.annotate(loc_id, (x, y), xytext=(5, 5), textcoords='offset points', fontsize=7, fontweight='bold')
+        ax.annotate(loc_id, (x, y), xytext=(10, 6), textcoords='offset points', fontsize=11, fontweight='bold')
 
-    # Create legend
-    legend_handles = []
-    for fac_type, color in FACILITY_COLORS.items():
-        if fac_type != 'Unknown':
-            marker = FACILITY_MARKERS[fac_type]
-            handle = plt.scatter([], [], c=color, marker=marker, s=100,
-                                edgecolors='black', linewidths=1, label=fac_type)
-            legend_handles.append(handle)
-
-    for triage, color in TRIAGE_COLORS.items():
-        handle = plt.scatter([], [], c=color, marker='o', s=60, edgecolors='black', linewidths=0.5, label=f'Patient {triage}')
-        legend_handles.append(handle)
-
-    handle = plt.scatter([], [], c='white', marker='s', s=100, edgecolors='#333333', linewidths=2, label='Ambulance')
-    legend_handles.append(handle)
-
-    ax.legend(handles=legend_handles, loc='upper left', title='Legend', fontsize=8)
-    ax.set_xlabel('X (km)')
-    ax.set_ylabel('Y (km)')
-    ax.set_aspect('equal')
+    ax.set_xlabel('X (km)', fontsize=13)
+    ax.set_ylabel('Y (km)', fontsize=13)
+    ax.tick_params(labelsize=11)
     ax.grid(True, alpha=0.3)
 
     # Time and stats display
-    time_text = ax.text(0.98, 0.98, '', transform=ax.transAxes, fontsize=14,
-                        verticalalignment='top', horizontalalignment='right',
-                        bbox=dict(boxstyle='round', facecolor='white', edgecolor='gray', alpha=0.9))
-
-    stats_text = ax.text(0.98, 0.88, '', transform=ax.transAxes, fontsize=10,
-                         verticalalignment='top', horizontalalignment='right',
-                         bbox=dict(boxstyle='round', facecolor='white', edgecolor='gray', alpha=0.9))
+    time_text = ax.text(0.01, 0.99, '', transform=ax.transAxes, fontsize=16,
+                        verticalalignment='top', horizontalalignment='left',
+                        bbox=dict(boxstyle='round,pad=0.4', facecolor='white', edgecolor='#888888', alpha=0.95))
 
     # Initialize ambulance states
     amb_initial_state = {}
@@ -487,10 +529,14 @@ def create_transport_video(
                 t1w = t2w = t3w = t1tr = t2tr = t3tr = total_c = 0
 
             text = f"W:{t1w}/{t2w}/{t3w}\nC:{total_c}\nTR:{t1tr}/{t2tr}/{t3tr}"
-            txt = ax.text(x, y + 2.5, text, fontsize=6, ha='center', va='bottom',
-                         bbox=dict(boxstyle='round,pad=0.2', facecolor='white',
-                                  edgecolor='gray', alpha=0.85),
-                         zorder=15)
+            txt = ax.annotate(
+                text, (x, y),
+                xytext=(0, 22), textcoords='offset points',
+                fontsize=10, ha='center', va='bottom',
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='lightyellow',
+                         edgecolor='#aaaaaa', alpha=0.92),
+                zorder=15,
+            )
             facility_text_artists.append(txt)
 
             # Draw patient dots at facility (waiting + transport requests)
@@ -514,10 +560,9 @@ def create_transport_video(
         hours = int(t // 60)
         mins = int(t % 60)
         time_text.set_text(f'Time: {hours:02d}:{mins:02d} ({t:.0f} min)')
-        stats_text.set_text(f'Ambulances moving: {n_in_transit}\nPatients in transit: {n_patients_moving}')
-        ax.set_title(f'MEDEVAC Simulation', fontsize=14, fontweight='bold')
+        ax.set_title(f'MEDEVAC Simulation', fontsize=18, fontweight='bold')
 
-        return ambulance_artists + patient_artists + facility_text_artists + [time_text, stats_text]
+        return ambulance_artists + patient_artists + facility_text_artists + [time_text]
 
     print(f"Creating animation with {n_frames} frames...")
     anim = FuncAnimation(fig, animate, init_func=init, frames=n_frames, interval=1000//fps, blit=False)
