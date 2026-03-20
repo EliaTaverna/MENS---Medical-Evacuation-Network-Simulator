@@ -64,7 +64,6 @@ class SimulationObserver:
         self._patch_ambulance()
         self._patch_facility_handed_over()
         self._patch_facility_process()
-        self._patch_unit_process()
         self._patch_unit_service_done()
         self._patch_patient_setup()
 
@@ -221,7 +220,6 @@ class SimulationObserver:
         Ambulance._travel_to = self._originals["ambulance_travel_to"]
         Facility.patient_handed_over = self._originals["facility_handed_over"]
         Facility.process = self._originals["facility_process"]
-        Unit.process = self._originals["unit_process"]
         Unit.service_done = self._originals["unit_service_done"]
         Patient.setup = self._originals["patient_setup"]
 

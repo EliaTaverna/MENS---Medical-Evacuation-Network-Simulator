@@ -75,25 +75,38 @@ def compute_positions_from_distance_matrix(distance_matrix: pd.DataFrame) -> dic
 
 def compute_positions_hierarchical(distance_matrix: pd.DataFrame, facility_df: pd.DataFrame) -> dict:
     """
-    Infer 2D positions via MDS (preserving real distances), then rotate so the
-    CCP-centroid → Role2-centroid axis points along +x (horizontal layout:
-    CCPs on the right, Role1 in the middle, Role2 on the left).
+    Return 2D positions for each facility.
+
+    If facility_df contains x_km / y_km columns (real coordinates), use them
+    directly.  Otherwise fall back to MDS on the distance matrix.
     """
     locations = list(distance_matrix.index)
-    dist_array = distance_matrix.values.astype(float)
 
-    # Replace any inf/nan with large values and symmetrise
+    # --- fast path: real coordinates available ---
+    if facility_df is not None and "x_km" in facility_df.columns and "y_km" in facility_df.columns:
+        coord_map = {str(r["facility_id"]): (float(r["x_km"]), float(r["y_km"]))
+                     for _, r in facility_df.iterrows()}
+        # AXPs are not in facility_df (they live in axp.xlsx); infer from id if missing
+        positions = {}
+        for loc in locations:
+            if loc in coord_map:
+                positions[loc] = coord_map[loc]
+            else:
+                # fallback: place unknown nodes at origin
+                positions[loc] = (0.0, 0.0)
+        return positions
+
+    # --- fallback: MDS ---
+    dist_array = distance_matrix.values.astype(float)
     dist_array = np.nan_to_num(dist_array, nan=1000.0, posinf=1000.0, neginf=0.0)
     dist_array = (dist_array + dist_array.T) / 2
     np.fill_diagonal(dist_array, 0)
 
-    # MDS → raw 2-D coordinates that preserve real distances
     mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42,
               normalized_stress='auto', n_init=4)
     coords = mds.fit_transform(dist_array)
     raw = {loc: coords[i] for i, loc in enumerate(locations)}
 
-    # Build facility-type map
     fac_type_map = {}
     if facility_df is not None:
         for _, row in facility_df.iterrows():
@@ -102,20 +115,14 @@ def compute_positions_hierarchical(distance_matrix: pd.DataFrame, facility_df: p
         if loc not in fac_type_map:
             fac_type_map[loc] = 'AXP' if str(loc).upper().startswith('AXP') else 'Unknown'
 
-    # Centroids of CCPs and Role-2s (used to find the evacuation axis)
     ccp_pts = np.array([raw[l] for l in locations if fac_type_map.get(l) == 'CCP'])
     r2_pts  = np.array([raw[l] for l in locations if fac_type_map.get(l) in ('Role2', 'Role3')])
 
     if len(ccp_pts) > 0 and len(r2_pts) > 0:
-        ccp_center = ccp_pts.mean(axis=0)
-        r2_center  = r2_pts.mean(axis=0)
-        axis = r2_center - ccp_center          # vector pointing from CCPs toward Role2
-        # angle to rotate so that `axis` aligns with -x (Role2 on left, CCPs on right)
-        angle = np.arctan2(axis[1], axis[0])   # atan2(y,x) gives angle from +x
-        angle = angle + np.pi                  # flip so CCPs end up on the right
+        axis = r2_pts.mean(axis=0) - ccp_pts.mean(axis=0)
+        angle = np.arctan2(axis[1], axis[0]) + np.pi
         cos_a, sin_a = np.cos(-angle), np.sin(-angle)
-        R = np.array([[cos_a, -sin_a],
-                      [sin_a,  cos_a]])
+        R = np.array([[cos_a, -sin_a], [sin_a, cos_a]])
     else:
         R = np.eye(2)
 

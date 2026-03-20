@@ -35,6 +35,13 @@ class Patient(sim.Component):
 
         self._log(action="SPAWNED", life_budget=self._remaining_survival_time)
 
+    @property
+    def life_budget(self) -> float:
+        """Current remaining survival time, accounting for elapsed clock time."""
+        if self._clock_running and self._wait_start_time is not None:
+            return self._remaining_survival_time - (self.env.now() - self._wait_start_time)
+        return self._remaining_survival_time
+
     def _loc_id(self):
         loc = getattr(self, "current_facility", None)
         return getattr(loc, "loc_id", None) or str(loc)

@@ -37,7 +37,7 @@ levers:
   delta: 0.0
   random_seed: 42
 simulation:
-  till: 12960 # 9 days (7 combat + 2 clearance) in minutes
+  till: 12960 # 2 days (7 combat + 2 clearance) in minutes
   casualty_seed: null
   trace: false
 video:
