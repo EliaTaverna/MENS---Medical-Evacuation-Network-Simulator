@@ -38,7 +38,7 @@ levers:
   random_seed: 42
 simulation:
   till: 12960 # 2 days (7 combat + 2 clearance) in minutes
-  casualty_seed: null
+  casualty_seed: 42
   trace: false
 video:
   enabled: false

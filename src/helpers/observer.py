@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from src.components.ambulance import Ambulance
 from src.components.facility import Facility
-from src.components.unit import Unit, UnitService
+from src.components.unit import Unit
 from src.components.patient import Patient
 
 
@@ -146,45 +146,6 @@ class SimulationObserver:
                 amb.activate()
 
         Facility.process = patched_facility_process
-
-    def _patch_unit_process(self) -> None:
-        original = Unit.process
-        self._originals["unit_process"] = original
-
-        def patched_unit_process(self):
-            while True:
-                q = self.facility.entry_lines[self.service_type]
-                while self.in_service < self.capacity and len(q) > 0:
-                    priority = {"T1": 0, "T2": 1, "T3": 2}
-                    idx = min(
-                        range(len(q)),
-                        key=lambda i: (priority.get(q[i].triage, 99), q[i]._unit_queue_entry_time),
-                    )
-                    p = q.pop(idx)
-                    p.pause_death_clock()
-                    if p.is_dead:
-                        continue
-                    t_enter = getattr(p, "_unit_queue_entry_time", None)
-                    if t_enter is not None:
-                        wait_duration = self.env.now() - t_enter
-                        self.wait_monitor.tally(wait_duration)
-                        self.env.wait_times.append({
-                            "triage": p.triage,
-                            "facility_type": self.facility.facility_type,
-                            "wait_type": "care",
-                            "duration": wait_duration,
-                            "unit_id": self.name(),
-                        })
-                    self.in_service += 1
-                    unit_id = self.name()
-                    if unit_id not in self.env.unit_busy_periods:
-                        self.env.unit_busy_periods[unit_id] = []
-                    p._unit_service_start = self.env.now()
-                    p._unit_service_unit_id = unit_id
-                    UnitService(name=f"{self.name()}_svc", unit=self, patient=p)
-                self.passivate()
-
-        Unit.process = patched_unit_process
 
     def _patch_unit_service_done(self) -> None:
         original = Unit.service_done
