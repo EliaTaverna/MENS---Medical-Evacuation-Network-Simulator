@@ -63,12 +63,8 @@ class Unit(sim.Component):
                     "unit_id": self.name(),
                 })
 
-        # Track service start for busy-period logging (used by observer)
+        # Track service start for busy-period logging
         p._unit_service_start = self.env.now()
-        p._unit_service_unit_id = self.name()
-        unit_id = self.name()
-        if hasattr(self.env, "unit_busy_periods") and unit_id not in self.env.unit_busy_periods:
-            self.env.unit_busy_periods[unit_id] = []
 
         self.in_service += 1
         svc = UnitService(name=f"{self.name()}_svc", unit=self, patient=p)
@@ -90,6 +86,15 @@ class Unit(sim.Component):
         """Called when a patient's service completes normally."""
         self.in_service -= 1
         self._active_services = [s for s in self._active_services if s.patient is not p]
+
+        # Log busy period
+        if hasattr(self.env, "unit_busy_periods") and getattr(p, "_unit_service_start", None) is not None:
+            unit_id = self.name()
+            self.env.unit_busy_periods.setdefault(unit_id, []).append({
+                "start": p._unit_service_start,
+                "end": self.env.now(),
+            })
+            p._unit_service_start = None
 
         if p.is_dead:
             self.activate()

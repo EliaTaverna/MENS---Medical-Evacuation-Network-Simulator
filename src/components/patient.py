@@ -33,6 +33,9 @@ class Patient(sim.Component):
         self._clock_running = False
         self._wait_start_time = None
 
+        if hasattr(self.env, "all_patients"):
+            self.env.all_patients[patient_id] = self
+
         self._log(action="SPAWNED", life_budget=self._remaining_survival_time)
 
     @property

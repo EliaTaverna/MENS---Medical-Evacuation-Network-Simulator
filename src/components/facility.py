@@ -66,6 +66,10 @@ class Facility(sim.Component):
 
         p.patient_state = "waiting_transport"
         self.exit_queue.append(req)
+        # Stamp transport wait start for wait-time tracking
+        if hasattr(self.env, "wait_times"):
+            p._transport_wait_start = self.env.now()
+            p._transport_wait_facility_type = self.facility_type
         # Start death clock - patient is waiting for transport
         p.start_death_clock()
         self.c2_up.receive_request(req)
@@ -83,6 +87,15 @@ class Facility(sim.Component):
 
             load_fn = self.env.load_policy[self.load_key]
             for p in load_fn(amb, self):
+                # Log transport wait duration
+                if hasattr(self.env, "wait_times") and getattr(p, "_transport_wait_start", None) is not None:
+                    self.env.wait_times.append({
+                        "triage": p.triage,
+                        "facility_type": p._transport_wait_facility_type,
+                        "wait_type": "transport",
+                        "duration": self.env.now() - p._transport_wait_start,
+                    })
+                    p._transport_wait_start = None
                 # remove the assigned request from exit_queue
                 for req in list(self.exit_queue):
                     if req.patient is p and req.status == "assigned":

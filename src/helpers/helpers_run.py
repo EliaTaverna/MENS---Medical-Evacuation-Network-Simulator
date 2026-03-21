@@ -237,10 +237,9 @@ def prepare_run(
     return data, s, run_folder
 
 
-def collect_results(env, observer, data: dict, settings: dict, run_folder: Path) -> dict:
-    """Assemble the results dict from environment and observer data."""
-    obs = observer.results()
-    env.patient_log_df = pd.DataFrame(obs["patient_log_rows"], columns=obs["patient_log_columns"])
+def collect_results(env, data: dict, settings: dict, run_folder: Path) -> dict:
+    """Assemble the results dict from environment data."""
+    env.patient_log_df = pd.DataFrame(env.patient_log_rows, columns=env.patient_log_columns)
 
     transport_df = pd.DataFrame(env.transport_events)
     facility_states_df = pd.DataFrame(env.facility_states)

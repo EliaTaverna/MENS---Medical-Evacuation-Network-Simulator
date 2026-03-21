@@ -78,6 +78,24 @@ class Ambulance(sim.Component):
         to_id = self._loc_id(destination)
         if from_id == to_id:
             return
+        if hasattr(self.env, "transport_events"):
+            self.env.transport_events.append({
+                "time": float(self.env.now()),
+                "event": "departure",
+                "amb_id": self.amb_id,
+                "from_loc": from_id,
+                "to_loc": to_id,
+                "patient_triages": [p.triage for p in self.onboard].copy(),
+            })
         dist_km = self.env.distance_matrix.loc[from_id, to_id]
         minutes = (dist_km / self.speed_kmh) * 60.0
         self.hold(minutes)
+        if hasattr(self.env, "transport_events"):
+            self.env.transport_events.append({
+                "time": float(self.env.now()),
+                "event": "arrival",
+                "amb_id": self.amb_id,
+                "from_loc": from_id,
+                "to_loc": to_id,
+                "patient_triages": [p.triage for p in self.onboard].copy(),
+            })
