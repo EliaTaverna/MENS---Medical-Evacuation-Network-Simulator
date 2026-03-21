@@ -1,0 +1,58 @@
+name: scenario_meisner_strict_short_1
+description: Meisner et al. (2025) replication — 1 CCP per battalion, 1 R1 per battalion, 1 R2 per brigade. Strict routing (each CCP→own R1, each R1→own R2).
+components:
+  distance_matrix: components/distances/distance_matrix_meisner.xlsx
+  axp: components/AXPs/axp_meisner.xlsx
+  facilities: components/facilities/facilities_meisner.xlsx
+  units: components/units/units_meisner.xlsx
+  ambulances: components/ambulances/amb_meisner.xlsx
+  c2: components/c2/c2_meisner.xlsx
+policy_matrixes:
+  facility_eligibility:
+    0: policy_matrixes/facility_eligibility/facility_eligibility_meisner_strict.xlsx
+    1: policy_matrixes/facility_eligibility/facility_eligibility_meisner_loose.xlsx
+
+  ambulance_eligibility:
+    0: policy_matrixes/ambulance_eligibility/ambulance_eligibility_meisner_strict.xlsx
+    1: policy_matrixes/ambulance_eligibility/ambulance_eligibility_meisner_loose.xlsx
+casualty_generation:
+  from_dataset: false
+  casualties_dataframe: casualty_dataframes/casualties.xlsx
+  config: casualty_generation_settings/sampling_settings/config_meisner.txt
+  diagnosis_mix: casualty_generation_settings/diagnosis/diagnosis_mix_meisner.xlsx
+  prescriptions: casualty_generation_settings/prescriptions/prescriptions_meisner.xlsx
+levers:
+  dispatch_policy: greedy   # "greedy" (Meisner-like) or "ilp"
+  facility_eligibility: 0
+  ambulance_eligibility: 0
+  triage_weights:
+    T1_BCAS: 0.0
+    T2_BCAS: 0.0
+    T3_BCAS: 0.0
+    T1_DNBI: 0.0
+    T2_DNBI: 0.0
+    T3_DNBI: 0.0
+  beta: 1.0
+  gamma: 1.0
+  delta: 0.0
+  random_seed: 42
+simulation:
+  till: 8640 # 2 days (7 combat + 2 clearance) in minutes
+  casualty_seed: null
+  trace: false
+video:
+  enabled: false
+  fps: 24
+  time_scale: 5.0
+  dpi: 100
+  state_log_interval: 5.0
+  duration: null
+logs:
+  enabled: true
+  path: simulation_logs
+outputs:
+  patient_log:       true
+  safe_patients:     true
+  transport_events:  true
+  wait_times:        true
+  facility_states:   false   # set true only when make_video: true

@@ -1,0 +1,46 @@
+name: "scenario_1"
+description: "Base scenario with default configuration"
+
+# All paths are relative to the input folder (data/single_run/input/)
+
+components:
+  distance_matrix: "components/distances/distance_matrix.xlsx"
+  axp: "components/AXPs/axp.xlsx"
+  facilities: "components/facilities/facilities.xlsx"
+  units: "components/units/units.xlsx"
+  ambulances: "components/ambulances/ambulances.xlsx"
+  c2: "components/c2/c2.xlsx"
+
+policy_matrixes:
+  corridors: "policy_matrixes/corridors/facility_eligibility_1.xlsx"
+  ambulances_eligibility: "policy_matrixes/ambulances_eligibility/ambulance_eligibility_1.xlsx"
+
+casualty_generation:
+  from_dataset: true  # If true, load casualties from casualties_dataframe; if false, generate them
+  casualties_dataframe: "casualties/one_casualty_1.xlsx"  # Path to pre-generated casualties (used when from_dataset: true)
+  # Generation settings (used when from_dataset: false)
+  config: "casualty_generation_settings/sampling_settings/config.yaml"
+  diagnosis_mix: "casualty_generation_settings/diagnosis/diagnosis_mix.xlsx"
+  prescriptions: "casualty_generation_settings/prescriptions/prescriptions_meisner.xlsx"
+
+levers:
+  facility_eligibility: 0
+  facility_assignment: 0
+  ambulance_eligibility: 0
+  ambulance_assignment: 0
+
+simulation:
+  till: 500
+  casualty_seed: null
+  trace: false
+
+video:
+  enabled: true
+  fps: 24
+  time_scale: 5.0
+  dpi: 100
+  state_log_interval: 5.0
+
+logs:
+  enabled: true
+  path: "simulation_logs"
