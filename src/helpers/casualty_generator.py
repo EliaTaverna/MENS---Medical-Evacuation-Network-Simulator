@@ -7,7 +7,6 @@ import random
 
 import numpy as np
 import pandas as pd
-import salabim as sim
 import yaml
 
 
@@ -84,8 +83,14 @@ def load_casualty_generation_config(
     }
 
 
-def _lifetime_df_to_factories(diagnosis_mix_df: pd.DataFrame) -> Dict[str, Callable[[], object]]:
-    """Convert diagnosis_mix dataframe to lifetime factory functions."""
+def _lifetime_df_to_factories(diagnosis_mix_df: pd.DataFrame) -> Dict[str, Callable[[], dict]]:
+    """Convert diagnosis_mix dataframe to lifetime param-dict factory functions.
+
+    Each factory returns a plain dict describing the distribution parameters,
+    e.g. {"type": "triangular", "low": 60, "high": 240, "mode": 120}.
+    No salabim objects are created here — distributions are built inside the
+    simulation (after the seeded environment is active).
+    """
     factories = {}
 
     for _, row in diagnosis_mix_df.iterrows():
@@ -93,21 +98,23 @@ def _lifetime_df_to_factories(diagnosis_mix_df: pd.DataFrame) -> Dict[str, Calla
         dist_type = row["lifetime_distribution"].lower()
 
         if dist_type == "uniform":
-            low, high = row["lifetime_low"], row["lifetime_high"]
-            factories[triage] = lambda l=low, h=high: sim.Uniform(l, h)
+            low, high = float(row["lifetime_low"]), float(row["lifetime_high"])
+            factories[triage] = lambda l=low, h=high: {"type": "uniform", "low": l, "high": h}
         elif dist_type == "triangular":
-            low = row["lifetime_low"]
-            high = row["lifetime_high"]
+            low  = float(row["lifetime_low"])
+            high = float(row["lifetime_high"])
             mode = row.get("lifetime_mode", (low + high) / 2)
             if pd.isna(mode):
                 mode = (low + high) / 2
-            factories[triage] = lambda l=low, m=mode, h=high: sim.Triangular(l, h, m)
+            mode = float(mode)
+            factories[triage] = lambda l=low, h=high, m=mode: {"type": "triangular", "low": l, "high": h, "mode": m}
         elif dist_type == "exponential":
-            mean = row["lifetime_mean"]
-            factories[triage] = lambda m=mean: sim.Exponential(m)
+            mean = float(row["lifetime_mean"])
+            factories[triage] = lambda m=mean: {"type": "exponential", "mean": m}
         elif dist_type == "normal":
-            mean, std = row["lifetime_mean"], row["lifetime_std"]
-            factories[triage] = lambda m=mean, s=std: sim.Normal(m, s)
+            mean = float(row["lifetime_mean"])
+            std  = float(row["lifetime_std"])
+            factories[triage] = lambda m=mean, s=std: {"type": "normal", "mean": m, "std": s}
         else:
             raise ValueError(f"Unknown distribution type: {dist_type}")
 
@@ -118,51 +125,18 @@ def save_casualties_df(
     casualties_df: pd.DataFrame,
     output_path: Union[str, Path] = None,
 ) -> Path:
-    """Save casualties dataframe to XLSX, extracting lifetime bounds."""
+    """Save casualties dataframe to XLSX.
+
+    The dataframe is expected to carry raw lifetime parameter columns
+    (lifetime_dist_type, lifetime_low, lifetime_high, lifetime_mode) rather
+    than salabim distribution objects — these are written directly.
+    """
     if output_path is None:
         output_path = DEFAULT_OUTPUT_DIR / "casualties.xlsx"
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    save_df = casualties_df.copy()
-
-    def get_dist_type(d):
-        cls_name = type(d).__name__.lower()
-        if "triangular" in cls_name:
-            return "triangular"
-        elif "uniform" in cls_name:
-            return "uniform"
-        elif "exponential" in cls_name:
-            return "exponential"
-        elif "normal" in cls_name:
-            return "normal"
-        return "uniform"
-
-    def get_low(d):
-        for attr in ["_low", "_lowerbound", "low", "a", "min"]:
-            if hasattr(d, attr):
-                return getattr(d, attr)
-        return None
-
-    def get_high(d):
-        for attr in ["_high", "_upperbound", "high", "b", "max"]:
-            if hasattr(d, attr):
-                return getattr(d, attr)
-        return None
-
-    def get_mode(d):
-        for attr in ["_mode", "mode", "c"]:
-            if hasattr(d, attr):
-                return getattr(d, attr)
-        return None
-
-    save_df["lifetime_dist_type"] = save_df["lifetime_dist"].apply(get_dist_type)
-    save_df["lifetime_low"] = save_df["lifetime_dist"].apply(get_low)
-    save_df["lifetime_high"] = save_df["lifetime_dist"].apply(get_high)
-    save_df["lifetime_mode"] = save_df["lifetime_dist"].apply(get_mode)
-
-    save_cols = [c for c in save_df.columns if c != "lifetime_dist"]
-    save_df[save_cols].to_excel(output_path, index=False)
+    casualties_df.to_excel(output_path, index=False)
     print(f"Saved casualties dataframe to: {output_path}")
     return output_path
 
@@ -355,7 +329,7 @@ def populate_patient_attributes(
 
     if lifetime_factory_by_triage is None:
         lifetime_factory_by_triage = {}
-    default_lifetime_factory = lambda: sim.Uniform(60, 120)
+    default_lifetime_factory = lambda: {"type": "uniform", "low": 60.0, "high": 120.0}
 
     rx_df = rx_df.copy()
     rx_df["label"] = rx_df["label"].astype(str)
@@ -374,16 +348,22 @@ def populate_patient_attributes(
             if w.df is None or len(w.df) == 0:
                 if w.df is None:
                     w.df = pd.DataFrame(columns=["t_create", "spawn_facility_id"])
-                w.df["triage"] = pd.Series(dtype=str)
-                w.df["prescription"] = pd.Series(dtype=object)
-                w.df["lifetime_dist"] = pd.Series(dtype=object)
+                w.df["triage"]             = pd.Series(dtype=str)
+                w.df["prescription"]       = pd.Series(dtype=object)
+                w.df["lifetime_dist_type"] = pd.Series(dtype=str)
+                w.df["lifetime_low"]       = pd.Series(dtype=float)
+                w.df["lifetime_high"]      = pd.Series(dtype=float)
+                w.df["lifetime_mode"]      = pd.Series(dtype=float)
                 continue
 
             n = len(w.df)
             triage = rng.choice(diag_labels, size=n, p=diag_p).astype(str)
 
-            prescriptions: List[List[str]] = []
-            lifetime_dists: List[object] = []
+            prescriptions:      List[List[str]] = []
+            lf_types:           List[str]       = []
+            lf_lows:            List[float]     = []
+            lf_highs:           List[float]     = []
+            lf_modes:           List[object]    = []
 
             for tr in triage:
                 if tr in rx_by_label:
@@ -395,12 +375,19 @@ def populate_patient_attributes(
                     prescriptions.append(list(global_presc_list[idx]))
 
                 lf_factory = lifetime_factory_by_triage.get(tr, default_lifetime_factory)
-                lifetime_dists.append(lf_factory())
+                params = lf_factory()
+                lf_types.append(params["type"])
+                lf_lows.append(params.get("low", params.get("mean")))
+                lf_highs.append(params.get("high", params.get("std")))
+                lf_modes.append(params.get("mode"))
 
             w.df = w.df.copy()
-            w.df["triage"] = triage
-            w.df["prescription"] = prescriptions
-            w.df["lifetime_dist"] = lifetime_dists
+            w.df["triage"]            = triage
+            w.df["prescription"]      = prescriptions
+            w.df["lifetime_dist_type"] = lf_types
+            w.df["lifetime_low"]       = lf_lows
+            w.df["lifetime_high"]      = lf_highs
+            w.df["lifetime_mode"]      = lf_modes
 
 
 # ============================================================
@@ -416,9 +403,10 @@ def merge_waves_to_casualties_df(*wave_dicts: WaveDict) -> pd.DataFrame:
                     frames.append(w.df)
 
     if not frames:
-        return pd.DataFrame(
-            columns=["t_create", "spawn_facility_id", "triage", "prescription", "lifetime_dist"]
-        )
+        return pd.DataFrame(columns=[
+            "t_create", "spawn_facility_id", "triage", "prescription",
+            "lifetime_dist_type", "lifetime_low", "lifetime_high", "lifetime_mode",
+        ])
 
     out = pd.concat(frames, ignore_index=True)
     return out.sort_values("t_create").reset_index(drop=True)

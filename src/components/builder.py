@@ -81,7 +81,7 @@ class ModelBuilder:
                 name=unit_id,
                 facility=None,
                 capacity=int(r.capacity),
-                service_time_dist=r.service_time_dist,
+                service_time_params=r.service_time_params,
                 service_type=r.service_type,
             )
             u._facility_id = r.facility_id

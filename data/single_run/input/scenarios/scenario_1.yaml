@@ -1,4 +1,5 @@
 name: scenario_1
+seed: 42
 description: Base scenario with default configuration
 components:
   distance_matrix: components/distances/distance_matrix.xlsx
@@ -33,10 +34,8 @@ levers:
   beta: 0.0
   gamma: 0.0
   delta: 0.0
-  random_seed: 42
 simulation:
   till: 500
-  casualty_seed: null
   trace: false
 video:
   enabled: true

@@ -1,3 +1,5 @@
+"""Multi-run helpers: EMA Workbench integration driven entirely by a scenario YAML."""
+
 from __future__ import annotations
 
 import yaml
@@ -10,9 +12,11 @@ from ema_workbench import (
     ScalarOutcome, SequentialEvaluator, perform_experiments,
 )
 
-import salabim as sim
-from src.helpers.casualty_generator import generate_casualties_df_from_waves
+from src import (
+    load_scenario, load_data_from_scenario, load_triage_weights_from_scenario,
+)
 from src.helpers.scenario import _lifetime_df_to_factories
+from src.helpers.casualty_generator import generate_casualties_df_from_waves
 from src.helpers.runner import run_simulation
 
 
@@ -25,79 +29,35 @@ def load_experiment(experiment_path: str) -> dict:
         return yaml.safe_load(f)
 
 
-def load_data_from_experiment(experiment: dict) -> dict:
-    """Load structural simulation data (facilities, ambulances, etc.) from experiment.yaml paths."""
-    base = Path(experiment["data_root"])
-    components = experiment["components"]
-    policy = experiment["policy_matrixes"]
+# ============================================================
+# CASUALTY CONFIG (from scenario's config file or inline)
+# ============================================================
 
-    distance_matrix = pd.read_excel(base / components["distance_matrix"], index_col=0)
+def _load_casualty_config(scenario: dict) -> dict:
+    """Load casualty config from the scenario, resolving the config file if needed."""
+    cas_gen = scenario["casualty_generation"]
+    base_path = Path(scenario["_base_path"])
 
-    axp_df = pd.read_excel(base / components["axp"])
-    axp_df["assigned_facility_ids"] = axp_df["assigned_facility_ids"].apply(
-        lambda x: [s.strip() for s in str(x).split(",")] if pd.notna(x) else []
-    )
+    if "spawn_map" in cas_gen:
+        raw = dict(cas_gen)
+    else:
+        config_path = base_path / cas_gen["config"]
+        with open(config_path, "r") as f:
+            raw = yaml.safe_load(f)
 
-    facility_df = pd.read_excel(base / components["facilities"])
-    facility_df["c2_up_id"] = facility_df["c2_up_id"].replace({pd.NA: None, "": None}).where(
-        facility_df["c2_up_id"].notna(), None
-    )
-
-    units_df = pd.read_excel(base / components["units"], dtype={"unit_id": str})
-    units_df["service_time_dist"] = units_df.apply(
-        lambda r: sim.Uniform(r["service_time_min"], r["service_time_max"]), axis=1
-    )
-
-    ambulance_df = pd.read_excel(base / components["ambulances"])
-
-    # Facility eligibility datasets — one DataFrame per lever value
-    fac_elig_datasets = {
-        int(k): pd.read_excel(base / v, index_col=0)
-        for k, v in policy["facility_eligibility"].items()
-    }
-
-    # Ambulance eligibility datasets — one DataFrame per lever value
-    amb_elig_datasets = {
-        int(k): pd.read_excel(base / v, index_col=0)
-        for k, v in policy["ambulance_eligibility"].items()
-    }
-
-    c2_df = pd.read_excel(base / components["c2"])
-    c2_df["facility_ids"] = c2_df["facility_ids"].apply(
-        lambda x: [s.strip() for s in str(x).split(",")] if pd.notna(x) else []
-    )
-    c2_df["ambulance_ids"] = c2_df["ambulance_ids"].apply(
-        lambda x: [s.strip() for s in str(x).split(",")] if pd.notna(x) else []
-    )
-
-    return {
-        "distance_matrix": distance_matrix,
-        "axp_df": axp_df,
-        "facility_df": facility_df,
-        "units_df": units_df,
-        "ambulance_df": ambulance_df,
-        "c2_df": c2_df,
-        "fac_eligibility_datasets": fac_elig_datasets,
-        "amb_eligibility_datasets": amb_elig_datasets,
-    }
-
-
-def load_casualty_config_from_experiment(experiment: dict) -> dict:
-    """Load casualty generation config (diagnosis mix, prescriptions) from experiment.yaml paths."""
-    base = Path(experiment["data_root"])
-    cas = experiment["casualty_config"]
-
-    diagnosis_mix_df = pd.read_excel(base / cas["diagnosis_mix"])
-    rx_df = pd.read_excel(base / cas["prescriptions"])
+    diagnosis_mix_df = pd.read_excel(base_path / cas_gen["diagnosis_mix"])
+    rx_df = pd.read_excel(base_path / cas_gen["prescriptions"])
     rx_df["prescription"] = rx_df["prescription"].apply(eval)
 
     return {
-        "spawn_map": cas["spawn_map"],
-        "rate_groups": cas.get("rate_groups", {}),
-        "diagnosis_mix_df": diagnosis_mix_df,
-        "rx_df": rx_df,
+        "spawn_map":             raw["spawn_map"],
+        "par_total":             raw["par_total"],
+        "n_days":                raw["n_days"],
+        "waves_per_day":         raw["waves_per_day"],
+        "wave_duration_min":     raw["wave_duration_min"],
+        "diagnosis_mix_df":      diagnosis_mix_df,
+        "rx_df":                 rx_df,
         "lifetime_factory_by_triage": _lifetime_df_to_factories(diagnosis_mix_df),
-        "triage_weights": dict(experiment.get("triage_weights", {})),
     }
 
 
@@ -105,50 +65,57 @@ def load_casualty_config_from_experiment(experiment: dict) -> dict:
 # PREPARE A SINGLE MULTI-RUN
 # ============================================================
 
-def prepare_multi_run(base_data: dict, base_config: dict, till: float, **kwargs) -> tuple:
-    """Generate casualties from EMA parameters and assemble (data, settings).
+def prepare_multi_run(base_data: dict, base_config: dict, base_scenario: dict,
+                      till: float, **kwargs) -> tuple:
+    """Apply parameter overrides from EMA and assemble (data, settings).
 
-    base_data and base_config are pre-loaded once outside the EMA loop.
-    Returns (data, settings) ready to pass to run_simulation.
-    No run_folder — multi-run does not write individual output folders.
+    Supported parameters:
+      seed              – master random seed
+      par_total         – total personnel at risk
+      n_days, waves_per_day, wave_duration_min – casualty schedule
+      <lever_key>       – any key present in base_scenario["levers"] overrides that lever
+      till              – simulation duration (minutes)
     """
-    # Build spawn_map, overriding rates for any named rate_groups that appear in kwargs
+    seed = int(kwargs.get("seed", base_scenario.get("seed", 42)))
+
     spawn_map = {fid: dict(cfg) for fid, cfg in base_config["spawn_map"].items()}
-    for rate_name, labels in base_config.get("rate_groups", {}).items():
-        if rate_name in kwargs:
-            label_set = set(labels)
-            for cfg in spawn_map.values():
-                if set(cfg["labels"]) == label_set:
-                    cfg["rate"] = float(kwargs[rate_name])
 
     full_df, _ = generate_casualties_df_from_waves(
         spawn_map=spawn_map,
-        par_total=int(kwargs["par_total"]),
-        n_days=int(kwargs["n_days"]),
-        waves_per_day=int(kwargs["waves_per_day"]),
-        wave_duration_min=int(kwargs["wave_duration_min"]),
+        par_total=int(kwargs.get("par_total",         base_config["par_total"])),
+        n_days=int(kwargs.get("n_days",               base_config["n_days"])),
+        waves_per_day=int(kwargs.get("waves_per_day", base_config["waves_per_day"])),
+        wave_duration_min=int(kwargs.get("wave_duration_min", base_config["wave_duration_min"])),
         diagnosis_mix_df=base_config["diagnosis_mix_df"],
         rx_df=base_config["rx_df"],
-        lifetime_factory_by_triage=base_config.get("lifetime_factory_by_triage"),
-        seed=int(kwargs["casualty_seed"]),
+        lifetime_factory_by_triage=base_config["lifetime_factory_by_triage"],
+        seed=seed,
     )
     casualties_df = full_df[
         ~full_df["triage"].str.startswith(("KIA", "MIA"))
     ].copy().reset_index(drop=True)
 
-    data = {**base_data, "casualties_df": casualties_df, "triage_weights": base_config.get("triage_weights", {})}
+    # Build levers: start from scenario base, apply any matching overrides
+    levers = dict(base_scenario.get("levers", {}))
+    for key, val in kwargs.items():
+        if key in levers:
+            levers[key] = val
+    levers["random_seed"] = seed
 
+    data = {
+        **base_data,
+        "casualties_df": casualties_df,
+        "triage_weights": load_triage_weights_from_scenario(base_scenario),
+    }
     settings = {
-        "till": till,
-        "trace": False,
-        "make_video": False,
-        "save_logs": False,
+        "seed":               seed,
+        "till":               float(kwargs.get("till", till)),
+        "trace":              False,
+        "make_video":         False,
+        "save_logs":          False,
         "state_log_interval": None,
-        "levers": {
-            "facility_eligibility":  int(kwargs.get("facility_eligibility", 0)),
-            "ambulance_eligibility": int(kwargs.get("ambulance_eligibility", 0)),
-            "joint_assignment":      int(kwargs.get("joint_assignment", 0)),
-        },
+        "levers":             levers,
+        "outputs":            {},
     }
 
     return data, settings
@@ -216,31 +183,26 @@ def compute_outcomes(results: dict) -> dict:
 # ============================================================
 
 def build_ema_model(experiment: dict) -> Model:
-    """Pre-load structural data once, then build the EMA Model with a run_model closure."""
-    base_data = load_data_from_experiment(experiment)
-    base_config = load_casualty_config_from_experiment(experiment)
-    till = experiment.get("simulation", {}).get("till", 1000.0)
+    """Pre-load scenario data once, then build the EMA Model with a run_model closure."""
+    scenario   = load_scenario(experiment["scenario"])
+    base_data  = load_data_from_scenario(scenario)
+    base_config = _load_casualty_config(scenario)
+    till = scenario.get("simulation", {}).get("till", 1000.0)
 
     def run_model(**kwargs):
-        data, settings = prepare_multi_run(base_data, base_config, till, **kwargs)
+        data, settings = prepare_multi_run(base_data, base_config, scenario, till, **kwargs)
         results = run_simulation(data, settings, run_folder=None)
         return compute_outcomes(results)
 
     model = Model("medevacmodel", function=run_model)
 
-    model.uncertainties = [
-        IntegerParameter(u["name"], u["lower"], u["upper"]) if u["type"] == "integer"
-        else RealParameter(u["name"], u["lower"], u["upper"])
-        for u in experiment["uncertainties"]
-    ]
+    def _make_param(p):
+        cls = IntegerParameter if p["type"] == "integer" else RealParameter
+        return cls(p["name"], p["lower"], p["upper"])
 
-    model.levers = [
-        IntegerParameter(lv["name"], lv["lower"], lv["upper"]) if lv["type"] == "integer"
-        else RealParameter(lv["name"], lv["lower"], lv["upper"])
-        for lv in experiment["levers"]
-    ]
-
-    model.outcomes = [ScalarOutcome(o["name"]) for o in experiment["outcomes"]]
+    model.uncertainties = [_make_param(p) for p in experiment.get("uncertainties", [])]
+    model.levers        = [_make_param(p) for p in experiment.get("levers", [])]
+    model.outcomes      = [ScalarOutcome(o) for o in experiment.get("outcomes", [])]
 
     return model
 
@@ -252,7 +214,7 @@ def build_ema_model(experiment: dict) -> Model:
 def run_ema(model: Model, experiment: dict) -> tuple:
     run_settings = experiment.get("run_settings", {})
     n_scenarios = run_settings.get("n_scenarios", 10)
-    n_policies = run_settings.get("n_policies", 1)
+    n_policies  = run_settings.get("n_policies", 1)
     print(f"Running {n_scenarios} scenarios x {n_policies} policies...")
 
     with SequentialEvaluator(model) as evaluator:
@@ -270,21 +232,15 @@ def run_ema(model: Model, experiment: dict) -> tuple:
 # ============================================================
 
 def merge_results(experiments_df: pd.DataFrame, outcomes: dict) -> pd.DataFrame:
-    """Merge EMA experiments and outcomes into a single flat DataFrame."""
     outcomes_df = pd.DataFrame(outcomes)
     return pd.concat([experiments_df.reset_index(drop=True), outcomes_df.reset_index(drop=True)], axis=1)
 
 
 def save_experiment_results(experiments_df: pd.DataFrame, outcomes: dict, experiment: dict) -> Path:
-    """
-    Create a timestamped output folder under data/multi_run/output/
-    and save a single merged CSV of experiments + outcomes.
-
-    Folder name: {experiment_name}_{timestamp}
-    """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    experiment_name = experiment.get("name", "experiment").replace(" ", "_")
-    run_folder = Path("data/multi_run/output") / f"{timestamp}_{experiment_name}"
+    scenario_name = Path(experiment["scenario"]).stem
+    output_folder = experiment.get("output_folder", "data/multi_run/output")
+    run_folder = Path(output_folder) / f"{timestamp}_{scenario_name}"
     run_folder.mkdir(parents=True, exist_ok=True)
 
     merged_df = merge_results(experiments_df, outcomes)

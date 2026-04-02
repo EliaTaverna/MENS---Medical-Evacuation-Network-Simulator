@@ -20,11 +20,17 @@ class CasualtySpawner(sim.Component):
                 self.hold(dt)
             spawn = self.env.facility_by_id[row.spawn_facility_id]
             injury_time = float(getattr(row, "injury_time", row.t_create))
+            life_time_params = {
+                "type": str(row.lifetime_dist_type),
+                "low":  row.lifetime_low,
+                "high": row.lifetime_high,
+                "mode": row.lifetime_mode,
+            }
             p = Patient(
                 patient_id=uuid.uuid4().hex,
                 triage=row.triage,
                 prescription=row.prescription,
-                life_time_dist=row.lifetime_dist,
+                life_time_params=life_time_params,
                 spawn_facility=spawn,
                 injury_time=injury_time,
             )

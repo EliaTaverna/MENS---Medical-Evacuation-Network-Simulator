@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Union
 
 import pandas as pd
-import salabim as sim
 import yaml
 
 
@@ -31,15 +30,16 @@ def load_scenario(scenario_path: Union[str, Path]) -> dict:
     return scenario
 
 
-def _build_service_time_dist(row):
-    """Build a service time distribution from a units DataFrame row.
+def _build_service_time_params(row) -> dict:
+    """Return a plain-dict description of the service-time distribution for a unit row.
+
+    No salabim objects are created here.  The actual distribution is built
+    inside Unit.setup(), which runs after the seeded sim.Environment is active.
 
     Supported ``service_time_type`` values (column optional, defaults to 'uniform'):
-    - 'uniform'          : sim.Uniform(service_time_min, service_time_max)
-    - 'normal'           : sim.Normal(service_time_mean, service_time_std)
-    - 'normal_by_triage' : dict {'mild': Normal(mild_mean, mild_std),
-                                 'severe': Normal(severe_mean, severe_std)}
-                          T1_BCAS / T2_BCAS → severe; all others → mild.
+    - 'uniform'          : {"type": "uniform", "low": min, "high": max}
+    - 'normal'           : {"type": "normal",  "mean": mean, "std": std}
+    - 'normal_by_triage' : {"type": "normal_by_triage", "mild_mean": ..., ...}
     """
     dist_type = "uniform"
     if "service_time_type" in row.index:
@@ -49,13 +49,16 @@ def _build_service_time_dist(row):
 
     if dist_type == "normal_by_triage":
         return {
-            "mild":   sim.Normal(float(row["service_time_mild_mean"]),   float(row["service_time_mild_std"])),
-            "severe": sim.Normal(float(row["service_time_severe_mean"]), float(row["service_time_severe_std"])),
+            "type":        "normal_by_triage",
+            "mild_mean":   float(row["service_time_mild_mean"]),
+            "mild_std":    float(row["service_time_mild_std"]),
+            "severe_mean": float(row["service_time_severe_mean"]),
+            "severe_std":  float(row["service_time_severe_std"]),
         }
     if dist_type == "normal":
-        return sim.Normal(float(row["service_time_mean"]), float(row["service_time_std"]))
+        return {"type": "normal", "mean": float(row["service_time_mean"]), "std": float(row["service_time_std"])}
     # default: uniform
-    return sim.Uniform(row["service_time_min"], row["service_time_max"])
+    return {"type": "uniform", "low": float(row["service_time_min"]), "high": float(row["service_time_max"])}
 
 
 def load_data_from_scenario(scenario: dict) -> dict:
@@ -100,7 +103,7 @@ def load_data_from_scenario(scenario: dict) -> dict:
 
     # Units
     units_df = pd.read_excel(resolve(components["units"]), dtype={"unit_id": str})
-    units_df["service_time_dist"] = units_df.apply(_build_service_time_dist, axis=1)
+    units_df["service_time_params"] = units_df.apply(_build_service_time_params, axis=1)
 
     # Ambulances — normalise all IDs to lowercase
     ambulance_df = pd.read_excel(resolve(components["ambulances"]))
@@ -214,7 +217,7 @@ def load_casualties_from_scenario(scenario: dict) -> pd.DataFrame:
         scenario: dict from load_scenario()
 
     Returns:
-        DataFrame with casualty data including reconstructed lifetime_dist
+        DataFrame with casualty data including raw lifetime parameter columns
     """
     base_path = Path(scenario["_base_path"])
     cas_gen = scenario["casualty_generation"]
@@ -228,15 +231,10 @@ def load_casualties_from_scenario(scenario: dict) -> pd.DataFrame:
             lambda x: eval(x) if isinstance(x, str) else x
         )
 
-    # Reconstruct lifetime_dist as Triangular from low/mode/high
-    casualties_df["lifetime_dist"] = casualties_df.apply(
-        lambda row: sim.Triangular(
-            float(row["lifetime_low"]),
-            float(row["lifetime_high"]),
-            float(row["lifetime_mode"])
-        ),
-        axis=1
-    )
+    # Raw lifetime parameter columns (lifetime_dist_type, lifetime_low,
+    # lifetime_high, lifetime_mode) are used directly by CasualtySpawner →
+    # Patient.setup(), which creates the salabim distribution inside the
+    # seeded simulation environment.
 
     return casualties_df
 
@@ -247,7 +245,10 @@ def load_triage_weights_from_scenario(scenario: dict) -> dict:
 
 
 def _lifetime_df_to_factories(diagnosis_mix_df: pd.DataFrame) -> dict:
-    """Convert diagnosis_mix dataframe to lifetime factory functions."""
+    """Convert diagnosis_mix dataframe to lifetime param-dict factory functions.
+
+    Each factory returns a plain dict — no salabim objects are created here.
+    """
     factories = {}
 
     for _, row in diagnosis_mix_df.iterrows():
@@ -255,21 +256,23 @@ def _lifetime_df_to_factories(diagnosis_mix_df: pd.DataFrame) -> dict:
         dist_type = row["lifetime_distribution"].lower()
 
         if dist_type == "uniform":
-            low, high = row["lifetime_low"], row["lifetime_high"]
-            factories[triage] = lambda l=low, h=high: sim.Uniform(l, h)
+            low, high = float(row["lifetime_low"]), float(row["lifetime_high"])
+            factories[triage] = lambda l=low, h=high: {"type": "uniform", "low": l, "high": h}
         elif dist_type == "triangular":
-            low = row["lifetime_low"]
-            high = row["lifetime_high"]
+            low  = float(row["lifetime_low"])
+            high = float(row["lifetime_high"])
             mode = row.get("lifetime_mode", (low + high) / 2)
             if pd.isna(mode):
                 mode = (low + high) / 2
-            factories[triage] = lambda l=low, m=mode, h=high: sim.Triangular(l, h, m)
+            mode = float(mode)
+            factories[triage] = lambda l=low, h=high, m=mode: {"type": "triangular", "low": l, "high": h, "mode": m}
         elif dist_type == "exponential":
-            mean = row["lifetime_mean"]
-            factories[triage] = lambda m=mean: sim.Exponential(m)
+            mean = float(row["lifetime_mean"])
+            factories[triage] = lambda m=mean: {"type": "exponential", "mean": m}
         elif dist_type == "normal":
-            mean, std = row["lifetime_mean"], row["lifetime_std"]
-            factories[triage] = lambda m=mean, s=std: sim.Normal(m, s)
+            mean = float(row["lifetime_mean"])
+            std  = float(row["lifetime_std"])
+            factories[triage] = lambda m=mean, s=std: {"type": "normal", "mean": m, "std": s}
         else:
             raise ValueError(f"Unknown distribution type: {dist_type}")
 

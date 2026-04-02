@@ -4,13 +4,31 @@ from __future__ import annotations
 import salabim as sim
 
 
+def _make_service_dist(params: dict):
+    """Build a salabim distribution from a service-time params dict.
+
+    Called inside Unit.setup(), which runs after sim.Environment(seed=…) is
+    active — so the distribution is bound to the correct seeded RNG.
+    """
+    t = params["type"]
+    if t == "normal_by_triage":
+        return {
+            "mild":   sim.Normal(params["mild_mean"],   params["mild_std"]),
+            "severe": sim.Normal(params["severe_mean"], params["severe_std"]),
+        }
+    if t == "normal":
+        return sim.Normal(params["mean"], params["std"])
+    # default: uniform
+    return sim.Uniform(params["low"], params["high"])
+
+
 class Unit(sim.Component):
     """A medical unit that provides a specific type of care."""
 
-    def setup(self, facility, capacity: int, service_time_dist, service_type: str):
+    def setup(self, facility, capacity: int, service_time_params: dict, service_type: str):
         self.facility = facility
         self.capacity = int(capacity)
-        self.service_time_dist = service_time_dist
+        self.service_time_dist = _make_service_dist(service_time_params)
         self.service_type = service_type
         self.in_service = 0
         self._active_services: list[UnitService] = []

@@ -9,7 +9,7 @@ from src.helpers.helpers_run import collect_results
 
 
 def run_simulation(data: dict, settings: dict, run_folder: Path) -> dict:
-    env = sim.Environment(trace=settings["trace"])
+    env = sim.Environment(trace=settings["trace"], random_seed=settings.get("seed", 42))
     env.levers = settings["levers"]
     env.triage_weights = data.get("triage_weights", {})
     env.unload_policy = {"unload_planned": unload_planned}

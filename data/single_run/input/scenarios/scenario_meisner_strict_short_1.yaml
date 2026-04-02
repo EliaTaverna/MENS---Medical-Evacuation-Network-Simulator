@@ -1,4 +1,5 @@
 name: scenario_meisner_strict_short_1
+seed: 42
 description: Meisner et al. (2025) replication — 1 CCP per battalion, 1 R1 per battalion, 1 R2 per brigade. Strict routing (each CCP→own R1, each R1→own R2).
 components:
   distance_matrix: components/distances/distance_matrix_meisner.xlsx
@@ -35,10 +36,8 @@ levers:
   beta: 1.0
   gamma: 1.0
   delta: 0.0
-  random_seed: 42
 simulation:
   till: 12960 # 2 days (7 combat + 2 clearance) in minutes
-  casualty_seed: 42
   trace: false
 video:
   enabled: false

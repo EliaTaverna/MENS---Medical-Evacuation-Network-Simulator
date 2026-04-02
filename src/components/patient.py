@@ -1,7 +1,31 @@
 """Patient component for the simulation."""
 
 from __future__ import annotations
+import math
 import salabim as sim
+
+
+def _make_lifetime_dist(params: dict):
+    """Build a salabim distribution from a lifetime params dict.
+
+    Called inside Patient.setup(), which runs during the simulation (after
+    sim.Environment(seed=…) is active) — so all samples are reproducibly
+    seeded.
+    """
+    t = str(params.get("type", "uniform")).lower()
+    if t == "triangular":
+        low  = float(params["low"])
+        high = float(params["high"])
+        mode = params.get("mode")
+        if mode is None or (isinstance(mode, float) and math.isnan(mode)):
+            mode = (low + high) / 2.0
+        return sim.Triangular(low, high, float(mode))
+    if t == "exponential":
+        return sim.Exponential(float(params["mean"]))
+    if t == "normal":
+        return sim.Normal(float(params["mean"]), float(params["std"]))
+    # default: uniform
+    return sim.Uniform(float(params["low"]), float(params["high"]))
 
 
 class Patient(sim.Component):
@@ -13,11 +37,11 @@ class Patient(sim.Component):
     - Clock EXTENDED after each treatment step
     """
 
-    def setup(self, patient_id: str, triage: str, prescription: list, life_time_dist, spawn_facility, injury_time):
+    def setup(self, patient_id: str, triage: str, prescription: list, life_time_params: dict, spawn_facility, injury_time):
         self.patient_id = patient_id
         self.triage = triage
         self.prescription = list(prescription)
-        self.life_time_dist = life_time_dist
+        self.life_time_dist = _make_lifetime_dist(life_time_params)
         self.spawn_facility = spawn_facility
         self.current_facility = spawn_facility
         self.rx_index = 0
