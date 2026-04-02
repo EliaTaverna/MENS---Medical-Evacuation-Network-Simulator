@@ -73,28 +73,33 @@ def compute_positions_from_distance_matrix(distance_matrix: pd.DataFrame) -> dic
     return {loc: (coords[i, 0], coords[i, 1]) for i, loc in enumerate(locations)}
 
 
-def compute_positions_hierarchical(distance_matrix: pd.DataFrame, facility_df: pd.DataFrame) -> dict:
+def compute_positions_hierarchical(
+    distance_matrix: pd.DataFrame,
+    facility_df: pd.DataFrame,
+    coord_df: pd.DataFrame = None,
+) -> dict:
     """
     Return 2D positions for each facility.
 
-    If facility_df contains x_km / y_km columns (real coordinates), use them
-    directly.  Otherwise fall back to MDS on the distance matrix.
+    If coord_df is provided (columns: facility_id, x/x_km, y/y_km — covers all nodes
+    including AXPs), use it directly.  Otherwise fall back to facility_df x_km/y_km,
+    and finally to MDS on the distance matrix.
     """
     locations = list(distance_matrix.index)
 
-    # --- fast path: real coordinates available ---
+    # --- fast path: full coordinate reference available (covers AXPs too) ---
+    if coord_df is not None and "facility_id" in coord_df.columns:
+        x_col = "x_km" if "x_km" in coord_df.columns else "x"
+        y_col = "y_km" if "y_km" in coord_df.columns else "y"
+        coord_map = {str(r["facility_id"]): (float(r[x_col]), float(r[y_col]))
+                     for _, r in coord_df.iterrows()}
+        return {loc: coord_map.get(loc, (0.0, 0.0)) for loc in locations}
+
+    # --- fallback: facility_df real coordinates (no AXPs) ---
     if facility_df is not None and "x_km" in facility_df.columns and "y_km" in facility_df.columns:
         coord_map = {str(r["facility_id"]): (float(r["x_km"]), float(r["y_km"]))
                      for _, r in facility_df.iterrows()}
-        # AXPs are not in facility_df (they live in axp.xlsx); infer from id if missing
-        positions = {}
-        for loc in locations:
-            if loc in coord_map:
-                positions[loc] = coord_map[loc]
-            else:
-                # fallback: place unknown nodes at origin
-                positions[loc] = (0.0, 0.0)
-        return positions
+        return {loc: coord_map.get(loc, (0.0, 0.0)) for loc in locations}
 
     # --- fallback: MDS ---
     dist_array = distance_matrix.values.astype(float)
@@ -170,43 +175,53 @@ class FacilityStateLogger(sim.Component):
     def _log_state(self):
         t = float(self.env.now())
 
+        def triage_key(tr):
+            for k in ('T1', 'T2', 'T3'):
+                if k in tr:
+                    return k
+            return None
+
         for fac_id, fac in self.env.facility_by_id.items():
-            # Count patients waiting in entry_lines (for treatment) by triage
-            # Use substring match so T1_BCAS / T1_DNBI etc. all map to T1
-            def triage_key(t):
-                for k in ('T1', 'T2', 'T3'):
-                    if k in t:
-                        return k
-                return None
-
-            waiting = {'T1': 0, 'T2': 0, 'T3': 0}
-            for service_type, queue in fac.entry_lines.items():
-                for p in queue:
-                    k = triage_key(p.triage)
-                    if k:
-                        waiting[k] += 1
-
-            # Count all transport requests by triage (pending or assigned, not yet picked up)
+            # Transport requests are facility-level (shared across all units)
             transport_requests = {'T1': 0, 'T2': 0, 'T3': 0}
             for req in fac.exit_queue:
                 k = triage_key(req.patient.triage)
                 if k:
                     transport_requests[k] += 1
 
-            # Count total patients in care
-            total_in_care = sum(unit.in_service for unit in fac.units.values() if unit is not None)
+            # One record per unit (keyed by service_type)
+            for svc_type, unit in fac.units.items():
+                if unit is None:
+                    continue
 
-            self.env.facility_states.append({
-                'time': t,
-                'facility_id': fac_id,
-                'T1_waiting': waiting['T1'],
-                'T2_waiting': waiting['T2'],
-                'T3_waiting': waiting['T3'],
-                'T1_transport': transport_requests['T1'],
-                'T2_transport': transport_requests['T2'],
-                'T3_transport': transport_requests['T3'],
-                'total_in_care': total_in_care,
-            })
+                # Waiting: only patients queued for this service type
+                waiting = {'T1': 0, 'T2': 0, 'T3': 0}
+                for p in fac.entry_lines.get(svc_type, []):
+                    k = triage_key(p.triage)
+                    if k:
+                        waiting[k] += 1
+
+                # In care: patients actively being served by this unit
+                in_care = {'T1': 0, 'T2': 0, 'T3': 0}
+                for svc in unit._active_services:
+                    k = triage_key(svc.patient.triage)
+                    if k:
+                        in_care[k] += 1
+
+                self.env.facility_states.append({
+                    'time': t,
+                    'facility_id': fac_id,
+                    'service_type': svc_type,
+                    'T1_waiting':   waiting['T1'],
+                    'T2_waiting':   waiting['T2'],
+                    'T3_waiting':   waiting['T3'],
+                    'T1_in_care':   in_care['T1'],
+                    'T2_in_care':   in_care['T2'],
+                    'T3_in_care':   in_care['T3'],
+                    'T1_transport': transport_requests['T1'],
+                    'T2_transport': transport_requests['T2'],
+                    'T3_transport': transport_requests['T3'],
+                })
 
 
 # ============================================================
@@ -217,11 +232,12 @@ def plot_network_static(
     distance_matrix: pd.DataFrame,
     facility_df: pd.DataFrame,
     ambulance_df: pd.DataFrame = None,
+    coord_df: pd.DataFrame = None,
     title: str = "MEDEVAC Network",
     figsize: tuple = (22, 12),
 ):
     """Create a static plot of the MEDEVAC network."""
-    positions = compute_positions_hierarchical(distance_matrix, facility_df)
+    positions = compute_positions_hierarchical(distance_matrix, facility_df, coord_df=coord_df)
 
     fig, ax = plt.subplots(figsize=figsize)
 
@@ -284,12 +300,14 @@ def create_transport_video(
     transport_events: pd.DataFrame,
     ambulance_df: pd.DataFrame,
     facility_states_df: pd.DataFrame = None,
+    coord_df: pd.DataFrame = None,
     fps: int = 30,
     time_scale: float = 5.0,
     figsize: tuple = (32, 18),
     save_path: str = "transport_simulation.mp4",
     dpi: int = 120,
     duration: float = None,
+    start_time: float = 0.0,
 ):
     """
     Create an MP4 video showing ambulances moving with patient dots.
@@ -305,9 +323,10 @@ def create_transport_video(
         figsize: Figure size
         save_path: Path to save the MP4 file
         dpi: Resolution of the video
-        duration: Video duration in minutes (None = until last transport event)
+        duration: Video duration in minutes from start_time (None = until last event)
+        start_time: Simulation time (minutes) at which the video begins (default 0)
     """
-    positions = compute_positions_hierarchical(distance_matrix, facility_df)
+    positions = compute_positions_hierarchical(distance_matrix, facility_df, coord_df=coord_df)
     amb_colors = generate_ambulance_colors(ambulance_df['amb_id'].tolist())
 
     fig, ax = plt.subplots(figsize=figsize)
@@ -353,33 +372,37 @@ def create_transport_video(
         }
 
     events_sorted = transport_events.sort_values('time').to_dict('records') if len(transport_events) > 0 else []
+
+    # Determine end time
     if duration is not None:
-        max_time = duration
+        max_time = start_time + duration
     elif facility_states_df is not None and len(facility_states_df) > 0:
-        # Use last facility state snapshot (covers treatment completion)
         max_time = facility_states_df['time'].max()
     elif len(transport_events) > 0:
         max_time = transport_events['time'].max()
     else:
-        max_time = 100
-    n_frames = int(max_time / time_scale) + 1
+        max_time = start_time + 100
 
-    # Build facility states lookup
+    # Frames run from start_time to max_time
+    n_frames = int((max_time - start_time) / time_scale) + 1
+
+    # Build facility states lookup: {time: {fac_id: {svc_type: state_dict}}}
     facility_states_by_time = {}
     if facility_states_df is not None and len(facility_states_df) > 0:
         for _, row in facility_states_df.iterrows():
-            t = row['time']
+            t      = row['time']
             fac_id = row['facility_id']
-            if t not in facility_states_by_time:
-                facility_states_by_time[t] = {}
-            facility_states_by_time[t][fac_id] = {
-                'T1_waiting': row['T1_waiting'],
-                'T2_waiting': row['T2_waiting'],
-                'T3_waiting': row['T3_waiting'],
+            svc    = row.get('service_type', 'UNK')
+            facility_states_by_time.setdefault(t, {}).setdefault(fac_id, {})[svc] = {
+                'T1_waiting':   row.get('T1_waiting',   0),
+                'T2_waiting':   row.get('T2_waiting',   0),
+                'T3_waiting':   row.get('T3_waiting',   0),
+                'T1_in_care':   row.get('T1_in_care',   0),
+                'T2_in_care':   row.get('T2_in_care',   0),
+                'T3_in_care':   row.get('T3_in_care',   0),
                 'T1_transport': row.get('T1_transport', 0),
                 'T2_transport': row.get('T2_transport', 0),
                 'T3_transport': row.get('T3_transport', 0),
-                'total_in_care': row['total_in_care'],
             }
 
     def get_facility_state_at_time(t, fac_id):
@@ -423,7 +446,7 @@ def create_transport_video(
                 }
 
             elif event['event'] == 'arrival':
-                at_loc = event['at_loc']
+                at_loc = event.get('at_loc') or event['to_loc']
                 patient_triages = event.get('patient_triages', [])
 
                 amb_state[amb_id] = {
@@ -482,7 +505,7 @@ def create_transport_video(
         patient_artists = []
         facility_text_artists = []
 
-        t = frame * time_scale
+        t = start_time + frame * time_scale
         amb_data = get_ambulance_visual_data(t)
 
         n_in_transit = 0
@@ -505,64 +528,49 @@ def create_transport_video(
                                    edgecolors='black', linewidths=edge_width, zorder=10)
             ambulance_artists.append(amb_artist)
 
-            if patients:
-                n_patients = len(patients)
-                for i, triage in enumerate(patients):
-                    angle = (2 * np.pi * i / max(n_patients, 1)) + np.pi/4
-                    offset = 0.4
-                    px = x + offset * np.cos(angle)
-                    py = y + offset * np.sin(angle)
+            # Moving triage label — always shown, shows 0s when empty
+            t1_c = sum(1 for tr in patients if 'T1' in tr)
+            t2_c = sum(1 for tr in patients if 'T2' in tr)
+            t3_c = sum(1 for tr in patients if 'T3' in tr)
+            amb_lbl = ax.annotate(
+                f"{t1_c}/{t2_c}/{t3_c}",
+                (x, y),
+                xytext=(0, -10), textcoords='offset points',
+                fontsize=7, ha='center', va='top',
+                color='black', zorder=12,
+            )
+            ambulance_artists.append(amb_lbl)
 
-                    color = TRIAGE_COLORS.get(triage, '#888888')
-                    patient_artist = ax.scatter(px, py, c=color, marker='o', s=50,
-                                               edgecolors='black', linewidths=0.5, zorder=11)
-                    patient_artists.append(patient_artist)
 
         # Draw facility patient counts and patient dots
         for fac_id in facility_df['facility_id'].tolist():
             if fac_id not in positions:
                 continue
             x, y = positions[fac_id]
-            state = get_facility_state_at_time(t, fac_id)
-            if state:
-                t1w = state['T1_waiting']
-                t2w = state['T2_waiting']
-                t3w = state['T3_waiting']
-                t1tr = state['T1_transport']
-                t2tr = state['T2_transport']
-                t3tr = state['T3_transport']
-                total_c = state['total_in_care']
-            else:
-                t1w = t2w = t3w = t1tr = t2tr = t3tr = total_c = 0
+            unit_states = get_facility_state_at_time(t, fac_id)  # {svc_type: state_dict} or None
 
-            text = f"W:{t1w}/{t2w}/{t3w}\nC:{total_c}\nTR:{t1tr}/{t2tr}/{t3tr}"
-            txt = ax.annotate(
-                text, (x, y),
-                xytext=(0, 22), textcoords='offset points',
-                fontsize=10, ha='center', va='bottom',
-                bbox=dict(boxstyle='round,pad=0.3', facecolor='lightyellow',
-                         edgecolor='#aaaaaa', alpha=0.92),
-                zorder=15,
-            )
-            facility_text_artists.append(txt)
+            # One label per unit, spread horizontally around facility position
+            if unit_states:
+                svc_types = list(unit_states.keys())
+                n_units   = len(svc_types)
+                dx        = 2.2   # km between unit label centres
+                for i, svc_type in enumerate(svc_types):
+                    s    = unit_states[svc_type]
+                    x_lbl = x + (i - (n_units - 1) / 2) * dx
+                    text = (f"{svc_type}\n"
+                            f"W:{s['T1_waiting']}/{s['T2_waiting']}/{s['T3_waiting']}\n"
+                            f"C:{s['T1_in_care']}/{s['T2_in_care']}/{s['T3_in_care']}\n"
+                            f"TR:{s['T1_transport']}/{s['T2_transport']}/{s['T3_transport']}")
+                    txt = ax.annotate(
+                        text, (x_lbl, y),
+                        xytext=(0, 22), textcoords='offset points',
+                        fontsize=8, ha='center', va='bottom',
+                        bbox=dict(boxstyle='round,pad=0.3', facecolor='lightyellow',
+                                  edgecolor='#aaaaaa', alpha=0.92),
+                        zorder=15,
+                    )
+                    facility_text_artists.append(txt)
 
-            # Draw patient dots at facility (waiting + transport requests)
-            patient_list = []
-            patient_list.extend(['T1'] * t1w + ['T1'] * t1tr)
-            patient_list.extend(['T2'] * t2w + ['T2'] * t2tr)
-            patient_list.extend(['T3'] * t3w + ['T3'] * t3tr)
-
-            n_patients = len(patient_list)
-            for i, triage in enumerate(patient_list):
-                angle = (2 * np.pi * i / max(n_patients, 1)) - np.pi/2
-                offset = 0.5 + 0.15 * (i // 8)  # Expand outward for many patients
-                px = x + offset * np.cos(angle)
-                py = y + offset * np.sin(angle)
-
-                color = TRIAGE_COLORS.get(triage, '#888888')
-                patient_artist = ax.scatter(px, py, c=color, marker='o', s=40,
-                                           edgecolors='black', linewidths=0.5, zorder=6)
-                patient_artists.append(patient_artist)
 
         hours = int(t // 60)
         mins = int(t % 60)

@@ -168,6 +168,7 @@ def resolve_settings(scenario: dict, **overrides) -> dict:
         "video_time_scale":     pick(overrides.get("video_time_scale"),     vid_s.get("time_scale", 5.0)),
         "video_dpi":            pick(overrides.get("video_dpi"),            vid_s.get("dpi", 100)),
         "video_duration":       vid_s.get("duration"),
+        "video_start_time":     float(vid_s.get("start_time", 0.0)),
         "state_log_interval":   pick(overrides.get("state_log_interval"),   vid_s.get("state_log_interval", 5.0)),
         "save_logs":            pick(overrides.get("save_logs"),            log_s.get("enabled", True)),
         "outputs":              outputs,
@@ -186,8 +187,12 @@ def create_run_folder(scenario: dict, scenario_path: str, output_folder: str) ->
     return run_folder
 
 
-def load_or_generate_casualties(scenario: dict, casualty_seed: int = None) -> pd.DataFrame:
-    """Load pre-generated casualties from file, or generate them dynamically."""
+def load_or_generate_casualties(scenario: dict, casualty_seed: int = None):
+    """Load pre-generated casualties from file, or generate them dynamically.
+
+    Returns (casualties_df, wave_dicts) where wave_dicts is a list of
+    WaveDict (facility_id -> list[Wave]) or None if loaded from dataset.
+    """
     from src import load_casualties_from_scenario, load_casualty_config_from_scenario
     from src.helpers.casualty_generator import generate_casualties_df_from_waves
 
@@ -195,11 +200,12 @@ def load_or_generate_casualties(scenario: dict, casualty_seed: int = None) -> pd
     if cas_gen.get("from_dataset", False):
         casualties_df = load_casualties_from_scenario(scenario)
         print(f"Loaded {len(casualties_df)} casualties from dataset")
+        return casualties_df, None
     else:
         config = load_casualty_config_from_scenario(scenario)
         if casualty_seed is not None:
             config["seed"] = casualty_seed
-        full_df, _ = generate_casualties_df_from_waves(
+        full_df, wave_dicts = generate_casualties_df_from_waves(
             spawn_map=config["spawn_map"],
             par_total=config["par_total"],
             n_days=config["n_days"],
@@ -214,7 +220,7 @@ def load_or_generate_casualties(scenario: dict, casualty_seed: int = None) -> pd
             ~full_df["triage"].str.startswith(("KIA", "MIA"))
         ].copy().reset_index(drop=True)
         print(f"Generated {len(casualties_df)} casualties (excl. KIA/MIA from {len(full_df)} total)")
-    return casualties_df
+        return casualties_df, wave_dicts
 
 
 def prepare_run(
@@ -232,7 +238,7 @@ def prepare_run(
     s = resolve_settings(scenario, **overrides)
     run_folder = create_run_folder(scenario, scenario_path, output_folder)
     data = load_data_from_scenario(scenario)
-    data["casualties_df"] = load_or_generate_casualties(scenario, s["casualty_seed"])
+    data["casualties_df"], data["wave_dicts"] = load_or_generate_casualties(scenario, s["casualty_seed"])
     data["triage_weights"] = load_triage_weights_from_scenario(scenario)
     return data, s, run_folder
 
@@ -298,6 +304,130 @@ def save_logs(results: dict) -> None:
     print(f"Logs saved to {run_folder}/: {', '.join(saved)}")
 
 
+def save_gantt_chart(data: dict, results: dict) -> None:
+    """Save an interactive Gantt chart of casualty generation waves per spawn location."""
+    wave_dicts = data.get("wave_dicts")
+    if not wave_dicts:
+        return
+
+    import plotly.graph_objects as go
+
+    # Flatten all wave dicts into {facility_id: [Wave, ...]}
+    all_waves: dict = {}
+    for wdict in wave_dicts:
+        for fac_id, waves in wdict.items():
+            all_waves.setdefault(fac_id, []).extend(waves)
+
+    locations = sorted(all_waves.keys())
+    loc_index = {loc: i for i, loc in enumerate(locations)}
+
+    all_ends = [w.t_end for waves in all_waves.values() for w in waves]
+    max_time = max(all_ends) if all_ends else 1440
+
+    BCAS_COLOR = "rgba(231, 76, 60, 0.85)"
+    DNBI_COLOR = "rgba(52, 152, 219, 0.85)"
+
+    def stream_color(fac_id):
+        return BCAS_COLOR if fac_id.startswith("ccp") else DNBI_COLOR
+
+    fig = go.Figure()
+
+    # --- Rectangle shapes (visual) ---
+    for fac_id, waves in all_waves.items():
+        y = loc_index[fac_id]
+        for w in waves:
+            fig.add_shape(
+                type="rect",
+                x0=w.t_start, x1=w.t_end,
+                y0=y - 0.4,   y1=y + 0.4,
+                fillcolor=stream_color(fac_id),
+                line=dict(width=0.5, color="black"),
+            )
+
+    # --- Invisible scatter points for hover ---
+    hover_x, hover_y, hover_text = [], [], []
+    for fac_id, waves in all_waves.items():
+        y = loc_index[fac_id]
+        for w in waves:
+            hover_x.append((w.t_start + w.t_end) / 2)
+            hover_y.append(y)
+            if w.df is not None and "triage" in w.df.columns and len(w.df) > 0:
+                counts = w.df["triage"].value_counts().sort_index().to_dict()
+            else:
+                counts = {}
+            triage_lines = "<br>".join(
+                f"&nbsp;&nbsp;{t}: {n}" for t, n in sorted(counts.items())
+            )
+            hover_text.append(
+                f"<b>{fac_id}</b><br>"
+                f"t: {w.t_start:.0f} – {w.t_end:.0f} min<br>"
+                f"total: {sum(counts.values())}<br>"
+                f"{triage_lines}"
+            )
+
+    fig.add_trace(go.Scatter(
+        x=hover_x, y=hover_y,
+        mode="markers",
+        marker=dict(size=18, opacity=0, color="rgba(0,0,0,0)"),
+        hovertemplate="%{text}<extra></extra>",
+        text=hover_text,
+        showlegend=False,
+    ))
+
+    # --- Day separator lines ---
+    minutes_per_day = 1440
+    n_days = int(max_time // minutes_per_day) + 1
+    for d in range(1, n_days + 1):
+        fig.add_vline(x=d * minutes_per_day, line=dict(color="grey", dash="dash", width=1))
+
+    # --- Legend entries (manual) ---
+    for label, color in [("BCAS (CCP)", BCAS_COLOR), ("DNBI (R1)", DNBI_COLOR)]:
+        fig.add_trace(go.Scatter(
+            x=[None], y=[None], mode="markers",
+            marker=dict(size=12, color=color, symbol="square"),
+            name=label, showlegend=True,
+        ))
+
+    fig.update_layout(
+        title="Casualty Generation Waves",
+        xaxis=dict(title="Simulation time (min)", range=[0, max_time]),
+        yaxis=dict(
+            title="Spawn location",
+            tickvals=list(range(len(locations))),
+            ticktext=locations,
+            range=[-0.5, len(locations) - 0.5],
+        ),
+        height=max(400, len(locations) * 22 + 120),
+        hovermode="closest",
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+    )
+
+    path = results["run_folder"] / "gantt_waves.html"
+    fig.write_html(str(path))
+    print(f"Gantt chart saved to {path}")
+
+
+def save_network_image(data: dict, results: dict) -> None:
+    """Save a static PNG of the facility network to the run folder."""
+    import matplotlib
+    matplotlib.use("Agg")
+    from src.helpers.visualization import plot_network_static
+
+    fig, _, _ = plot_network_static(
+        distance_matrix=data["distance_matrix"],
+        facility_df=data["facility_df"],
+        ambulance_df=data.get("ambulance_df"),
+        coord_df=data.get("coord_df"),
+        title="MEDEVAC Network",
+    )
+    path = results["run_folder"] / "network.png"
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    import matplotlib.pyplot as plt
+    plt.close(fig)
+    print(f"Network image saved to {path}")
+
+
 def make_video(data: dict, results: dict, settings: dict) -> None:
     """Generate MP4 animation from transport events."""
     transport_df = results["transport_df"]
@@ -316,22 +446,38 @@ def make_video(data: dict, results: dict, settings: dict) -> None:
         transport_events=transport_df,
         ambulance_df=data["ambulance_df"],
         facility_states_df=results["facility_states_df"],
+        coord_df=data.get("coord_df"),
         fps=settings["video_fps"],
         time_scale=settings["video_time_scale"],
         dpi=settings["video_dpi"],
         save_path=str(video_path),
         duration=settings["video_duration"],
+        start_time=settings["video_start_time"],
     )
 
 
-def print_summary(results: dict):
+def print_summary(results: dict, data: dict = None):
     """Print simulation summary statistics."""
     log_df = results["patient_log_df"]
     wait_times_df = results.get("wait_times_df", pd.DataFrame())
     transport_df = results.get("transport_df", pd.DataFrame())
     unit_busy_periods = results.get("unit_busy_periods", {})
     sim_duration = results.get("sim_duration", 0)
+
+    # Build unit capacity and facility lookups
+    unit_capacity = {}
+    unit_facility = {}
+    if data is not None and "units_df" in data:
+        for _, r in data["units_df"].iterrows():
+            uid = str(r["unit_id"])
+            unit_capacity[uid] = int(r["capacity"])
+            unit_facility[uid] = str(r["facility_id"])
     distance_matrix = results.get("distance_matrix")
+
+    amb_start_locations = {}
+    if data is not None and "ambulance_df" in data:
+        for _, r in data["ambulance_df"].iterrows():
+            amb_start_locations[str(r["amb_id"]).lower()] = str(r["start_loc_id"])
 
     print("\n" + "=" * 70)
     print("SIMULATION RESULTS")
@@ -378,7 +524,24 @@ def print_summary(results: dict):
     print(f"    In progress: {n_in_progress_total:4d} ({100*n_in_progress_total/n_total:5.1f}%)")
 
     # -----------------------------------------------------------------
-    # 2. Waiting time statistics
+    # 2. Patients generated by spawn location
+    # -----------------------------------------------------------------
+    spawned = log_df[log_df["action"] == "SPAWNED"][["patient_id", "current_location"]].copy()
+    spawned["triage"] = spawned["patient_id"].map(triage_map)
+    if not spawned.empty:
+        print("\n--- PATIENTS GENERATED BY SPAWN LOCATION ---")
+        triage_cols = sorted(spawned["triage"].dropna().unique())
+        for loc in sorted(spawned["current_location"].unique()):
+            loc_df = spawned[spawned["current_location"] == loc]
+            n_loc = len(loc_df)
+            breakdown = "  ".join(
+                f"{t}: {(loc_df['triage'] == t).sum()}"
+                for t in triage_cols if (loc_df["triage"] == t).sum() > 0
+            )
+            print(f"  {loc}: {n_loc} total  [{breakdown}]")
+
+    # -----------------------------------------------------------------
+    # 3. Waiting time statistics
     # -----------------------------------------------------------------
     if not wait_times_df.empty:
         print("\n--- WAITING TIME STATISTICS (minutes) ---")
@@ -413,39 +576,40 @@ def print_summary(results: dict):
                     print(f"      {triage}: {p25:6.1f} / {p50:6.1f} / {p75:6.1f}  (n={len(durations)})")
 
     # -----------------------------------------------------------------
-    # 3. Cumulative transport time
+    # 5. Trip load distribution
     # -----------------------------------------------------------------
-    if not transport_df.empty and distance_matrix is not None:
-        print("\n--- CUMULATIVE TRANSPORT TIME ---")
+    if not transport_df.empty:
+        print("\n--- TRIP LOAD DISTRIBUTION ---")
 
-        departures = transport_df[transport_df["event"] == "departure"].copy()
-        arrivals = transport_df[transport_df["event"] == "arrival"].copy()
+        # Only loaded departures (patient_triages is non-empty)
+        deps = transport_df[transport_df["event"] == "departure"].copy()
+        deps["n_patients"] = deps["patient_triages"].apply(
+            lambda x: len(x) if isinstance(x, list) else 0
+        )
+        loaded_deps = deps[deps["n_patients"] > 0]
 
-        amb_travel_times = {}
-        for amb_id in transport_df["amb_id"].unique():
-            amb_deps = departures[departures["amb_id"] == amb_id].sort_values("time")
-            amb_arrs = arrivals[arrivals["amb_id"] == amb_id].sort_values("time")
+        # Determine max capacity from data
+        max_cap = int(deps["n_patients"].max()) if not deps.empty else 1
 
-            total_time = 0
-            for _, arr in amb_arrs.iterrows():
-                matching_deps = amb_deps[
-                    (amb_deps["time"] < arr["time"]) &
-                    (amb_deps["from_loc"] == arr["from_loc"]) &
-                    (amb_deps["to_loc"] == arr["to_loc"])
-                ]
-                if not matching_deps.empty:
-                    total_time += arr["time"] - matching_deps.iloc[-1]["time"]
+        for amb_id in sorted(deps["amb_id"].unique()):
+            amb_deps   = loaded_deps[loaded_deps["amb_id"] == amb_id]
+            total_trips = len(amb_deps)
+            start_loc  = amb_start_locations.get(amb_id, "?")
 
-            amb_travel_times[amb_id] = total_time
+            if total_trips == 0:
+                print(f"  {amb_id} ({start_loc}): no loaded trips")
+                continue
 
-        total_transport_time = sum(amb_travel_times.values())
-        print(f"  Total transport time (all ambulances): {total_transport_time:.1f} minutes")
-        print("\n  By ambulance:")
-        for amb_id, travel_time in sorted(amb_travel_times.items()):
-            print(f"    {amb_id}: {travel_time:.1f} minutes")
+            parts = []
+            for n in range(1, max_cap + 1):
+                count = int((amb_deps["n_patients"] == n).sum())
+                pct   = 100.0 * count / total_trips
+                parts.append(f"{n}: {count} ({pct:.0f}%)")
+
+            print(f"  {amb_id} ({start_loc}): " + "  |  ".join(parts))
 
     # -----------------------------------------------------------------
-    # 4. Unit utilization
+    # 6. Unit utilization
     # -----------------------------------------------------------------
     if unit_busy_periods and sim_duration > 0:
         print("\n--- UNIT UTILIZATION ---")
@@ -456,7 +620,28 @@ def print_summary(results: dict):
                 continue
 
             total_busy = sum(p["end"] - p["start"] for p in periods)
-            utilization = (total_busy / sim_duration) * 100
-            print(f"  {unit_id}: {utilization:.1f}% ({total_busy:.1f} min busy / {sim_duration:.1f} min total)")
+            capacity = unit_capacity.get(unit_id, 1)
+            denom = sim_duration * capacity
+            utilization = (total_busy / denom) * 100
+
+            # Break down by triage tier (T1 / T2 / T3)
+            tier_busy  = {"T1": 0.0, "T2": 0.0, "T3": 0.0}
+            tier_count = {"T1": 0,   "T2": 0,   "T3": 0}
+            for p in periods:
+                triage = p.get("triage", "")
+                dur = p["end"] - p["start"]
+                if triage.startswith("T1"):
+                    tier_busy["T1"] += dur;  tier_count["T1"] += 1
+                elif triage.startswith("T2"):
+                    tier_busy["T2"] += dur;  tier_count["T2"] += 1
+                elif triage.startswith("T3"):
+                    tier_busy["T3"] += dur;  tier_count["T3"] += 1
+            tier_str = "  ".join(
+                f"{t}: {(v / denom * 100):.1f}% (n={tier_count[t]})"
+                for t, v in tier_busy.items()
+            )
+            fac_name = unit_facility.get(unit_id, "?")
+            print(f"  {unit_id} ({fac_name}): {utilization:.1f}%  [{tier_str}]  "
+                  f"({total_busy:.1f} min busy / {sim_duration:.1f} min × cap {capacity})")
 
     print("\n" + "=" * 70)

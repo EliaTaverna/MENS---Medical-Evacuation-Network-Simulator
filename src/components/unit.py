@@ -93,6 +93,7 @@ class Unit(sim.Component):
             self.env.unit_busy_periods.setdefault(unit_id, []).append({
                 "start": p._unit_service_start,
                 "end": self.env.now(),
+                "triage": getattr(p, "triage", "Unknown"),
             })
             p._unit_service_start = None
 

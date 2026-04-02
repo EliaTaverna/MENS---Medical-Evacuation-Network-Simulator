@@ -139,13 +139,13 @@ def save_casualties_df(
         return "uniform"
 
     def get_low(d):
-        for attr in ["_lowerbound", "low", "a", "min"]:
+        for attr in ["_low", "_lowerbound", "low", "a", "min"]:
             if hasattr(d, attr):
                 return getattr(d, attr)
         return None
 
     def get_high(d):
-        for attr in ["_upperbound", "high", "b", "max"]:
+        for attr in ["_high", "_upperbound", "high", "b", "max"]:
             if hasattr(d, attr):
                 return getattr(d, attr)
         return None
@@ -425,18 +425,77 @@ def merge_waves_to_casualties_df(*wave_dicts: WaveDict) -> pd.DataFrame:
 
 
 # ============================================================
-# ORCHESTRATOR
+# STREAMS-BASED ORCHESTRATOR  (primary interface)
+#
+# STREAMS is a list of dicts, each with:
+#   - facility_ids : List[str]   — spawn locations for this stream
+#   - rate         : float       — casualties per soldier per day
+#   - mix_df       : DataFrame   — triage labels, frequencies, lifetime params
+#
+# par_total    : total PAR across all involved units
+# n_days, waves_per_day, wave_duration_min : wave schedule
+# rx_df        : prescriptions DataFrame
+# seed         : base RNG seed
+# ============================================================
+
+def generate_casualties_df_from_streams(
+    streams: List[Dict],
+    par_total: int,
+    n_days: int,
+    waves_per_day: int,
+    wave_duration_min: int,
+    rx_df: pd.DataFrame,
+    seed: int = 123,
+) -> Tuple[pd.DataFrame, List[WaveDict]]:
+    """
+    Primary orchestrator matching the notebook's STREAMS approach.
+
+    Each stream dict must have keys: facility_ids, rate, mix_df.
+    Returns (casualties_df, list_of_wave_dicts).
+    """
+    all_factories: Dict[str, Callable] = {}
+    for stream in streams:
+        all_factories.update(_lifetime_df_to_factories(stream["mix_df"]))
+
+    all_wave_dicts: List[WaveDict] = []
+
+    for i, stream in enumerate(streams):
+        base_seed = seed + i * 10
+
+        wdict = place_waves_randomly_per_day(
+            facility_ids=stream["facility_ids"],
+            n_days=n_days,
+            waves_per_day=waves_per_day,
+            wave_duration_min=wave_duration_min,
+            seed=base_seed,
+        )
+        allocate_casualties_to_waves(
+            wave_dict=wdict,
+            par_total=par_total,
+            rate_per_day=stream["rate"],
+            seed=base_seed + 1,
+        )
+        fill_wave_dataframes(wdict, seed=base_seed + 2)
+        populate_patient_attributes(
+            wave_dict=wdict,
+            diagnosis_mix_df=stream["mix_df"],
+            rx_df=rx_df,
+            lifetime_factory_by_triage=all_factories,
+            seed=base_seed + 3,
+        )
+        all_wave_dicts.append(wdict)
+
+    casualties_df = merge_waves_to_casualties_df(*all_wave_dicts)
+    return casualties_df, all_wave_dicts
+
+
+# ============================================================
+# SPAWN-MAP ORCHESTRATOR  (legacy — wraps generate_casualties_df_from_streams)
 #
 # spawn_map: {facility_id: {"labels": [...], "rate": float}}
 #
 # Facilities sharing the same (labels, rate) are automatically
-# grouped into one stream; the pipeline runs once per stream.
-# The diagnosis_mix_df is filtered to each stream's labels and
-# re-normalized before sampling.
-#
-# casualties_df includes KIA and MIA.
-# Filter before passing to simulator:
-#   sim_df = casualties_df[~casualties_df["triage"].isin(["KIA","MIA"])]
+# grouped into one stream.
 # ============================================================
 
 def generate_casualties_df_from_waves(
@@ -461,64 +520,41 @@ def generate_casualties_df_from_waves(
             "r1_bde1": {"labels": ["T1_DNBI", "T2_DNBI", "T3_DNBI"], "rate": 0.0013},
         }
     """
-    # Group facilities that share the same (labels, rate) into one stream
-    streams: Dict[Tuple, Dict] = {}
+    # Group facilities that share the same (labels, rate) into one stream,
+    # then delegate to generate_casualties_df_from_streams.
+    grouped: Dict[Tuple, Dict] = {}
     for fid, cfg in spawn_map.items():
         key = (tuple(sorted(cfg["labels"])), float(cfg["rate"]))
-        if key not in streams:
-            streams[key] = {
+        if key not in grouped:
+            grouped[key] = {
                 "facility_ids": [],
                 "labels": list(cfg["labels"]),
                 "rate": float(cfg["rate"]),
             }
-        streams[key]["facility_ids"].append(fid)
+        grouped[key]["facility_ids"].append(fid)
 
-    all_wave_dicts: List[WaveDict] = []
-
-    for i, stream in enumerate(streams.values()):
-        seed_offset = i * 20
-
-        # Filter diagnosis mix to this stream's labels and re-normalize
+    streams_list = []
+    for group in grouped.values():
         sub_mix = diagnosis_mix_df[
-            diagnosis_mix_df["triage"].isin(stream["labels"])
+            diagnosis_mix_df["triage"].isin(group["labels"])
         ].copy()
+        sub_mix = sub_mix.copy()
         sub_mix["frequency"] = sub_mix["frequency"] / sub_mix["frequency"].sum()
+        streams_list.append({
+            "facility_ids": group["facility_ids"],
+            "rate":         group["rate"],
+            "mix_df":       sub_mix,
+        })
 
-        # Facility weights for this stream only
-        stream_weights = None
-        if facility_weights:
-            stream_weights = {
-                fid: facility_weights[fid]
-                for fid in stream["facility_ids"]
-                if fid in facility_weights
-            }
-
-        wdict = place_waves_randomly_per_day(
-            facility_ids=stream["facility_ids"],
-            n_days=n_days,
-            waves_per_day=waves_per_day,
-            wave_duration_min=wave_duration_min,
-            seed=seed + seed_offset,
-        )
-        allocate_casualties_to_waves(
-            wave_dict=wdict,
-            par_total=par_total,
-            rate_per_day=stream["rate"],
-            facility_weights=stream_weights,
-            seed=seed + seed_offset + 1,
-        )
-        fill_wave_dataframes(wave_dict=wdict, seed=seed + seed_offset + 2)
-        populate_patient_attributes(
-            wave_dict=wdict,
-            diagnosis_mix_df=sub_mix,
-            rx_df=rx_df,
-            lifetime_factory_by_triage=lifetime_factory_by_triage,
-            seed=seed + seed_offset + 3,
-        )
-        all_wave_dicts.append(wdict)
-
-    casualties_df = merge_waves_to_casualties_df(*all_wave_dicts)
-    return casualties_df, all_wave_dicts
+    return generate_casualties_df_from_streams(
+        streams=streams_list,
+        par_total=par_total,
+        n_days=n_days,
+        waves_per_day=waves_per_day,
+        wave_duration_min=wave_duration_min,
+        rx_df=rx_df,
+        seed=seed,
+    )
 
 
 # ============================================================

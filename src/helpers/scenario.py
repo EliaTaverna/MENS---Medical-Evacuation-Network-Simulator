@@ -134,6 +134,12 @@ def load_data_from_scenario(scenario: dict) -> dict:
         lambda x: [s.strip().lower() for s in str(x).split(",")] if pd.notna(x) else []
     )
 
+    # Coordinates (optional) — covers all nodes including AXPs, used for visualization
+    coord_df = None
+    if "coordinates" in components:
+        coord_df = pd.read_excel(resolve(components["coordinates"]))
+        coord_df["facility_id"] = coord_df["facility_id"].str.lower()
+
     return {
         "distance_matrix": distance_matrix,
         "axp_df": axp_df,
@@ -141,6 +147,7 @@ def load_data_from_scenario(scenario: dict) -> dict:
         "units_df": units_df,
         "ambulance_df": ambulance_df,
         "c2_df": c2_df,
+        "coord_df": coord_df,
         "fac_eligibility_datasets": fac_elig_datasets,
         "amb_eligibility_datasets": amb_elig_datasets,
     }
@@ -167,10 +174,6 @@ def load_casualty_config_from_scenario(scenario: dict) -> dict:
     def resolve(relative_path: str) -> Path:
         return base_path / relative_path
 
-    # Load parameters from YAML
-    with open(resolve(cas_gen["config"]), "r", encoding="utf-8") as f:
-        params = yaml.safe_load(f)
-
     # Load single combined diagnosis mix
     diagnosis_mix_df = pd.read_excel(resolve(cas_gen["diagnosis_mix"]))
 
@@ -182,12 +185,12 @@ def load_casualty_config_from_scenario(scenario: dict) -> dict:
     lifetime_factory_by_triage = _lifetime_df_to_factories(diagnosis_mix_df)
 
     return {
-        "spawn_map": params["spawn_map"],
-        "par_total": params["par_total"],
-        "n_days": params["n_days"],
-        "waves_per_day": params["waves_per_day"],
-        "wave_duration_min": params["wave_duration_min"],
-        "seed": params.get("seed", 42),
+        "spawn_map":        cas_gen["spawn_map"],
+        "par_total":        cas_gen["par_total"],
+        "n_days":           cas_gen["n_days"],
+        "waves_per_day":    cas_gen["waves_per_day"],
+        "wave_duration_min": cas_gen["wave_duration_min"],
+        "seed":             cas_gen.get("seed", 42),
         "diagnosis_mix_df": diagnosis_mix_df,
         "rx_df": rx_df,
         "lifetime_factory_by_triage": lifetime_factory_by_triage,
