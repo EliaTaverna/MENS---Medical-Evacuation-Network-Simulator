@@ -63,7 +63,7 @@ class Unit(sim.Component):
 
     def _start_service(self, p) -> None:
         """Dequeue patient p, begin their UnitService, and register it."""
-        p.pause_death_clock()
+        p.pause_death_clock(suffix="care")
         if p.is_dead:
             return
 

@@ -50,7 +50,7 @@ class Facility(sim.Component):
 
             self.entry_lines[needed].append(p)
             # Start death clock - patient is waiting in queue
-            p.start_death_clock()
+            p.start_death_clock(action=f"WAITING_CARE:{needed.lower()}")
             unit.activate()
             return
 
@@ -71,7 +71,7 @@ class Facility(sim.Component):
             p._transport_wait_start = self.env.now()
             p._transport_wait_facility_type = self.facility_type
         # Start death clock - patient is waiting for transport
-        p.start_death_clock()
+        p.start_death_clock(action=f"WAITING_TRANSPORT:{self.facility_type.lower()}")
         self.c2_up.receive_request(req)
 
     def process(self):
@@ -102,7 +102,7 @@ class Facility(sim.Component):
                         self.exit_queue.remove(req)
                         break
                 # Pause death clock - patient is being transported
-                p.pause_death_clock()
+                p.pause_death_clock(suffix="transport")
                 amb.onboard.append(p)
                 p.patient_state = "in_transport"
 

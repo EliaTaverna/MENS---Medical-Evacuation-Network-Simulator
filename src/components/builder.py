@@ -48,11 +48,7 @@ class ModelBuilder:
                 ambulance_ids=r.ambulance_ids,
                 lever_value_facility_eligibility=levers.get("facility_eligibility", 0),
                 lever_value_ambulance_eligibility=levers.get("ambulance_eligibility", 0),
-                beta=levers.get("beta",  0.0),
-                gamma=levers.get("gamma", 0.0),
-                delta=levers.get("delta", 0.0),
-                random_seed=levers.get("random_seed", 42),
-                dispatch_policy=levers.get("dispatch_policy", "ilp"),
+                dispatch_policy=levers.get("dispatch_policy", "greedy"),
             )
 
     def build_facilities(self, facility_df: pd.DataFrame, units_df: pd.DataFrame):

@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from src.components.c2 import TransportC2
 
 from src.components.requests import PlanStep
-from src.helpers.ilp import solve_ilp
 
 
 # ============================================================
@@ -79,7 +78,7 @@ def amb_eligibility(
     Dataset format: DataFrame with ambulance IDs as index, facility IDs as columns;
     value 1 if that ambulance may serve requests issued from that facility.
 
-    Called after fac_eligibility, before solve_ilp.
+    Called after fac_eligibility, before the dispatch solver.
     """
     df       = requests_df.copy()
     idle_ids = [a.amb_id for a in (idle_ambulances or [])]

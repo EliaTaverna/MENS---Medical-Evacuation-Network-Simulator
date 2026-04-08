@@ -57,10 +57,12 @@ class Patient(sim.Component):
         self._clock_running = False
         self._wait_start_time = None
 
+        self._diagnosis = "_".join(s.lower() for s in self.prescription)
+
         if hasattr(self.env, "all_patients"):
             self.env.all_patients[patient_id] = self
 
-        self._log(action="SPAWNED", life_budget=self._remaining_survival_time)
+        self._log(action="INJURY", life_budget=self._remaining_survival_time)
 
     @property
     def life_budget(self) -> float:
@@ -80,6 +82,8 @@ class Patient(sim.Component):
         self.env.patient_log_rows.append({
             "time": float(self.env.now()),
             "patient_id": self.patient_id,
+            "triage": self.triage,
+            "diagnosis": self._diagnosis,
             "action": str(action),
             "life_budget": None if life_budget is None else float(life_budget),
             "needed_unit": self.unit_needed,
@@ -88,17 +92,17 @@ class Patient(sim.Component):
             "is_safe": bool(self.is_safe),
         })
 
-    def start_death_clock(self):
+    def start_death_clock(self, action: str = "WAITING"):
         """Start or resume the death clock. Called when patient starts waiting."""
         if self.is_dead or self.is_safe:
             return
 
         self._clock_running = True
         self._wait_start_time = self.env.now()
-        self._log(action="CLOCK_STARTED", life_budget=self._remaining_survival_time)
+        self._log(action=action, life_budget=self._remaining_survival_time)
         self.activate()
 
-    def pause_death_clock(self):
+    def pause_death_clock(self, suffix: str = ""):
         """Pause the death clock. Called when transport or treatment starts."""
         if not self._clock_running:
             return
@@ -110,7 +114,8 @@ class Patient(sim.Component):
             self._wait_start_time = None
 
         self._clock_running = False
-        self._log(action="CLOCK_PAUSED", life_budget=self._remaining_survival_time)
+        action = f"CLOCK_PAUSED:{suffix}" if suffix else "CLOCK_PAUSED"
+        self._log(action=action, life_budget=self._remaining_survival_time)
 
         # Check if patient died while waiting
         if self._remaining_survival_time <= 0:

@@ -9,6 +9,21 @@ import pandas as pd
 import yaml
 
 
+class _LifetimeFactory:
+    """Picklable callable that returns a lifetime param dict.
+
+    Replaces lambdas in _lifetime_df_to_factories so the factory dict
+    can be pickled by multiprocessing workers.
+    """
+    __slots__ = ("_params",)
+
+    def __init__(self, **params):
+        self._params = params
+
+    def __call__(self):
+        return dict(self._params)
+
+
 def load_scenario(scenario_path: Union[str, Path]) -> dict:
     """
     Load a scenario YAML file.
@@ -257,22 +272,21 @@ def _lifetime_df_to_factories(diagnosis_mix_df: pd.DataFrame) -> dict:
 
         if dist_type == "uniform":
             low, high = float(row["lifetime_low"]), float(row["lifetime_high"])
-            factories[triage] = lambda l=low, h=high: {"type": "uniform", "low": l, "high": h}
+            factories[triage] = _LifetimeFactory(type="uniform", low=low, high=high)
         elif dist_type == "triangular":
             low  = float(row["lifetime_low"])
             high = float(row["lifetime_high"])
             mode = row.get("lifetime_mode", (low + high) / 2)
             if pd.isna(mode):
                 mode = (low + high) / 2
-            mode = float(mode)
-            factories[triage] = lambda l=low, h=high, m=mode: {"type": "triangular", "low": l, "high": h, "mode": m}
+            factories[triage] = _LifetimeFactory(type="triangular", low=low, high=high, mode=float(mode))
         elif dist_type == "exponential":
             mean = float(row["lifetime_mean"])
-            factories[triage] = lambda m=mean: {"type": "exponential", "mean": m}
+            factories[triage] = _LifetimeFactory(type="exponential", mean=mean)
         elif dist_type == "normal":
             mean = float(row["lifetime_mean"])
             std  = float(row["lifetime_std"])
-            factories[triage] = lambda m=mean, s=std: {"type": "normal", "mean": m, "std": s}
+            factories[triage] = _LifetimeFactory(type="normal", mean=mean, std=std)
         else:
             raise ValueError(f"Unknown distribution type: {dist_type}")
 
