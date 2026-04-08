@@ -7,15 +7,28 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 os.chdir(_REPO_ROOT)
 sys.path.insert(0, str(_REPO_ROOT))
 
-from ema_workbench.util import ema_logging
+import logging
+from datetime import datetime
+from ema_workbench import ema_logging
 from src.helpers.helpers_multi import (
     load_experiment, build_ema_model, run_ema, save_experiment_results,
 )
 
+# ── Point this at your experiment YAML ───────────────────────────────────────
+EXPERIMENT_PATH = "data/multi_run/input/experiment_wave_duration.yaml"
+# ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    ema_logging.log_to_stderr(ema_logging.INFO)
-    experiment = load_experiment("data/multi_run/input/experiment.yaml")
+    ema_logging.log_to_stderr(logging.WARNING)
+
+    experiment = load_experiment(EXPERIMENT_PATH)
     model = build_ema_model(experiment)
-    experiments_df, outcomes = run_ema(model, experiment)
-    save_experiment_results(experiments_df, outcomes, experiment)
+
+    output_folder = experiment.get("output_folder", "data/multi_run/output")
+    scenario_name = Path(experiment["scenario"]).stem
+    run_folder = Path(output_folder) / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{scenario_name}"
+    run_folder.mkdir(parents=True, exist_ok=True)
+    print(f"Output folder: {run_folder}")
+
+    experiments_df, outcomes = run_ema(model, experiment, output_dir=run_folder)
+    save_experiment_results(experiments_df, outcomes, experiment, run_folder=run_folder)

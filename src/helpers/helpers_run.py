@@ -243,8 +243,12 @@ def collect_results(env, data: dict, settings: dict, run_folder: Path) -> dict:
     print(f"Logged {len(transport_df)} transport events")
     print(f"Logged {len(facility_states_df)} facility state snapshots")
 
+    c2_dispatch_logs = {
+        c2_id: pd.DataFrame(rows)
+        for c2_id, rows in getattr(env, "c2_dispatch_logs", {}).items()
+    }
+
     return {
-        "env": env,
         "safe_df": safe_df,
         "transport_df": transport_df,
         "facility_states_df": facility_states_df,
@@ -256,6 +260,8 @@ def collect_results(env, data: dict, settings: dict, run_folder: Path) -> dict:
         "run_folder": run_folder,
         "distance_matrix": data["distance_matrix"],
         "outputs": settings.get("outputs", _DEFAULT_OUTPUTS),
+        "c2_dispatch_logs": c2_dispatch_logs,
+        "data_collector_records": env.data_collector_records,
     }
 
 
@@ -284,6 +290,12 @@ def save_logs(results: dict) -> None:
     if outputs.get("facility_states", False) and not results["facility_states_df"].empty:
         results["facility_states_df"].to_excel(run_folder / "facility_states.xlsx", index=False)
         saved.append("facility_states.xlsx")
+
+    for c2_id, df in results.get("c2_dispatch_logs", {}).items():
+        if not df.empty:
+            fname = f"{c2_id}.xlsx"
+            df.to_excel(run_folder / fname, index=False)
+            saved.append(fname)
 
     print(f"Logs saved to {run_folder}/: {', '.join(saved)}")
 
@@ -470,12 +482,9 @@ def print_summary(results: dict, data: dict = None):
     # -----------------------------------------------------------------
     # 1. Patient outcomes by triage
     # -----------------------------------------------------------------
-    env = results.get("env")
-
     triage_map = {}
-    if env and hasattr(env, "all_patients"):
-        for pid, patient in env.all_patients.items():
-            triage_map[pid] = patient.triage
+    for pid, patient in results.get("all_patients", {}).items():
+        triage_map[pid] = patient.triage
 
     final_states = log_df.groupby("patient_id").last().reset_index()
     final_states["triage"] = final_states["patient_id"].map(triage_map)
@@ -627,5 +636,111 @@ def print_summary(results: dict, data: dict = None):
             fac_name = unit_facility.get(unit_id, "?")
             print(f"  {unit_id} ({fac_name}): {utilization:.1f}%  [{tier_str}]  "
                   f"({total_busy:.1f} min busy / {sim_duration:.1f} min × cap {capacity})")
+
+
+# ============================================================
+# PHASE DURATION ANALYSIS
+# ============================================================
+
+def _fac_type(fid: str) -> str:
+    if fid.startswith("ccp"):    return "ccp"
+    if fid.startswith("r1"):     return "role1"
+    if fid.startswith("r2"):     return "role2"
+    return fid
+
+
+def _compute_phase_durations(patient_log_df) -> dict:
+    """
+    Derive mean duration (minutes) of each lifecycle phase per (triage, diagnosis) pair.
+
+    Columns produced (one per observed combination):
+      waiting_transport_{fac_type}_{triage}_{rx}  — WAITING_TRANSPORT:{fac} → CLOCK_PAUSED:transport
+      waiting_care_{care_type}_{triage}_{rx}      — WAITING_CARE:{care}     → CLOCK_PAUSED:care
+      transit_{from_type}_{to_type}_{triage}_{rx} — CLOCK_PAUSED:transport  → next WAITING_* event
+      in_care_{care_type}_{triage}_{rx}           — CLOCK_PAUSED:care       → CARE_COMPLETED:*
+    """
+    if patient_log_df is None or patient_log_df.empty:
+        return {}
+
+    from collections import defaultdict
+    import numpy as np
+    buckets: dict = defaultdict(list)
+
+    for pid, grp in patient_log_df.groupby("patient_id"):
+        triage = grp["triage"].iloc[0].lower()
+        rx     = grp["diagnosis"].iloc[0]
+        if not rx:
+            continue
+
+        rows    = grp.sort_values("time")[["time", "action", "current_location"]].values.tolist()
+        times   = [r[0] for r in rows]
+        actions = [r[1] for r in rows]
+        locs    = [str(r[2]).lower() if r[2] else "" for r in rows]
+        n       = len(actions)
+
+        for i, (t, a) in enumerate(zip(times, actions)):
+
+            if a.startswith("WAITING_TRANSPORT:"):
+                fac_type = a.split(":", 1)[1]
+                for j in range(i + 1, n):
+                    if actions[j] == "CLOCK_PAUSED:transport":
+                        buckets[f"waiting_transport_{fac_type}_{triage}_{rx}"].append(times[j] - t)
+                        break
+
+            elif a.startswith("WAITING_CARE:"):
+                care_type = a.split(":", 1)[1]
+                for j in range(i + 1, n):
+                    if actions[j] == "CLOCK_PAUSED:care":
+                        buckets[f"waiting_care_{care_type}_{triage}_{rx}"].append(times[j] - t)
+                        break
+
+            elif a == "CLOCK_PAUSED:transport":
+                from_type = _fac_type(locs[i])
+                for j in range(i + 1, n):
+                    if actions[j].startswith("WAITING_CARE:") or actions[j].startswith("WAITING_TRANSPORT:"):
+                        to_type = _fac_type(locs[j])
+                        buckets[f"transit_{from_type}_{to_type}_{triage}_{rx}"].append(times[j] - t)
+                        break
+
+            elif a == "CLOCK_PAUSED:care":
+                care_type = None
+                for k in range(i - 1, -1, -1):
+                    if actions[k].startswith("WAITING_CARE:"):
+                        care_type = actions[k].split(":", 1)[1]
+                        break
+                if care_type is None:
+                    continue
+                for j in range(i + 1, n):
+                    if actions[j].startswith("CARE_COMPLETED:"):
+                        buckets[f"in_care_{care_type}_{triage}_{rx}"].append(times[j] - t)
+                        break
+
+    return {col: float(np.mean(vals)) for col, vals in buckets.items()}
+
+
+def print_phase_durations(results: dict) -> None:
+    """Print mean phase durations per (triage, diagnosis) group to the console."""
+    import re
+
+    patient_log_df = results.get("patient_log_df")
+    phases = _compute_phase_durations(patient_log_df)
+    if not phases:
+        return
+
+    from collections import defaultdict
+    groups: dict = defaultdict(dict)
+    for col, val in phases.items():
+        m = re.match(r"^(.+?)_(t[123]_\w+)_(.+)$", col)
+        if m:
+            groups[(m.group(2), m.group(3))][m.group(1)] = val
+
+    if not groups:
+        return
+
+    print("\n--- PHASE DURATIONS (mean minutes) ---")
+    for (triage, rx) in sorted(groups.keys()):
+        print(f"\n  {triage.upper()} | rx: {rx.upper()}")
+        for phase, val in sorted(groups[(triage, rx)].items()):
+            print(f"    {phase:<42s}  {val:6.1f} min")
 
     print("\n" + "=" * 70)

@@ -1,0 +1,170 @@
+scenario: data/single_run/input/scenarios/scenario_400.yaml
+output_folder: data/multi_run/output
+
+# Full factorial of:
+#   bcas_rate     × 2  (0.005, 0.05)
+#   wave_duration × 5  (1, 30, 60, 120, 240 min)
+#   6 battalions in combat, 3 waves per day (fixed in force structure / config)
+# = 10 lever combinations × 500 seeds = 5,000 runs total
+
+uncertainties:
+- name: seed
+  type: integer
+  lower: 1
+  upper: 10000
+
+levers:
+- name: bcas_rate
+  type: categorical
+  values: [0.005, 0.05]
+- name: wave_duration_min
+  type: categorical
+  values: [1, 30, 60, 120, 240]
+
+outcomes:
+# ── standard outcomes ─────────────────────────────────────────────────────
+- death_rate
+- death_rate_T1_BCAS
+- death_rate_T2_BCAS
+- death_rate_T3_BCAS
+- death_rate_T1_DNBI
+- death_rate_T2_DNBI
+- death_rate_T3_DNBI
+- safe_rate
+- n_patients_T1_BCAS
+- n_patients_T2_BCAS
+- n_patients_T3_BCAS
+- n_dead_T1_BCAS
+- n_dead_T2_BCAS
+- n_dead_T3_BCAS
+- mean_wait_care_T1_BCAS
+- mean_wait_care_T2_BCAS
+- mean_wait_care_T3_BCAS
+- mean_wait_care_T1_DNBI
+- mean_wait_care_T2_DNBI
+- mean_wait_care_T3_DNBI
+- mean_wait_transport_T1_BCAS
+- mean_wait_transport_T2_BCAS
+- mean_wait_transport_T3_BCAS
+- mean_wait_transport_T1_DNBI
+- mean_wait_transport_T2_DNBI
+- mean_wait_transport_T3_DNBI
+- total_transport_time
+# ── waiting_transport_ccp (12) ────────────────────────────────────────────
+- waiting_transport_ccp_t1_bcas_dcr_dcs
+- waiting_transport_ccp_t1_bcas_dcr
+- waiting_transport_ccp_t2_bcas_dcr_dcs
+- waiting_transport_ccp_t2_bcas_dcr
+- waiting_transport_ccp_t3_bcas_pec_dcs
+- waiting_transport_ccp_t3_bcas_pec
+- waiting_transport_ccp_t1_dnbi_dcr_dcs
+- waiting_transport_ccp_t1_dnbi_dcr
+- waiting_transport_ccp_t2_dnbi_dcr_dcs
+- waiting_transport_ccp_t2_dnbi_dcr
+- waiting_transport_ccp_t3_dnbi_pec_dcs
+- waiting_transport_ccp_t3_dnbi_pec
+# ── waiting_transport_role1 (6) ───────────────────────────────────────────
+- waiting_transport_role1_t1_bcas_dcr_dcs
+- waiting_transport_role1_t2_bcas_dcr_dcs
+- waiting_transport_role1_t3_bcas_pec_dcs
+- waiting_transport_role1_t1_dnbi_dcr_dcs
+- waiting_transport_role1_t2_dnbi_dcr_dcs
+- waiting_transport_role1_t3_dnbi_pec_dcs
+# ── waiting_care_dcr (8) ──────────────────────────────────────────────────
+- waiting_care_dcr_t1_bcas_dcr_dcs
+- waiting_care_dcr_t1_bcas_dcr
+- waiting_care_dcr_t2_bcas_dcr_dcs
+- waiting_care_dcr_t2_bcas_dcr
+- waiting_care_dcr_t1_dnbi_dcr_dcs
+- waiting_care_dcr_t1_dnbi_dcr
+- waiting_care_dcr_t2_dnbi_dcr_dcs
+- waiting_care_dcr_t2_dnbi_dcr
+# ── waiting_care_pec (4) ──────────────────────────────────────────────────
+- waiting_care_pec_t3_bcas_pec_dcs
+- waiting_care_pec_t3_bcas_pec
+- waiting_care_pec_t3_dnbi_pec_dcs
+- waiting_care_pec_t3_dnbi_pec
+# ── waiting_care_dcs (6) ──────────────────────────────────────────────────
+- waiting_care_dcs_t1_bcas_dcr_dcs
+- waiting_care_dcs_t2_bcas_dcr_dcs
+- waiting_care_dcs_t3_bcas_pec_dcs
+- waiting_care_dcs_t1_dnbi_dcr_dcs
+- waiting_care_dcs_t2_dnbi_dcr_dcs
+- waiting_care_dcs_t3_dnbi_pec_dcs
+# ── transit_ccp_role1 (12) ────────────────────────────────────────────────
+- transit_ccp_role1_t1_bcas_dcr_dcs
+- transit_ccp_role1_t1_bcas_dcr
+- transit_ccp_role1_t2_bcas_dcr_dcs
+- transit_ccp_role1_t2_bcas_dcr
+- transit_ccp_role1_t3_bcas_pec_dcs
+- transit_ccp_role1_t3_bcas_pec
+- transit_ccp_role1_t1_dnbi_dcr_dcs
+- transit_ccp_role1_t1_dnbi_dcr
+- transit_ccp_role1_t2_dnbi_dcr_dcs
+- transit_ccp_role1_t2_dnbi_dcr
+- transit_ccp_role1_t3_dnbi_pec_dcs
+- transit_ccp_role1_t3_dnbi_pec
+# ── transit_role1_role2 (6) ───────────────────────────────────────────────
+- transit_role1_role2_t1_bcas_dcr_dcs
+- transit_role1_role2_t2_bcas_dcr_dcs
+- transit_role1_role2_t3_bcas_pec_dcs
+- transit_role1_role2_t1_dnbi_dcr_dcs
+- transit_role1_role2_t2_dnbi_dcr_dcs
+- transit_role1_role2_t3_dnbi_pec_dcs
+# ── in_care_dcr (8) ───────────────────────────────────────────────────────
+- in_care_dcr_t1_bcas_dcr_dcs
+- in_care_dcr_t1_bcas_dcr
+- in_care_dcr_t2_bcas_dcr_dcs
+- in_care_dcr_t2_bcas_dcr
+- in_care_dcr_t1_dnbi_dcr_dcs
+- in_care_dcr_t1_dnbi_dcr
+- in_care_dcr_t2_dnbi_dcr_dcs
+- in_care_dcr_t2_dnbi_dcr
+# ── in_care_pec (4) ───────────────────────────────────────────────────────
+- in_care_pec_t3_bcas_pec_dcs
+- in_care_pec_t3_bcas_pec
+- in_care_pec_t3_dnbi_pec_dcs
+- in_care_pec_t3_dnbi_pec
+# ── in_care_dcs (6) ───────────────────────────────────────────────────────
+- in_care_dcs_t1_bcas_dcr_dcs
+- in_care_dcs_t2_bcas_dcr_dcs
+- in_care_dcs_t3_bcas_pec_dcs
+- in_care_dcs_t1_dnbi_dcr_dcs
+- in_care_dcs_t2_dnbi_dcr_dcs
+- in_care_dcs_t3_dnbi_pec_dcs
+
+array_outcomes:
+# ── waiting for transport at each Role 1 (6 facilities × 3 triage = 18) ──────
+- ts_transport_r1_1_T1
+- ts_transport_r1_1_T2
+- ts_transport_r1_1_T3
+- ts_transport_r1_2_T1
+- ts_transport_r1_2_T2
+- ts_transport_r1_2_T3
+- ts_transport_r1_3_T1
+- ts_transport_r1_3_T2
+- ts_transport_r1_3_T3
+- ts_transport_r1_4_T1
+- ts_transport_r1_4_T2
+- ts_transport_r1_4_T3
+- ts_transport_r1_5_T1
+- ts_transport_r1_5_T2
+- ts_transport_r1_5_T3
+- ts_transport_r1_6_T1
+- ts_transport_r1_6_T2
+- ts_transport_r1_6_T3
+# ── waiting for DCS surgery at each Role 2 (2 facilities × 3 triage = 6) ─────
+- ts_dcs_r2_1_T1
+- ts_dcs_r2_1_T2
+- ts_dcs_r2_1_T3
+- ts_dcs_r2_2_T1
+- ts_dcs_r2_2_T2
+- ts_dcs_r2_2_T3
+
+run_settings:
+  n_scenarios: 1
+  n_policies: 1         # 2 bcas × 5 wave_durations = 10
+  uncertainty_sampler: lhs
+  lever_sampler: fullfactorial
+  batch_size: 50
+  max_parallel: 4
