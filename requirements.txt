@@ -1,5 +1,5 @@
 salabim
-ema-workbench[recommended]==2.5.1
+ema-workbench[recommended]==2.5.1 #
 pandas
 numpy
 scipy
