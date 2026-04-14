@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 .claude/
+.venv/
 /data/multi_run/output/
 /data/single_run/output/
 /src/analysis/

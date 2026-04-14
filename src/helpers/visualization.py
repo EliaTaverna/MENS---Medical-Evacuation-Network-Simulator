@@ -5,6 +5,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import imageio_ffmpeg
+import matplotlib
+matplotlib.rcParams['animation.ffmpeg_path'] = imageio_ffmpeg.get_ffmpeg_exe()
 from matplotlib.animation import FuncAnimation, FFMpegWriter
 from sklearn.manifold import MDS
 import salabim as sim
