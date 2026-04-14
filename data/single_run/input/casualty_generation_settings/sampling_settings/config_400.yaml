@@ -1,0 +1,10 @@
+n_days: 1
+waves_per_day: 3
+wave_duration_min: 30
+
+bcas_rate: 0.023
+dnbi_rate: 0
+
+diagnosis_mix: casualty_generation_settings/diagnosis/diagnosis_mix_meisner.xlsx
+prescriptions: casualty_generation_settings/prescriptions/prescriptions_meisner.xlsx
+force_structure: casualty_generation_settings/military_force_structure/force_structure_400.xlsx

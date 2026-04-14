@@ -1,0 +1,45 @@
+name: scenario_400
+seed: 42
+description: Auto-generated scenario
+components:
+  distance_matrix: components/distances/distance_matrix_400.xlsx
+  coordinates: components/distances/coordinates_400.xlsx
+  axp: components/AXPs/axp_400.xlsx
+  facilities: components/facilities/facilities_400.xlsx
+  units: components/units/units_400.xlsx
+  ambulances: components/ambulances/amb_400.xlsx
+  c2: components/c2/c2_400.xlsx
+policy_matrixes:
+  facility_eligibility:
+    0: policy_matrixes/facility_eligibility/facility_eligibility_400_strict.xlsx
+    1: policy_matrixes/facility_eligibility/facility_eligibility_400_loose.xlsx
+  ambulance_eligibility:
+    0: policy_matrixes/ambulance_eligibility/ambulance_eligibility_400_strict.xlsx
+    1: policy_matrixes/ambulance_eligibility/ambulance_eligibility_400_loose.xlsx
+casualty_generation:
+  config: casualty_generation_settings/sampling_settings/config_400.yaml
+levers:
+  dispatch_policy: greedy
+  facility_eligibility: 0
+  ambulance_eligibility: 0
+simulation:
+  till: 7200
+  trace: false
+  data_collector_interval: 10.0
+video:
+  enabled: true
+  fps: 50
+  time_scale: 5.0
+  dpi: 100
+  state_log_interval: 5.0
+  start_time: 840   # simulation minute at which the video begins
+  duration: 500     # minutes of simulation time to include after start_time
+logs:
+  enabled: true
+  path: simulation_logs
+outputs:
+  patient_log: true
+  safe_patients: true
+  transport_events: true
+  wait_times: true
+  facility_states: false

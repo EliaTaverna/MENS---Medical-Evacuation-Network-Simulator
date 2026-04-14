@@ -1,0 +1,276 @@
+n_days: 2
+par_total: 18800
+seed: 42
+spawn_map:
+  ccp_1:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_10:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_11:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_12:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_13:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_14:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_15:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_16:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_17:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_18:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_19:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_2:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_20:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_21:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_22:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_23:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_24:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_25:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_26:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_27:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_3:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_4:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_5:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_6:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_7:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_8:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  ccp_9:
+    labels:
+    - T1_BCAS
+    - T2_BCAS
+    - T3_BCAS
+    - KIA_BCAS
+    - MIA_BCAS
+    rate: 0.023
+  r1_1:
+    labels:
+    - T1_DNBI
+    - T2_DNBI
+    - T3_DNBI
+    rate: 0.0013
+  r1_2:
+    labels:
+    - T1_DNBI
+    - T2_DNBI
+    - T3_DNBI
+    rate: 0.0013
+  r1_3:
+    labels:
+    - T1_DNBI
+    - T2_DNBI
+    - T3_DNBI
+    rate: 0.0013
+  r1_4:
+    labels:
+    - T1_DNBI
+    - T2_DNBI
+    - T3_DNBI
+    rate: 0.0013
+  r1_5:
+    labels:
+    - T1_DNBI
+    - T2_DNBI
+    - T3_DNBI
+    rate: 0.0013
+  r1_6:
+    labels:
+    - T1_DNBI
+    - T2_DNBI
+    - T3_DNBI
+    rate: 0.0013
+  r1_7:
+    labels:
+    - T1_DNBI
+    - T2_DNBI
+    - T3_DNBI
+    rate: 0.0013
+  r1_8:
+    labels:
+    - T1_DNBI
+    - T2_DNBI
+    - T3_DNBI
+    rate: 0.0013
+  r1_9:
+    labels:
+    - T1_DNBI
+    - T2_DNBI
+    - T3_DNBI
+    rate: 0.0013
+wave_duration_min: 30
+waves_per_day: 3
