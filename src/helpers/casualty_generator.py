@@ -494,8 +494,6 @@ def generate_casualties_df_from_waves(
     wave_duration_min: int,
     diagnosis_mix_df: pd.DataFrame,
     rx_df: pd.DataFrame,
-    facility_weights: Optional[Dict[str, float]] = None,
-    lifetime_factory_by_triage: Optional[Dict[str, Callable[[], object]]] = None,
     seed: int = 123,
 ) -> Tuple[pd.DataFrame, List[WaveDict]]:
     """
@@ -565,7 +563,6 @@ if __name__ == "__main__":
         wave_duration_min=config["wave_duration_min"],
         diagnosis_mix_df=config["diagnosis_mix_df"],
         rx_df=config["rx_df"],
-        lifetime_factory_by_triage=config["lifetime_factory_by_triage"],
         seed=config["seed"],
     )
 

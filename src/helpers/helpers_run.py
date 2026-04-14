@@ -196,7 +196,6 @@ def load_or_generate_casualties(scenario: dict, seed: int = None):
             wave_duration_min=config["wave_duration_min"],
             diagnosis_mix_df=config["diagnosis_mix_df"],
             rx_df=config["rx_df"],
-            lifetime_factory_by_triage=config["lifetime_factory_by_triage"],
             seed=config["seed"],
         )
         casualties_df = full_df[

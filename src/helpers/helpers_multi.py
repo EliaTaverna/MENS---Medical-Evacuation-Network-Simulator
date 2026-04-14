@@ -12,6 +12,15 @@ from ema_workbench import (
     Model, RealParameter, IntegerParameter, CategoricalParameter,
     ScalarOutcome, ArrayOutcome, SequentialEvaluator, perform_experiments,
 )
+from ema_workbench.em_framework.evaluators import Samplers
+
+_SAMPLER_MAP = {
+    "lhs":          Samplers.LHS,
+    "fullfactorial": Samplers.FF,
+    "ff":           Samplers.FF,
+    "mc":           Samplers.MC,
+    "uniform_lhs":  Samplers.UNIFORM_LHS,
+}
 
 from src import (
     load_scenario, load_data_from_scenario, load_triage_weights_from_scenario,
@@ -125,14 +134,16 @@ def _load_casualty_config(scenario: dict) -> dict:
     bcas_labels = [l for l in all_labels if "BCAS" in l or l.startswith(("KIA", "MIA"))]
     dnbi_labels = [l for l in all_labels if "DNBI" in l]
 
-    par_total = int(force_df["par"].sum())
-
-    # Base spawn_map: only involved battalions
+    # Only battalions in active combat generate casualties
     involved  = force_df[force_df["involved"] == True]
+    par_total = int(involved["par"].sum())
     spawn_map = {}
     for _, row in involved.iterrows():
-        for fid in _parse_spawning_points(row["spawning_points"]):
+        for fid in _parse_spawning_points(row["bcas_spawning_points"]):
             spawn_map[fid] = {"labels": bcas_labels, "rate": bcas_rate, "par": par_total}
+        if dnbi_rate > 0:
+            for fid in _parse_spawning_points(row["dnbi_spawning_points"]):
+                spawn_map[fid] = {"labels": dnbi_labels, "rate": dnbi_rate, "par": par_total}
 
     return {
         "spawn_map":                  spawn_map,
@@ -340,13 +351,6 @@ def build_ema_model(experiment: dict) -> Model:
     base_config = _load_casualty_config(scenario)
     till        = scenario.get("simulation", {}).get("till", 1000.0)
 
-    # Attach r1 facility IDs so RunSetter can build DNBI spawn entries
-    fac_df = base_data["facility_df"]
-    base_config["r1_ids"] = (
-        fac_df.loc[fac_df["facility_type"] == "Role1", "facility_id"]
-        .str.lower().tolist()
-    )
-
     scalar_outcomes = [o for o in experiment.get("outcomes", [])]
     array_outcomes  = [o for o in experiment.get("array_outcomes", [])]
     expected_outcomes = scalar_outcomes + array_outcomes
@@ -406,11 +410,13 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
         - ``outcomes``: dict mapping outcome name → 1-D numpy array
           (scalars) or 2-D numpy array (time series), length = total runs.
     """
-    run_settings = experiment.get("run_settings", {})
-    n_scenarios  = run_settings.get("n_scenarios", 10)
-    n_policies   = run_settings.get("n_policies",  1)
-    max_parallel = run_settings.get("max_parallel", 1)
-    batch_size   = run_settings.get("batch_size", 0)
+    run_settings  = experiment.get("run_settings", {})
+    n_scenarios   = run_settings.get("n_scenarios", 10)
+    n_policies    = run_settings.get("n_policies",  1)
+    max_parallel  = run_settings.get("max_parallel", 1)
+    batch_size    = run_settings.get("batch_size", 0)
+    unc_sampler   = _SAMPLER_MAP.get(str(run_settings.get("uncertainty_sampler", "lhs")).lower(), Samplers.LHS)
+    lever_sampler = _SAMPLER_MAP.get(str(run_settings.get("lever_sampler",       "lhs")).lower(), Samplers.LHS)
 
     if max_parallel > 1:
         from ema_workbench import MultiprocessingEvaluator
@@ -423,11 +429,13 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
     # ── No batching ───────────────────────────────────────────────────────────
     if not batch_size:
         print(f"Running {n_scenarios} scenarios × {n_policies} policies "
-              f"(max_parallel={max_parallel})...")
+              f"(max_parallel={max_parallel}, unc={unc_sampler.name}, levers={lever_sampler.name})...")
         with evaluator_cls(model, **evaluator_kwargs) as evaluator:
             experiments_df, outcomes = perform_experiments(
                 model, scenarios=n_scenarios, policies=n_policies,
                 evaluator=evaluator,
+                uncertainty_sampling=unc_sampler,
+                lever_sampling=lever_sampler,
             )
         return experiments_df, outcomes
 
@@ -441,7 +449,8 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
     n_batches = (n_scenarios + batch_size - 1) // batch_size
     print(f"Running {n_scenarios} scenarios × {n_policies} policies "
           f"in {n_batches} batches of {batch_size} "
-          f"(max_parallel={max_parallel}, total={n_total} runs)...")
+          f"(max_parallel={max_parallel}, unc={unc_sampler.name}, levers={lever_sampler.name}, "
+          f"total={n_total} runs)...")
 
     all_experiments = []
     all_outcomes    = {}
@@ -455,6 +464,8 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
             exp_df, outcomes = perform_experiments(
                 model, scenarios=batch_n, policies=n_policies,
                 evaluator=evaluator,
+                uncertainty_sampling=unc_sampler,
+                lever_sampling=lever_sampler,
             )
 
         all_experiments.append(exp_df)

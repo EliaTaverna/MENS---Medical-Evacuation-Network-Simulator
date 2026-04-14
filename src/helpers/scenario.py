@@ -171,19 +171,54 @@ def load_data_from_scenario(scenario: dict) -> dict:
     }
 
 
-def load_casualty_config_from_scenario(scenario: dict) -> dict:
+def _parse_spawning_points(value) -> list:
+    """Parse a spawning_points cell into a list of lowercase CCP IDs.
+
+    Accepts either a Python list (from YAML) or a raw string such as
+    ``"[ccp1, ccp2]"`` (from an Excel cell).
     """
-    Load casualty generation config based on scenario.
+    if isinstance(value, list):
+        return [c.strip().lower() for c in value]
+    return [c.strip().lower() for c in str(value).strip("[]").split(",")]
+
+
+def load_casualty_config_from_scenario(scenario: dict) -> dict:
+    """Load casualty generation config from a scenario dict.
+
+    Supports two formats for the ``casualty_generation`` block in the scenario YAML:
+
+    **Config-pointer format** (preferred)::
+
+        casualty_generation:
+          config: casualty_generation_settings/sampling_settings/config_400.yaml
+
+    The referenced YAML is the single source of truth for all casualty parameters
+    (PAR, rates, force structure, schedule).  The function reads it, loads the
+    force structure, and builds the ``spawn_map`` from battalions marked as
+    ``involved``.  BCAS entries come from ``bcas_spawning_points``; DNBI
+    entries come from ``dnbi_spawning_points`` when ``dnbi_rate > 0``.
+
+    **Inline format** (legacy, still supported)::
+
+        casualty_generation:
+          par_total: 3500
+          bcas_rate: 0.023
+          spawn_map: {...}
+          ...
 
     Parameters:
-        scenario: dict from load_scenario()
+        scenario: dict from :func:`load_scenario`.  Must contain a
+            ``casualty_generation`` block and ``_base_path``.
 
     Returns:
-        dict with casualty generation configuration, or None if from_dataset is True
+        dict with keys ``spawn_map``, ``par_total``, ``n_days``,
+        ``waves_per_day``, ``wave_duration_min``, ``seed``,
+        ``diagnosis_mix_df``, ``rx_df``, ``lifetime_factory_by_triage``.
+        Returns ``None`` if ``from_dataset`` is ``True``.
     """
     cas_gen = scenario["casualty_generation"]
 
-    # Check if loading from dataset
+    # ── Pre-generated dataset ────────────────────────────────────────────────
     if cas_gen.get("from_dataset", False):
         return None
 
@@ -192,26 +227,61 @@ def load_casualty_config_from_scenario(scenario: dict) -> dict:
     def resolve(relative_path: str) -> Path:
         return base_path / relative_path
 
-    # Load single combined diagnosis mix
-    diagnosis_mix_df = pd.read_excel(resolve(cas_gen["diagnosis_mix"]))
+    # ── Config-pointer format ────────────────────────────────────────────────
+    if "config" in cas_gen:
+        with open(resolve(cas_gen["config"]), "r") as f:
+            raw = yaml.safe_load(f)
 
-    # Load prescriptions
-    rx_df = pd.read_excel(resolve(cas_gen["prescriptions"]))
+        diagnosis_mix_df = pd.read_excel(resolve(raw["diagnosis_mix"]))
+        rx_df            = pd.read_excel(resolve(raw["prescriptions"]))
+        rx_df["prescription"] = rx_df["prescription"].apply(eval)
+
+        force_df  = pd.read_excel(resolve(raw["force_structure"]))
+        bcas_rate = float(raw.get("bcas_rate", 0.023))
+        dnbi_rate = float(raw.get("dnbi_rate", 0.0))
+
+        all_labels  = diagnosis_mix_df["triage"].astype(str).tolist()
+        bcas_labels = [lb for lb in all_labels if "BCAS" in lb or lb.startswith(("KIA", "MIA"))]
+        dnbi_labels = [lb for lb in all_labels if "DNBI" in lb]
+
+        # Only battalions in active combat generate casualties
+        involved  = force_df[force_df["involved"] == True]
+        par_total = int(involved["par"].sum())
+        spawn_map: dict = {}
+        for _, row in involved.iterrows():
+            for fid in _parse_spawning_points(row["bcas_spawning_points"]):
+                spawn_map[fid] = {"labels": bcas_labels, "rate": bcas_rate, "par": par_total}
+            if dnbi_rate > 0:
+                for fid in _parse_spawning_points(row["dnbi_spawning_points"]):
+                    spawn_map[fid] = {"labels": dnbi_labels, "rate": dnbi_rate, "par": par_total}
+
+        return {
+            "spawn_map":                  spawn_map,
+            "par_total":                  par_total,
+            "n_days":                     int(raw["n_days"]),
+            "waves_per_day":              int(raw["waves_per_day"]),
+            "wave_duration_min":          int(raw["wave_duration_min"]),
+            "seed":                       int(raw.get("seed", 42)),
+            "diagnosis_mix_df":           diagnosis_mix_df,
+            "rx_df":                      rx_df,
+            "lifetime_factory_by_triage": _lifetime_df_to_factories(diagnosis_mix_df),
+        }
+
+    # ── Inline format (legacy) ───────────────────────────────────────────────
+    diagnosis_mix_df = pd.read_excel(resolve(cas_gen["diagnosis_mix"]))
+    rx_df            = pd.read_excel(resolve(cas_gen["prescriptions"]))
     rx_df["prescription"] = rx_df["prescription"].apply(eval)
 
-    # Build lifetime factories
-    lifetime_factory_by_triage = _lifetime_df_to_factories(diagnosis_mix_df)
-
     return {
-        "spawn_map":        cas_gen["spawn_map"],
-        "par_total":        cas_gen["par_total"],
-        "n_days":           cas_gen["n_days"],
-        "waves_per_day":    cas_gen["waves_per_day"],
-        "wave_duration_min": cas_gen["wave_duration_min"],
-        "seed":             cas_gen.get("seed", 42),
-        "diagnosis_mix_df": diagnosis_mix_df,
-        "rx_df": rx_df,
-        "lifetime_factory_by_triage": lifetime_factory_by_triage,
+        "spawn_map":                  cas_gen["spawn_map"],
+        "par_total":                  cas_gen["par_total"],
+        "n_days":                     cas_gen["n_days"],
+        "waves_per_day":              cas_gen["waves_per_day"],
+        "wave_duration_min":          cas_gen["wave_duration_min"],
+        "seed":                       cas_gen.get("seed", 42),
+        "diagnosis_mix_df":           diagnosis_mix_df,
+        "rx_df":                      rx_df,
+        "lifetime_factory_by_triage": _lifetime_df_to_factories(diagnosis_mix_df),
     }
 
 

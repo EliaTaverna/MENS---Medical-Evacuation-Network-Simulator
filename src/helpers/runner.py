@@ -11,6 +11,32 @@ from src.helpers.helpers_run import collect_results
 
 
 def run_simulation(data: dict, settings: dict, run_folder: Path) -> dict:
+    """Run a single MEDEVAC simulation and return the collected results.
+
+    Builds the salabim environment, constructs and connects all model components
+    (AXPs, facilities, units, ambulances, C2 nodes), optionally attaches a
+    FacilityStateLogger and a periodic DataCollector, spawns casualties, advances
+    the simulation clock to ``settings["till"]``, collects output metrics, then
+    tears down the environment to free greenlet memory.
+
+    Args:
+        data: Component DataFrames and configuration loaded for this run.
+            Expected keys: ``distance_matrix``, ``axp_df``, ``facility_df``,
+            ``units_df``, ``ambulance_df``, ``c2_df``, ``casualties_df``.
+            Optional keys: ``triage_weights``, ``fac_eligibility_datasets``,
+            ``amb_eligibility_datasets``.
+        settings: Runtime configuration dict. Recognised keys include:
+            ``trace`` (bool), ``seed`` / ``sim_seed`` (int), ``levers`` (dict),
+            ``till`` (float, simulation end time in minutes),
+            ``make_video`` (bool), ``state_log_interval`` (float),
+            ``data_collector_interval`` (float), ``outputs`` (dict of flags).
+        run_folder: Directory where per-run output files (logs, CSVs, video
+            frames, etc.) are written by ``collect_results``.
+
+    Returns:
+        A dict of aggregated result metrics produced by ``collect_results``
+        (e.g. patient outcomes, wait-time statistics, transport events).
+    """
     env = sim.Environment(trace=settings["trace"], random_seed=settings.get("sim_seed", settings.get("seed", 42)))
     env.levers = settings["levers"]
     env.triage_weights = data.get("triage_weights", {})

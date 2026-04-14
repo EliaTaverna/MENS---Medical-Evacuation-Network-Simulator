@@ -5,7 +5,7 @@ output_folder: data/multi_run/output
 #   bcas_rate     × 2  (0.005, 0.05)
 #   wave_duration × 5  (1, 30, 60, 120, 240 min)
 #   6 battalions in combat, 3 waves per day (fixed in force structure / config)
-# = 10 lever combinations × 500 seeds = 5,000 runs total
+# = 10 lever combinations × 1000 seeds = 10,000 runs total
 
 uncertainties:
 - name: seed
@@ -19,151 +19,199 @@ levers:
   values: [0.005, 0.05]
 - name: wave_duration_min
   type: categorical
-  values: [1, 30, 60, 120, 240]
+  values: [10, 20, 40, 50]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OUTCOMES
+# Comment out any line below to exclude that outcome from the experiment.
+# Excluded outcomes are not computed, not stored, and not available for analysis.
+# ═══════════════════════════════════════════════════════════════════════════════
 
 outcomes:
-# ── standard outcomes ─────────────────────────────────────────────────────
-- death_rate
-- death_rate_T1_BCAS
-- death_rate_T2_BCAS
-- death_rate_T3_BCAS
-- death_rate_T1_DNBI
-- death_rate_T2_DNBI
-- death_rate_T3_DNBI
-- safe_rate
-- n_patients_T1_BCAS
-- n_patients_T2_BCAS
-- n_patients_T3_BCAS
-- n_dead_T1_BCAS
-- n_dead_T2_BCAS
-- n_dead_T3_BCAS
-- mean_wait_care_T1_BCAS
-- mean_wait_care_T2_BCAS
-- mean_wait_care_T3_BCAS
-- mean_wait_care_T1_DNBI
-- mean_wait_care_T2_DNBI
-- mean_wait_care_T3_DNBI
-- mean_wait_transport_T1_BCAS
-- mean_wait_transport_T2_BCAS
-- mean_wait_transport_T3_BCAS
-- mean_wait_transport_T1_DNBI
-- mean_wait_transport_T2_DNBI
-- mean_wait_transport_T3_DNBI
-- total_transport_time
-# ── waiting_transport_ccp (12) ────────────────────────────────────────────
-- waiting_transport_ccp_t1_bcas_dcr_dcs
-- waiting_transport_ccp_t1_bcas_dcr
-- waiting_transport_ccp_t2_bcas_dcr_dcs
-- waiting_transport_ccp_t2_bcas_dcr
-- waiting_transport_ccp_t3_bcas_pec_dcs
-- waiting_transport_ccp_t3_bcas_pec
-- waiting_transport_ccp_t1_dnbi_dcr_dcs
-- waiting_transport_ccp_t1_dnbi_dcr
-- waiting_transport_ccp_t2_dnbi_dcr_dcs
-- waiting_transport_ccp_t2_dnbi_dcr
-- waiting_transport_ccp_t3_dnbi_pec_dcs
-- waiting_transport_ccp_t3_dnbi_pec
-# ── waiting_transport_role1 (6) ───────────────────────────────────────────
-- waiting_transport_role1_t1_bcas_dcr_dcs
-- waiting_transport_role1_t2_bcas_dcr_dcs
-- waiting_transport_role1_t3_bcas_pec_dcs
-- waiting_transport_role1_t1_dnbi_dcr_dcs
-- waiting_transport_role1_t2_dnbi_dcr_dcs
-- waiting_transport_role1_t3_dnbi_pec_dcs
-# ── waiting_care_dcr (8) ──────────────────────────────────────────────────
-- waiting_care_dcr_t1_bcas_dcr_dcs
-- waiting_care_dcr_t1_bcas_dcr
-- waiting_care_dcr_t2_bcas_dcr_dcs
-- waiting_care_dcr_t2_bcas_dcr
-- waiting_care_dcr_t1_dnbi_dcr_dcs
-- waiting_care_dcr_t1_dnbi_dcr
-- waiting_care_dcr_t2_dnbi_dcr_dcs
-- waiting_care_dcr_t2_dnbi_dcr
-# ── waiting_care_pec (4) ──────────────────────────────────────────────────
-- waiting_care_pec_t3_bcas_pec_dcs
-- waiting_care_pec_t3_bcas_pec
-- waiting_care_pec_t3_dnbi_pec_dcs
-- waiting_care_pec_t3_dnbi_pec
-# ── waiting_care_dcs (6) ──────────────────────────────────────────────────
-- waiting_care_dcs_t1_bcas_dcr_dcs
-- waiting_care_dcs_t2_bcas_dcr_dcs
-- waiting_care_dcs_t3_bcas_pec_dcs
-- waiting_care_dcs_t1_dnbi_dcr_dcs
-- waiting_care_dcs_t2_dnbi_dcr_dcs
-- waiting_care_dcs_t3_dnbi_pec_dcs
-# ── transit_ccp_role1 (12) ────────────────────────────────────────────────
-- transit_ccp_role1_t1_bcas_dcr_dcs
-- transit_ccp_role1_t1_bcas_dcr
-- transit_ccp_role1_t2_bcas_dcr_dcs
-- transit_ccp_role1_t2_bcas_dcr
-- transit_ccp_role1_t3_bcas_pec_dcs
-- transit_ccp_role1_t3_bcas_pec
-- transit_ccp_role1_t1_dnbi_dcr_dcs
-- transit_ccp_role1_t1_dnbi_dcr
-- transit_ccp_role1_t2_dnbi_dcr_dcs
-- transit_ccp_role1_t2_dnbi_dcr
-- transit_ccp_role1_t3_dnbi_pec_dcs
-- transit_ccp_role1_t3_dnbi_pec
-# ── transit_role1_role2 (6) ───────────────────────────────────────────────
-- transit_role1_role2_t1_bcas_dcr_dcs
-- transit_role1_role2_t2_bcas_dcr_dcs
-- transit_role1_role2_t3_bcas_pec_dcs
-- transit_role1_role2_t1_dnbi_dcr_dcs
-- transit_role1_role2_t2_dnbi_dcr_dcs
-- transit_role1_role2_t3_dnbi_pec_dcs
-# ── in_care_dcr (8) ───────────────────────────────────────────────────────
-- in_care_dcr_t1_bcas_dcr_dcs
-- in_care_dcr_t1_bcas_dcr
-- in_care_dcr_t2_bcas_dcr_dcs
-- in_care_dcr_t2_bcas_dcr
-- in_care_dcr_t1_dnbi_dcr_dcs
-- in_care_dcr_t1_dnbi_dcr
-- in_care_dcr_t2_dnbi_dcr_dcs
-- in_care_dcr_t2_dnbi_dcr
-# ── in_care_pec (4) ───────────────────────────────────────────────────────
-- in_care_pec_t3_bcas_pec_dcs
-- in_care_pec_t3_bcas_pec
-- in_care_pec_t3_dnbi_pec_dcs
-- in_care_pec_t3_dnbi_pec
-# ── in_care_dcs (6) ───────────────────────────────────────────────────────
-- in_care_dcs_t1_bcas_dcr_dcs
-- in_care_dcs_t2_bcas_dcr_dcs
-- in_care_dcs_t3_bcas_pec_dcs
-- in_care_dcs_t1_dnbi_dcr_dcs
-- in_care_dcs_t2_dnbi_dcr_dcs
-- in_care_dcs_t3_dnbi_pec_dcs
+
+  # ── Overall mortality and survival ──────────────────────────────────────────
+  - death_rate              # fraction of all patients who died
+  - safe_rate               # fraction of all patients who reached definitive care
+
+  # ── Mortality by triage and casualty type ───────────────────────────────────
+  - death_rate_T1_BCAS      # T1 battle casualties: fraction who died
+  - death_rate_T2_BCAS      # T2 battle casualties: fraction who died
+  - death_rate_T3_BCAS      # T3 battle casualties: fraction who died
+  - death_rate_T1_DNBI      # T1 non-battle injuries: fraction who died
+  - death_rate_T2_DNBI      # T2 non-battle injuries: fraction who died
+  - death_rate_T3_DNBI      # T3 non-battle injuries: fraction who died
+
+  # ── Patient counts by triage ─────────────────────────────────────────────────
+  - n_patients_T1_BCAS      # total T1 BCAS patients generated
+  - n_patients_T2_BCAS      # total T2 BCAS patients generated
+  - n_patients_T3_BCAS      # total T3 BCAS patients generated
+  - n_dead_T1_BCAS          # absolute number of T1 BCAS deaths
+  - n_dead_T2_BCAS          # absolute number of T2 BCAS deaths
+  - n_dead_T3_BCAS          # absolute number of T3 BCAS deaths
+
+  # ── Mean wait time for care (minutes) ────────────────────────────────────────
+  # Time from arrival at a facility to start of treatment
+  - mean_wait_care_T1_BCAS
+  - mean_wait_care_T2_BCAS
+  - mean_wait_care_T3_BCAS
+  - mean_wait_care_T1_DNBI
+  - mean_wait_care_T2_DNBI
+  - mean_wait_care_T3_DNBI
+
+  # ── Mean wait time for transport (minutes) ───────────────────────────────────
+  # Time from arrival at a facility to departure by ambulance
+  - mean_wait_transport_T1_BCAS
+  - mean_wait_transport_T2_BCAS
+  - mean_wait_transport_T3_BCAS
+  - mean_wait_transport_T1_DNBI
+  - mean_wait_transport_T2_DNBI
+  - mean_wait_transport_T3_DNBI
+
+  # ── Total ambulance travel time (minutes) ────────────────────────────────────
+  - total_transport_time    # sum of all ambulance trip durations across the simulation
+
+  # ── Queue: waiting for transport at CCP (12) ─────────────────────────────────
+  # Mean number of patients queued for the CCP→Role1 ambulance leg, by triage + pathway
+  - waiting_transport_ccp_t1_bcas_dcr_dcs   # T1 BCAS routed via DCR then DCS
+  - waiting_transport_ccp_t1_bcas_dcr       # T1 BCAS routed via DCR only
+  - waiting_transport_ccp_t2_bcas_dcr_dcs
+  - waiting_transport_ccp_t2_bcas_dcr
+  - waiting_transport_ccp_t3_bcas_pec_dcs   # T3 BCAS routed via PEC then DCS
+  - waiting_transport_ccp_t3_bcas_pec       # T3 BCAS routed via PEC only
+  - waiting_transport_ccp_t1_dnbi_dcr_dcs
+  - waiting_transport_ccp_t1_dnbi_dcr
+  - waiting_transport_ccp_t2_dnbi_dcr_dcs
+  - waiting_transport_ccp_t2_dnbi_dcr
+  - waiting_transport_ccp_t3_dnbi_pec_dcs
+  - waiting_transport_ccp_t3_dnbi_pec
+
+  # ── Queue: waiting for transport at Role 1 (6) ───────────────────────────────
+  # Mean number of patients queued for the Role1→Role2 ambulance leg
+  - waiting_transport_role1_t1_bcas_dcr_dcs
+  - waiting_transport_role1_t2_bcas_dcr_dcs
+  - waiting_transport_role1_t3_bcas_pec_dcs
+  - waiting_transport_role1_t1_dnbi_dcr_dcs
+  - waiting_transport_role1_t2_dnbi_dcr_dcs
+  - waiting_transport_role1_t3_dnbi_pec_dcs
+
+  # ── Queue: waiting for DCR care at Role 1 (8) ────────────────────────────────
+  # Mean number of patients waiting for a DCR (damage control resuscitation) slot
+  - waiting_care_dcr_t1_bcas_dcr_dcs
+  - waiting_care_dcr_t1_bcas_dcr
+  - waiting_care_dcr_t2_bcas_dcr_dcs
+  - waiting_care_dcr_t2_bcas_dcr
+  - waiting_care_dcr_t1_dnbi_dcr_dcs
+  - waiting_care_dcr_t1_dnbi_dcr
+  - waiting_care_dcr_t2_dnbi_dcr_dcs
+  - waiting_care_dcr_t2_dnbi_dcr
+
+  # ── Queue: waiting for PEC care at Role 1 (4) ────────────────────────────────
+  # Mean number of patients waiting for a PEC (pre-evacuation care) slot
+  - waiting_care_pec_t3_bcas_pec_dcs
+  - waiting_care_pec_t3_bcas_pec
+  - waiting_care_pec_t3_dnbi_pec_dcs
+  - waiting_care_pec_t3_dnbi_pec
+
+  # ── Queue: waiting for DCS surgery at Role 2 (6) ─────────────────────────────
+  # Mean number of patients waiting for a DCS (damage control surgery) slot
+  - waiting_care_dcs_t1_bcas_dcr_dcs
+  - waiting_care_dcs_t2_bcas_dcr_dcs
+  - waiting_care_dcs_t3_bcas_pec_dcs
+  - waiting_care_dcs_t1_dnbi_dcr_dcs
+  - waiting_care_dcs_t2_dnbi_dcr_dcs
+  - waiting_care_dcs_t3_dnbi_pec_dcs
+
+  # ── Phase duration: transit CCP → Role 1 (12) ────────────────────────────────
+  # Mean time patients spend travelling from CCP to Role 1, by triage + pathway
+  - transit_ccp_role1_t1_bcas_dcr_dcs
+  - transit_ccp_role1_t1_bcas_dcr
+  - transit_ccp_role1_t2_bcas_dcr_dcs
+  - transit_ccp_role1_t2_bcas_dcr
+  - transit_ccp_role1_t3_bcas_pec_dcs
+  - transit_ccp_role1_t3_bcas_pec
+  - transit_ccp_role1_t1_dnbi_dcr_dcs
+  - transit_ccp_role1_t1_dnbi_dcr
+  - transit_ccp_role1_t2_dnbi_dcr_dcs
+  - transit_ccp_role1_t2_dnbi_dcr
+  - transit_ccp_role1_t3_dnbi_pec_dcs
+  - transit_ccp_role1_t3_dnbi_pec
+
+  # ── Phase duration: transit Role 1 → Role 2 (6) ──────────────────────────────
+  # Mean time patients spend travelling from Role 1 to Role 2
+  - transit_role1_role2_t1_bcas_dcr_dcs
+  - transit_role1_role2_t2_bcas_dcr_dcs
+  - transit_role1_role2_t3_bcas_pec_dcs
+  - transit_role1_role2_t1_dnbi_dcr_dcs
+  - transit_role1_role2_t2_dnbi_dcr_dcs
+  - transit_role1_role2_t3_dnbi_pec_dcs
+
+  # ── Phase duration: time in DCR care at Role 1 (8) ───────────────────────────
+  # Mean time patients spend actively receiving DCR treatment
+  - in_care_dcr_t1_bcas_dcr_dcs
+  - in_care_dcr_t1_bcas_dcr
+  - in_care_dcr_t2_bcas_dcr_dcs
+  - in_care_dcr_t2_bcas_dcr
+  - in_care_dcr_t1_dnbi_dcr_dcs
+  - in_care_dcr_t1_dnbi_dcr
+  - in_care_dcr_t2_dnbi_dcr_dcs
+  - in_care_dcr_t2_dnbi_dcr
+
+  # ── Phase duration: time in PEC care at Role 1 (4) ───────────────────────────
+  # Mean time patients spend actively receiving PEC treatment
+  - in_care_pec_t3_bcas_pec_dcs
+  - in_care_pec_t3_bcas_pec
+  - in_care_pec_t3_dnbi_pec_dcs
+  - in_care_pec_t3_dnbi_pec
+
+  # ── Phase duration: time in DCS surgery at Role 2 (6) ────────────────────────
+  # Mean time patients spend actively receiving DCS surgery
+  - in_care_dcs_t1_bcas_dcr_dcs
+  - in_care_dcs_t2_bcas_dcr_dcs
+  - in_care_dcs_t3_bcas_pec_dcs
+  - in_care_dcs_t1_dnbi_dcr_dcs
+  - in_care_dcs_t2_dnbi_dcr_dcs
+  - in_care_dcs_t3_dnbi_pec_dcs
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARRAY OUTCOMES  (time series — saved to timeseries.npz, not results.csv)
+# Each entry is a 1-D array of length n_timesteps per run.
+# Comment out any block to skip collecting that time series.
+# ═══════════════════════════════════════════════════════════════════════════════
 
 array_outcomes:
-# ── waiting for transport at each Role 1 (6 facilities × 3 triage = 18) ──────
-- ts_transport_r1_1_T1
-- ts_transport_r1_1_T2
-- ts_transport_r1_1_T3
-- ts_transport_r1_2_T1
-- ts_transport_r1_2_T2
-- ts_transport_r1_2_T3
-- ts_transport_r1_3_T1
-- ts_transport_r1_3_T2
-- ts_transport_r1_3_T3
-- ts_transport_r1_4_T1
-- ts_transport_r1_4_T2
-- ts_transport_r1_4_T3
-- ts_transport_r1_5_T1
-- ts_transport_r1_5_T2
-- ts_transport_r1_5_T3
-- ts_transport_r1_6_T1
-- ts_transport_r1_6_T2
-- ts_transport_r1_6_T3
-# ── waiting for DCS surgery at each Role 2 (2 facilities × 3 triage = 6) ─────
-- ts_dcs_r2_1_T1
-- ts_dcs_r2_1_T2
-- ts_dcs_r2_1_T3
-- ts_dcs_r2_2_T1
-- ts_dcs_r2_2_T2
-- ts_dcs_r2_2_T3
+
+  # ── Queue length at Role 1: patients waiting for transport (6 facilities × 3 triage) ──
+  # Sampled every 10 minutes by DataCollector. Shape per run: (n_timesteps,)
+  - ts_transport_r1_1_T1    # Role1 facility 1 — T1 patients waiting for ambulance
+  - ts_transport_r1_1_T2    # Role1 facility 1 — T2 patients waiting for ambulance
+  - ts_transport_r1_1_T3    # Role1 facility 1 — T3 patients waiting for ambulance
+  - ts_transport_r1_2_T1
+  - ts_transport_r1_2_T2
+  - ts_transport_r1_2_T3
+  - ts_transport_r1_3_T1
+  - ts_transport_r1_3_T2
+  - ts_transport_r1_3_T3
+  - ts_transport_r1_4_T1
+  - ts_transport_r1_4_T2
+  - ts_transport_r1_4_T3
+  - ts_transport_r1_5_T1
+  - ts_transport_r1_5_T2
+  - ts_transport_r1_5_T3
+  - ts_transport_r1_6_T1
+  - ts_transport_r1_6_T2
+  - ts_transport_r1_6_T3
+
+  # ── Queue length at Role 2: patients waiting for DCS surgery (2 facilities × 3 triage) ──
+  - ts_dcs_r2_1_T1          # Role2 facility 1 — T1 patients waiting for DCS slot
+  - ts_dcs_r2_1_T2          # Role2 facility 1 — T2 patients waiting for DCS slot
+  - ts_dcs_r2_1_T3          # Role2 facility 1 — T3 patients waiting for DCS slot
+  - ts_dcs_r2_2_T1
+  - ts_dcs_r2_2_T2
+  - ts_dcs_r2_2_T3
 
 run_settings:
-  n_scenarios: 1
-  n_policies: 1         # 2 bcas × 5 wave_durations = 10
+  n_scenarios: 1000
+  n_policies: 10         # 2 bcas × 5 wave_durations = 10
   uncertainty_sampler: lhs
   lever_sampler: fullfactorial
   batch_size: 50

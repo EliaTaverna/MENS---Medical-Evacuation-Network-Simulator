@@ -1,501 +1,630 @@
 # MEDEVAC Simulation Model
 
-A discrete-event simulation (DES) model of military medical evacuation (MEDEVAC) operations, built on [salabim](https://www.salabim.org/). The model simulates the full casualty chain — from injury to definitive care — through a network of medical facilities, treatment units, and ambulances operating under configurable policy rules.
+Discrete-event simulation model for military medical evacuation (MEDEVAC), built on `salabim`.
 
-Supports both **single-run** analysis (with video output and detailed logs) and **multi-run** policy exploration via [EMA Workbench](https://ema-workbench.readthedocs.io/).
+The model represents the chain from casualty generation to definitive care through CCPs, Role 1 facilities, Role 2 facilities, treatment units, ambulances, AXP nodes, and C2 dispatchers. It supports single-run debugging with detailed logs and multi-run experiments with EMA Workbench.
 
----
+This README is split into five working sections:
 
-## Table of Contents
+1. Datasets
+2. Casualty Dataset Builder
+3. Dataset Builder
+4. Single Run
+5. Multi Run
 
-1. [Project Structure](#project-structure)
-2. [Installation](#installation)
-3. [Quick Start](#quick-start)
-4. [Single Run](#single-run)
-5. [Multi Run (EMA Workbench)](#multi-run-ema-workbench)
-6. [Model Architecture](#model-architecture)
-7. [Components](#components)
-8. [Policy System](#policy-system)
-9. [Casualty Generation](#casualty-generation)
-10. [Observability](#observability)
-11. [Output](#output)
+## 1. Datasets
 
----
+All simulation inputs live under:
 
-## Project Structure
-
-```
-medevac_model/
-│
-├── src/
-│   ├── components/             # Simulation entities (salabim Components)
-│   │   ├── ambulance.py        # Ambulance movement and transport logic
-│   │   ├── axp.py              # Ambulance Exchange Point
-│   │   ├── builder.py          # ModelBuilder / ModelConnector
-│   │   ├── c2.py               # Command & Control dispatcher
-│   │   ├── facility.py         # Medical facility (queues, load/unload)
-│   │   ├── patient.py          # Patient with death clock
-│   │   ├── requests.py         # TransportRequest and PlanStep data classes
-│   │   ├── spawner.py          # CasualtySpawner
-│   │   └── unit.py             # Treatment unit
-│   │
-│   ├── helpers/                # Pure functions — no salabim state
-│   │   ├── runner.py           # run_simulation() — the core simulation function
-│   │   ├── helpers_run.py      # Single-run helpers: prepare, save, video, print
-│   │   ├── helpers_multi.py    # Multi-run helpers: EMA model, outcomes, saving
-│   │   ├── observer.py         # SimulationObserver context manager
-│   │   ├── casualty_generator.py  # Wave-based casualty generation
-│   │   ├── scenario.py         # Scenario YAML loading and data parsing
-│   │   └── visualization.py    # Network plot, video generation, state logger
-│   │
-│   ├── launch/                 # Entry points — minimal, no business logic
-│   │   ├── runner_single.py    # Run a single scenario
-│   │   └── runner_multiple.py  # Run an EMA Workbench experiment
-│   │
-│   ├── policies/
-│   │   └── policies.py         # All policy functions and registries
-│   │
-│   └── __init__.py             # Package-level exports
-│
-├── data/
-│   ├── single_run/
-│   │   ├── input/
-│   │   │   ├── components/         # facilities, units, ambulances, AXPs, c2, distances
-│   │   │   ├── policy_matrixes/    # corridors matrix, ambulance eligibility matrix
-│   │   │   ├── casualty_generation_settings/  # diagnosis mix, prescriptions, config
-│   │   │   ├── casualty_dataframes/           # pre-generated casualty datasets
-│   │   │   └── scenarios/          # scenario YAML files
-│   │   └── output/                 # timestamped run folders (auto-generated)
-│   │
-│   └── multi_run/
-│       ├── input_settings/         # experiment YAML files
-│       └── outputs/                # timestamped experiment folders (auto-generated)
-│
-└── tests/
-    ├── test_casualty_generator.py
-    └── test_kpis.py
+```text
+data/single_run/input/
 ```
 
----
+Scenario YAML files live under:
 
-## Installation
-
-```bash
-pip install salabim ema_workbench pandas openpyxl matplotlib numpy pyyaml
+```text
+data/single_run/input/scenarios/
 ```
 
-Python 3.10+ recommended.
+The paths inside a scenario YAML are relative to `data/single_run/input/`, not to the repository root.
 
----
+### Scenario YAML
 
-## Quick Start
+A scenario is the single-run entry point. It points to all component datasets, policy matrices, casualty settings, runtime options, and output settings.
 
-**Single run:**
-```bash
-python src/launch/runner_single.py
-```
-
-**Multi run (EMA Workbench):**
-```bash
-python src/launch/runner_multiple.py
-```
-
----
-
-## Single Run
-
-### How it works
-
-`runner_single.py` executes in four steps:
-
-```python
-data, settings, run_folder = prepare_run(scenario_path="data/single_run/input/scenarios/scenario_2.yaml")
-results = run_simulation(data, settings, run_folder)
-if settings["save_logs"]: save_logs(results)
-if settings["make_video"]: make_video(data, results, settings)
-print_summary(results)
-```
-
-1. **`prepare_run`** — loads the scenario YAML, resolves settings, creates the output folder, and loads/generates casualties
-2. **`run_simulation`** — builds the salabim environment, runs the simulation, returns results
-3. **`save_logs`** — writes Excel files to the run folder
-4. **`make_video`** — renders an MP4 animation of transport events
-5. **`print_summary`** — prints statistics to the console
-
-### Scenarios
-
-Scenarios live in `data/single_run/input/scenarios/`. Each scenario YAML defines:
+Current shape:
 
 ```yaml
-name: "scenario_2"
+name: scenario_elia_testing
+seed: 42
+description: Auto-generated scenario
 
-components:           # paths to Excel files (relative to input/)
-  distance_matrix: "components/distances/distance_matrix.xlsx"
-  axp:              "components/AXPs/axp.xlsx"
-  facilities:       "components/facilities/facilities.xlsx"
-  units:            "components/units/units.xlsx"
-  ambulances:       "components/ambulances/ambulances.xlsx"
-  c2:               "components/c2/c2.xlsx"
+components:
+  distance_matrix: components/distances/distance_matrix_elia_testing.xlsx
+  coordinates: components/distances/coordinates_elia_testing.xlsx
+  axp: components/AXPs/axp_elia_testing.xlsx
+  facilities: components/facilities/facilities_elia_testing.xlsx
+  units: components/units/units_elia_testing.xlsx
+  ambulances: components/ambulances/amb_elia_testing.xlsx
+  c2: components/c2/c2_elia_testing.xlsx
 
 policy_matrixes:
-  corridors:               "policy_matrixes/corridors/facility_eligibility_1.xlsx"
-  ambulances_eligibility:  "policy_matrixes/ambulances_eligibility/ambulance_eligibility_1.xlsx"
+  facility_eligibility:
+    0: policy_matrixes/facility_eligibility/facility_eligibility_elia_testing_strict.xlsx
+    1: policy_matrixes/facility_eligibility/facility_eligibility_elia_testing_loose.xlsx
+  ambulance_eligibility:
+    0: policy_matrixes/ambulance_eligibility/ambulance_eligibility_elia_testing_strict.xlsx
+    1: policy_matrixes/ambulance_eligibility/ambulance_eligibility_elia_testing_loose.xlsx
 
 casualty_generation:
-  from_dataset: true                              # load pre-generated casualties
-  casualties_dataframe: "casualty_dataframes/one_casualty_1.xlsx"
-  # --- OR: generate dynamically ---
-  # from_dataset: false
-  # config:        "casualty_generation_settings/sampling_settings/config.yaml"
-  # diagnosis_mix: "casualty_generation_settings/diagnosis/diagnosis_mix.xlsx"
-  # prescriptions: "casualty_generation_settings/prescriptions/prescriptions_meisner.xlsx"
+  config: casualty_generation_settings/sampling_settings/config_elia_testing.yaml
 
-levers:                      # policy indices (see Policy System)
+levers:
+  dispatch_policy: greedy
   facility_eligibility: 0
-  facility_assignment:  0
   ambulance_eligibility: 0
-  ambulance_assignment: 0
 
 simulation:
-  till: 500          # simulation end time (minutes)
+  till: 4320
   trace: false
+  data_collector_interval: 10.0
 
 video:
-  enabled: true
+  enabled: false
   fps: 24
   time_scale: 5.0
   dpi: 100
   state_log_interval: 5.0
+  start_time: 0
+  duration: null
 
 logs:
   enabled: true
+  path: simulation_logs
+
+outputs:
+  patient_log: true
+  safe_patients: true
+  transport_events: true
+  wait_times: true
+  facility_states: false
 ```
 
-### Output folder
+The scenario seed is the master seed for a single run. In multi-run experiments, the `seed` column usually comes from the experiment YAML instead.
 
-Each run creates a timestamped folder under `data/single_run/output/`:
+### Component Datasets
 
-```
-20260311_170758_scenario_2/
-├── scenario_2.yaml         # copy of the scenario used
-├── patient_log.xlsx        # full event log per patient
-├── transport_events.xlsx   # all ambulance departure/arrival events
-├── facility_states.xlsx    # periodic snapshots of facility state
-├── safe_patients.xlsx      # patients who reached definitive care
-└── simulation.mp4          # animation (if video enabled)
-```
+Component files are Excel files in `data/single_run/input/components/`.
 
----
+`distance_matrix.xlsx`
 
-## Multi Run (EMA Workbench)
+Square matrix of travel distances in km. Row and column labels are location IDs such as `ccp_1`, `r1_1`, `r2_1`, and `axp_1`. The matrix must include every location that an ambulance can depart from or arrive at.
 
-### How it works
+`coordinates.xlsx`
 
-`runner_multiple.py` runs an EMA Workbench experiment over a configurable space of uncertainties and levers:
+Optional visualization reference. Used for `network.png` and videos, not for simulation logic. Expected columns:
 
-```python
-experiment = load_experiment("data/multi_run/input_settings/experiment.yaml")
-model = build_ema_model(experiment)         # pre-loads structural data once
-experiments_df, outcomes = run_ema(model, experiment)
-save_experiment_results(experiments_df, outcomes, experiment)
+```text
+facility_id, facility_type, x, y
 ```
 
-**Key design decision:** structural data (facilities, ambulances, distances, policies) is loaded **once** before the experiment loop. Each individual run only re-generates casualties and re-runs the simulation engine. This avoids redundant I/O on every iteration.
+`facilities.xlsx`
 
-### Experiment YAML
+One row per CCP, Role 1, and Role 2 facility. Expected columns:
 
-Experiments live in `data/multi_run/input_settings/`. Each experiment YAML is fully self-contained — it references its own component and casualty config files directly, independently of any single-run scenario.
+```text
+facility_id, facility_type, c2_up_id, unload_policy, load_policy
+```
+
+`c2_up_id` is blank for Role 2 because Role 2 is the end of the evacuation chain.
+
+`units.xlsx`
+
+One row per care unit. Expected columns include:
+
+```text
+unit_id, facility_id, service_type, capacity, service_time_min, service_time_max
+```
+
+The current model uses `DCR`, `PEC`, and `DCS` service types.
+
+`axp.xlsx`
+
+One row per Ambulance Exchange Point. Expected columns:
+
+```text
+axp_id, assigned_facility_ids
+```
+
+`ambulances.xlsx`
+
+One row per ambulance. Expected columns include:
+
+```text
+amb_id, start_loc_id, capacity, speed_kmh
+```
+
+`c2.xlsx`
+
+One row per dispatcher node. Expected columns:
+
+```text
+c2_id, facility_ids, ambulance_ids
+```
+
+`facility_ids` are the facilities whose outbound transport requests are controlled by this C2. `ambulance_ids` are the ambulances this C2 may dispatch.
+
+### Policy Matrices
+
+Policy matrix files live under:
+
+```text
+data/single_run/input/policy_matrixes/
+```
+
+`facility_eligibility/*.xlsx`
+
+Binary matrix. Row index is origin facility, columns are candidate destination facilities. `1` means that route is allowed.
+
+`ambulance_eligibility/*.xlsx`
+
+Binary matrix. Row index is ambulance ID, columns are facilities. `1` means that ambulance can serve that facility.
+
+The active matrix is selected at runtime by scenario levers:
 
 ```yaml
-name: "medevac_experiment_1"
+levers:
+  facility_eligibility: 0
+  ambulance_eligibility: 0
+```
 
-data_root: "data/single_run/input"   # base path for all component paths below
+### Casualty Generation Datasets
 
-components:
-  distance_matrix: "components/distances/distance_matrix.xlsx"
-  axp:              "components/AXPs/axp.xlsx"
-  facilities:       "components/facilities/facilities.xlsx"
-  units:            "components/units/units.xlsx"
-  ambulances:       "components/ambulances/ambulances.xlsx"
-  c2:               "components/c2/c2.xlsx"
+Casualty-generation inputs live under:
 
-policy_matrixes:
-  corridors:              "policy_matrixes/corridors/facility_eligibility_1.xlsx"
-  ambulances_eligibility: "policy_matrixes/ambulances_eligibility/ambulance_eligibility_1.xlsx"
+```text
+data/single_run/input/casualty_generation_settings/
+```
 
-casualty_config:
-  diagnosis_mix:  "casualty_generation_settings/diagnosis/diagnosis_mix.xlsx"
-  prescriptions:  "casualty_generation_settings/prescriptions/prescriptions_meisner.xlsx"
-  facility_ids:
-    - "ccp1"
-    - "ccp2"
+`sampling_settings/config_<suffix>.yaml`
 
-simulation:
-  till: 500.0
+This is the casualty-generation control file. Current shape:
+
+```yaml
+n_days: 1
+waves_per_day: 3
+wave_duration_min: 30
+
+bcas_rate: 0.05
+dnbi_rate: 0
+
+diagnosis_mix: casualty_generation_settings/diagnosis/diagnosis_mix_elia_testing.xlsx
+prescriptions: casualty_generation_settings/prescriptions/prescriptions_elia_testing.xlsx
+force_structure: casualty_generation_settings/military_force_structure/force_structure_elia_testing.xlsx
+```
+
+`n_days`, `waves_per_day`, and `wave_duration_min` control when casualty waves occur. `bcas_rate` and `dnbi_rate` control expected casualties per personnel-at-risk per day.
+
+`force_structure.xlsx`
+
+Current columns:
+
+```text
+division, brigade, battalion, par, involved, bcas_spawning_points, dnbi_spawning_points
+```
+
+`par` is personnel at risk. Only rows with `involved == True` generate baseline BCAS casualties. `bcas_spawning_points` is the list of CCP IDs where battle casualties can spawn. `dnbi_spawning_points` is the list of Role 1 or other facility IDs where DNBI casualties can spawn when `dnbi_rate > 0`.
+
+The older `spawning_points` column is no longer the current schema.
+
+`diagnosis_mix.xlsx`
+
+One row per triage label. Expected columns:
+
+```text
+triage, frequency, lifetime_distribution, lifetime_low, lifetime_mode, lifetime_high
+```
+
+Typical labels include:
+
+```text
+T1_BCAS, T2_BCAS, T3_BCAS, KIA_BCAS, MIA_BCAS, T1_DNBI, T2_DNBI, T3_DNBI
+```
+
+KIA/MIA rows may be generated but are filtered out before the simulation run.
+
+`prescriptions.xlsx`
+
+One row per possible care pathway. Expected columns:
+
+```text
+label, frequency, prescription
+```
+
+Example prescriptions:
+
+```text
+['DCR', 'DCS']
+['DCR']
+['PEC', 'DCS']
+['PEC']
+```
+
+### Optional Pre-Generated Casualty Dataset
+
+The preferred mode is dynamic casualty generation through `casualty_generation.config`. A scenario can also load a pre-generated casualty spreadsheet:
+
+```yaml
+casualty_generation:
+  from_dataset: true
+  casualties_dataframe: casualty_dataframes/casualties.xlsx
+```
+
+That file must include at least:
+
+```text
+t_create, spawn_facility_id, triage, prescription,
+lifetime_dist_type, lifetime_low, lifetime_high, lifetime_mode
+```
+
+## 2. Casualty Dataset Builder
+
+Build or update casualty settings before building the rest of a scenario.
+
+The casualty settings are:
+
+```text
+data/single_run/input/casualty_generation_settings/diagnosis/diagnosis_mix_<suffix>.xlsx
+data/single_run/input/casualty_generation_settings/prescriptions/prescriptions_<suffix>.xlsx
+data/single_run/input/casualty_generation_settings/military_force_structure/force_structure_<suffix>.xlsx
+data/single_run/input/casualty_generation_settings/sampling_settings/config_<suffix>.yaml
+```
+
+For a new scenario suffix:
+
+1. Copy an existing diagnosis mix file and rename it to `diagnosis_mix_<suffix>.xlsx`.
+2. Copy an existing prescriptions file and rename it to `prescriptions_<suffix>.xlsx`.
+3. Copy an existing force-structure file and rename it to `force_structure_<suffix>.xlsx`.
+4. Edit the force-structure file using the current columns:
+
+```text
+division, brigade, battalion, par, involved, bcas_spawning_points, dnbi_spawning_points
+```
+
+5. Copy an existing config YAML and rename it to `config_<suffix>.yaml`.
+6. Edit the config YAML so it points to the new diagnosis, prescription, and force-structure files.
+7. Set `n_days`, `waves_per_day`, `wave_duration_min`, `bcas_rate`, and `dnbi_rate`.
+
+The single-run path can generate casualties dynamically from this config. If you want a fixed pre-generated casualty Excel file instead, use the `from_dataset` scenario mode described above.
+
+## 3. Dataset Builder
+
+The dataset-builder notebook builds the remaining network datasets and the scenario YAML.
+
+Main notebooks:
+
+```text
+datasets_builder.ipynb
+datasets_builder_elia_testing.ipynb
+```
+
+The notebook is driven by its first configuration cell. The important fields are:
+
+```python
+N_CCP = 3
+N_R1 = 1
+N_AXP = 1
+N_R2 = 1
+
+OUT_BASE = pathlib.Path("data/single_run/input")
+SUFFIX = "elia_testing"
+
+CASUALTY_CONFIG = f"config_{SUFFIX}"
+SCENARIO_NAME = f"scenario_{SUFFIX}"
+SEED = 42
+SIM_TILL_MIN = 60 * 24 * 3
+DISPATCH_POLICY = "greedy"
+DATA_COLLECTOR_INTERVAL = 10.0
+```
+
+What the notebook does:
+
+1. Builds facility coordinates for CCPs, Role 1s, AXPs, and Role 2s.
+2. Computes the Euclidean distance matrix.
+3. Visualizes the layout for sanity checking.
+4. Builds facility, AXP, ambulance, and C2 tables.
+5. Builds care units using the service-time and capacity parameters in the config cell.
+6. Builds strict and loose facility eligibility matrices.
+7. Builds strict and loose ambulance eligibility matrices.
+8. Verifies that `casualty_generation_settings/sampling_settings/{CASUALTY_CONFIG}.yaml` exists.
+9. Writes the scenario YAML to `data/single_run/input/scenarios/{SCENARIO_NAME}.yaml`.
+
+Outputs written by the notebook:
+
+```text
+components/distances/distance_matrix_<suffix>.xlsx
+components/distances/coordinates_<suffix>.xlsx
+components/facilities/facilities_<suffix>.xlsx
+components/units/units_<suffix>.xlsx
+components/AXPs/axp_<suffix>.xlsx
+components/ambulances/amb_<suffix>.xlsx
+components/c2/c2_<suffix>.xlsx
+policy_matrixes/facility_eligibility/facility_eligibility_<suffix>_strict.xlsx
+policy_matrixes/facility_eligibility/facility_eligibility_<suffix>_loose.xlsx
+policy_matrixes/ambulance_eligibility/ambulance_eligibility_<suffix>_strict.xlsx
+policy_matrixes/ambulance_eligibility/ambulance_eligibility_<suffix>_loose.xlsx
+scenarios/scenario_<suffix>.yaml
+```
+
+Recommended workflow:
+
+1. Build or edit the casualty settings first.
+2. Create a copy of a dataset builder notebook and open it.
+3. Set `SUFFIX` and `CASUALTY_CONFIG` to match the casualty config.
+4. Set facility counts, geometry, ambulance parameters, unit capacities, and simulation duration.
+5. Run the notebook top to bottom.
+6. Check that the final scenario YAML points to the new files.
+
+## 4. Single Run
+
+Single runs are for inspecting one scenario with detailed logs, plots, and optionally a video.
+
+Entry point:
+
+```text
+src/launch/runner_single.py
+```
+
+Current path inside the script:
+
+```python
+scenario_path="data/single_run/input/scenarios/scenario_elia_testing.yaml"
+```
+
+To run a different scenario, edit that path.
+
+### Single-Run Input
+
+A single run needs:
+
+1. Casualty-generation settings:
+
+```text
+data/single_run/input/casualty_generation_settings/...
+```
+
+2. Component datasets:
+
+```text
+data/single_run/input/components/...
+```
+
+3. Policy matrices:
+
+```text
+data/single_run/input/policy_matrixes/...
+```
+
+4. Scenario YAML:
+
+```text
+data/single_run/input/scenarios/scenario_<suffix>.yaml
+```
+
+### Single-Run Steps
+
+1. Build the casualty settings:
+
+```text
+diagnosis_mix_<suffix>.xlsx
+prescriptions_<suffix>.xlsx
+force_structure_<suffix>.xlsx
+config_<suffix>.yaml
+```
+
+2. Create a copy of a dataset builder notebook and open it.
+3. Set `SUFFIX`, `CASUALTY_CONFIG`, and the network parameters.
+4. Run the notebook to create the remaining datasets and scenario YAML.
+5. Open `src/launch/runner_single.py`.
+6. Set `scenario_path` to the new scenario YAML.
+7. Run:
+
+```powershell
+python -m src.launch.runner_single
+```
+
+### Single-Run Output
+
+Outputs are written to:
+
+```text
+data/single_run/output/<timestamp>_<scenario_name>/
+```
+
+Common files:
+
+```text
+patient_log.xlsx
+safe_patients.xlsx
+transport_events.xlsx
+wait_times.xlsx
+C2_*.xlsx
+network.png
+gantt_waves.html
+simulation.mp4
+```
+
+`simulation.mp4` is only created when `video.enabled: true`.
+
+`patient_log.xlsx` is the most detailed patient trace. `transport_events.xlsx` contains ambulance departures and arrivals. `wait_times.xlsx` contains per-patient wait episodes for care and transport. `safe_patients.xlsx` contains patients who completed all required care. `C2_*.xlsx` files contain dispatch-decision logs.
+
+## 5. Multi Run
+
+Multi runs are EMA Workbench experiments over uncertainty and lever spaces.
+
+Entry point:
+
+```text
+src/launch/runner_multiple.py
+```
+
+Current path inside the script:
+
+```python
+EXPERIMENT_PATH = "data/multi_run/input/experiment_elia_testing.yaml"
+```
+
+To run a different experiment, edit that path.
+
+### Multi-Run Experiment YAML
+
+Experiment files live under:
+
+```text
+data/multi_run/input/
+```
+
+Minimal structure:
+
+```yaml
+scenario: data/single_run/input/scenarios/scenario_elia_testing.yaml
+output_folder: data/multi_run/output
 
 uncertainties:
-  - { name: casualty_seed,     type: integer, lower: 1,     upper: 10000 }
-  - { name: par_total,         type: integer, lower: 5000,  upper: 30000 }
-  - { name: rate_per_day,      type: real,    lower: 0.005, upper: 0.030 }
-  - { name: waves_per_day,     type: integer, lower: 1,     upper: 6     }
-  - { name: wave_duration_min, type: integer, lower: 15,    upper: 120   }
-  - { name: n_days,            type: integer, lower: 1,     upper: 7     }
+- name: seed
+  type: integer
+  lower: 1
+  upper: 10000
 
 levers:
-  - { name: facility_eligibility,  type: integer, lower: 0, upper: 0 }
-  - { name: facility_assignment,   type: integer, lower: 0, upper: 0 }
-  - { name: ambulance_eligibility, type: integer, lower: 0, upper: 0 }
-  - { name: ambulance_assignment,  type: integer, lower: 0, upper: 0 }
+- name: bcas_rate
+  type: categorical
+  values: [0.005, 0.05]
+- name: wave_duration_min
+  type: categorical
+  values: [10, 20, 40, 50]
 
 outcomes:
-  - name: death_rate
-  - name: death_rate_T1
-  - name: death_rate_T2
-  - name: death_rate_T3
-  - name: safe_rate
-  - name: mean_wait_care_T1
-  - name: mean_wait_care_T2
-  - name: mean_wait_care_T3
-  - name: mean_wait_transport_T1
-  - name: mean_wait_transport_T2
-  - name: mean_wait_transport_T3
-  - name: total_transport_time
+- death_rate
+- safe_rate
+- total_transport_time
+
+array_outcomes:
+- ts_transport_r1_1_T1
+- ts_transport_r1_1_T2
+- ts_transport_r1_1_T3
 
 run_settings:
-  n_scenarios: 100
-  n_policies:  1
-  evaluator:   sequential
+  n_scenarios: 1000
+  n_policies: 1
+  uncertainty_sampler: lhs
+  lever_sampler: fullfactorial
+  batch_size: 50
+  max_parallel: 4
 ```
 
-**Uncertainties** are parameters sampled by EMA (things you don't control — how many casualties, when they arrive, how severe). **Levers** are policy choices (which policy function index to use for each decision point). **Outcomes** are the scalar KPIs returned by each run.
+### Uncertainties, Levers, and Seeds
 
-### Output folder
+Uncertainties are sampled into EMA scenarios. Levers are sampled into EMA policies.
 
-Each experiment creates a timestamped folder under `data/multi_run/outputs/`:
+If `seed` is listed under `uncertainties`, then `n_scenarios` controls how many different seeds are sampled.
 
-```
-20260313_154802_medevac_experiment_1/
-└── results.csv     # experiments + outcomes merged into a single flat table
-                    # one row per run, columns = uncertainties + levers + KPIs
-```
+For example:
 
----
+```yaml
+uncertainties:
+- name: seed
+  type: integer
+  lower: 1
+  upper: 10000
 
-## Model Architecture
-
-The simulation models the military MEDEVAC chain as a network of nodes and transport links:
-
-```
-[Injury site]
-     │  spawned at CCP (Combat Collection Point)
-     ▼
-[CCP / Role 1]  ──► treatment units (e.g. AIDSTA)
-     │  transport request → C2
-     ▼
-[Role 2]        ──► treatment units (e.g. FST, ICU)
-     │  transport request → C2
-     ▼
-[Role 3]        ──► treatment units (e.g. SUR, ICU)
-     │
-     ▼
-  [SAFE]
+run_settings:
+  n_scenarios: 1
 ```
 
-Each patient has a **death clock**: a survival time drawn from a triage-specific distribution. The clock runs while the patient is waiting (for care or transport) and is **paused** when the patient is actively being treated or transported. If the clock expires during a wait, the patient dies.
+This samples one seed. If `lever_sampler: fullfactorial` expands to eight policies, the results will show the same seed on eight rows because those eight policies are all crossed with the same single scenario.
 
-### Component interactions
+To get many seeds for every lever combination, increase `n_scenarios`.
 
-```
-CasualtySpawner
-    │ creates Patient at spawn facility
-    ▼
-Facility
-    │ puts patient in entry_line queue
-    ▼
-Unit (treatment)
-    │ serves patient, then patient waits for transport
-    ├─► Facility generates TransportRequest
-    │       │
-    │       ▼
-    │   TransportC2 (C2)
-    │       │ applies policy chain (eligibility → assignment → plan → dispatch)
-    │       ▼
-    │   Ambulance
-    │       │ travels to pickup facility, loads patient, travels to destination
-    │       ▼
-    │   next Facility (or safe zone)
-    │
-    └─► [Patient marked SAFE when reaching final destination]
+With this lever space:
+
+```yaml
+bcas_rate: [0.005, 0.05]
+wave_duration_min: [10, 20, 40, 50]
 ```
 
----
+full factorial creates `2 * 4 = 8` policy combinations. With `n_scenarios: 1000`, that gives about `1000 * 8 = 8000` runs.
 
-## Components
+### Multi-Run Steps
 
-### `Ambulance`
-Moves between facilities and AXPs following a **plan** — an ordered list of `PlanStep` objects, each specifying a location and which patients to load or unload there. When idle, an ambulance waits at its assigned AXP.
+1. Make sure the target single-run scenario works first.
+2. Copy an existing experiment YAML in `data/multi_run/input/`.
+3. Rename the copy, for example:
 
-### `AXP` (Ambulance Exchange Point)
-A waypoint where ambulances idle between missions. Each AXP is associated with a set of downstream facilities it serves.
-
-### `TransportC2`
-The dispatcher. When a facility has patients ready for transport, it raises a `TransportRequest`. The C2 collects pending requests, applies a configurable four-step policy chain (see [Policy System](#policy-system)), crafts ambulance plans, and dispatches ambulances.
-
-### `Facility`
-A medical node in the evacuation chain. Each facility has:
-- **Entry lines** — queues of patients waiting for specific treatment units
-- **Exit queue** — patients waiting for transport to the next echelon
-- **Units** — one or more treatment units (e.g. AIDSTA, FST, SUR, ICU)
-- A reference to its upstream C2
-
-Facility types: `CCP`, `Role1`, `Role2`, `Role3`.
-
-### `Unit`
-A treatment unit inside a facility with a fixed capacity. Patients are served in **triage-priority order** (T1 first). Service time is sampled from a configurable distribution. When service ends, the unit calls a completion callback that transitions the patient to the transport queue.
-
-### `Patient`
-A casualty with:
-- **Triage level**: T1 (immediate), T2 (delayed), T3 (minimal)
-- **Prescription**: an ordered list of unit types the patient must visit (e.g. `["AIDSTA", "FST", "ICU"]`)
-- **Death clock**: counts down during waiting; paused during treatment and transport
-- **State**: `waiting_care` → `in_care` → `waiting_transport` → `in_transport` → `safe` / `dead`
-
-### `CasualtySpawner`
-Reads a pre-built `casualties_df` (one row per patient with scheduled creation time and spawn facility) and injects patients into the simulation at the correct simulation times.
-
----
-
-## Policy System
-
-Policies govern how C2 makes decisions. Each decision point has a **registry** mapping integer keys to policy functions. The lever values in a scenario or experiment select which function is used at runtime.
-
-| Lever | Decision | Registry |
-|---|---|---|
-| `facility_eligibility` | Which destination facilities are reachable? | `FACILITY_ELIGIBILITY_POLICIES` |
-| `facility_assignment` | Which facility to assign to this patient? | `FACILITY_ASSIGNMENT_POLICIES` |
-| `ambulance_eligibility` | Which ambulances are available? | `AMBULANCE_ELIGIBILITY_POLICIES` |
-| `ambulance_assignment` | Which ambulance to assign? | `AMBULANCE_ASSIGNMENT_POLICIES` |
-
-**Currently implemented (index 0 = base):**
-
-- **Facility eligibility 0** — consults the corridors matrix to find reachable facilities of the required type
-- **Facility assignment 0** — random selection from eligible facilities
-- **Ambulance eligibility 0** — idle ambulances whose service coverage matches the required facility type
-- **Ambulance assignment 0** — random selection from eligible ambulances
-
-### Adding a new policy
-
-1. Write a new function in `src/policies/policies.py` matching the signature of existing policies
-2. Add it to the relevant registry dict with the next integer key
-3. Set the corresponding lever to that key in the scenario YAML or experiment YAML
-
----
-
-## Casualty Generation
-
-Casualties are generated using a **wave model** that mimics realistic battle rhythms.
-
-### Parameters
-
-| Parameter | Description |
-|---|---|
-| `par_total` | Total Personnel At Risk |
-| `rate_per_day` | Casualties per soldier per day |
-| `n_days` | Simulation duration in days |
-| `waves_per_day` | Number of engagement waves per day |
-| `wave_duration_min` | Duration of each wave (minutes) |
-| `seed` | Random seed for reproducibility |
-| `facility_ids` | Locations where casualties spawn |
-
-### Generation steps
-
-1. **Place waves** — non-overlapping time windows are placed randomly across the simulation horizon, `waves_per_day` per day
-2. **Allocate casualties** — the expected total (`par_total × rate_per_day × n_days`) is distributed across facilities using a Poisson draw; each facility gets casualties proportional to its weight
-3. **Fill waves** — each facility's casualties are distributed randomly across its waves; within each wave, creation times are drawn uniformly
-4. **Assign attributes** — triage level and prescription are sampled from the diagnosis mix; survival time is sampled from triage-specific distributions (Uniform, Triangular, Exponential, or Normal)
-
-### Two sources
-
-| Mode | When to use |
-|---|---|
-| `from_dataset: true` | Reproducible single runs with a fixed casualty file |
-| `from_dataset: false` | Dynamic generation with configurable parameters |
-
-In multi-run mode, casualties are **always generated dynamically** — the EMA sampler controls `par_total`, `rate_per_day`, etc. as uncertainties.
-
----
-
-## Observability
-
-The `SimulationObserver` context manager collects runtime data without modifying any component source code. It monkey-patches five methods before the simulation starts and restores them on exit:
-
-| Patched method | Data collected |
-|---|---|
-| `Ambulance._travel_to` | Departure and arrival events with timestamps, locations, onboard patients |
-| `Facility.patient_handed_over` | Transport wait start time per patient |
-| `Facility.process` | Transport wait duration (time from handover to ambulance loading) |
-| `Unit.process` | Care wait duration (time in queue before treatment starts) |
-| `Unit.service_done` | Unit busy periods (start/end of each service slot) |
-| `Patient.setup` | Registration of all patients in `env.all_patients` |
-
-Usage:
-```python
-with SimulationObserver(env) as observer:
-    # build and run simulation
-    env.run(till=till)
-
-data = observer.results()
-# data keys: transport_events, wait_times, unit_busy_periods,
-#            all_patients, facility_states, patient_log_rows
+```text
+experiment_my_scenario.yaml
 ```
 
----
+4. Edit the `scenario` path to point to your scenario YAML.
+5. Edit `uncertainties`.
+6. Edit `levers`.
+7. Edit `outcomes` and `array_outcomes`.
+8. Edit `run_settings`.
+9. Open `src/launch/runner_multiple.py`.
+10. Set `EXPERIMENT_PATH` to the new experiment YAML.
+11. Run:
 
-## Output
-
-### Single run logs
-
-| File | Contents |
-|---|---|
-| `patient_log.xlsx` | Full event log: one row per patient action (spawned, entered queue, started treatment, etc.) |
-| `transport_events.xlsx` | Ambulance departure and arrival events |
-| `facility_states.xlsx` | Periodic snapshots: patient counts by triage and status at each facility |
-| `safe_patients.xlsx` | Patients who completed evacuation: ID, triage, time safe, spawn location |
-| `simulation.mp4` | Animated video showing ambulance movements and facility status over time |
-
-### Console summary (single run)
-
-```
-SIMULATION RESULTS
-======================================================================
---- PATIENT OUTCOMES ---
-  T1:  23 patients
-    Deaths:        8  ( 34.8%)
-    Safe:         12  ( 52.2%)
-    In progress:   3  ( 13.0%)
-  ...
-
---- WAITING TIME STATISTICS (minutes) ---
-  Waiting for CARE:
-    At CCP:
-      T1:    0.0 /    0.0 /    2.1  (n=12)
-  ...
-
---- CUMULATIVE TRANSPORT TIME ---
-  Total transport time (all ambulances): 214.3 minutes
-    amb_1: 87.0 minutes
-    amb_2: 63.1 minutes
-
---- UNIT UTILIZATION ---
-  ccp1_AIDSTA: 18.4% (92.0 min busy / 500.0 min total)
-  ...
+```powershell
+python -m src.launch.runner_multiple
 ```
 
-### Multi-run results
+If Windows multiprocessing fails with an access or process-startup error in a restricted shell, set:
 
-`results.csv` — one row per experiment run, columns are all uncertainties, all levers, and all scalar outcomes. Ready for direct import into EMA Workbench analysis notebooks.
+```yaml
+max_parallel: 1
+```
 
+or run from a normal terminal.
+
+### Multi-Run Output
+
+Outputs are written to:
+
+```text
+data/multi_run/output/<timestamp>_<scenario_name>/
 ```
-casualty_seed | par_total | rate_per_day | ... | death_rate | safe_rate | mean_wait_care_T1 | ...
-         4821 |     12340 |        0.014 | ... |       0.23 |      0.61 |               4.2 | ...
+
+Common files:
+
+```text
+results.csv
+timeseries.npz
 ```
+
+`results.csv` contains one row per run. The columns are:
+
+```text
+uncertainties, levers, EMA metadata, scalar outcomes
+```
+
+Typical columns:
+
+```text
+seed, bcas_rate, wave_duration_min, scenario, policy, model,
+death_rate, safe_rate, total_transport_time
+```
+
+`timeseries.npz` contains array outcomes. Each key is an array outcome name such as:
+
+```text
+ts_transport_r1_1_T1
+ts_dcs_r2_1_T2
+```
+
+Each array has shape:
+
+```text
+n_runs x n_timesteps
+```
+
+where `n_timesteps` depends on `simulation.till` and `data_collector_interval`.

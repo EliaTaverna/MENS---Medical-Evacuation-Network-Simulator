@@ -190,7 +190,6 @@ class RunSetter:
             wave_duration_min=int(kwargs.get("wave_duration_min", self.base_config["wave_duration_min"])),
             diagnosis_mix_df=self.base_config["diagnosis_mix_df"],
             rx_df=self.base_config["rx_df"],
-            lifetime_factory_by_triage=self.base_config["lifetime_factory_by_triage"],
             seed=seed,
         )
         data["casualties_df"] = full_df[
@@ -228,15 +227,14 @@ class RunSetter:
         bcas_rate   = self.base_config["bcas_rate"]
         dnbi_labels = self.base_config["dnbi_labels"]
         dnbi_rate   = self.base_config["dnbi_rate"]
-        r1_ids      = self.base_config["r1_ids"]
 
         spawn_map = {}
         for _, row in selected.iterrows():
-            for fid in self._parse_spawning_points(row["spawning_points"]):
+            for fid in self._parse_spawning_points(row["bcas_spawning_points"]):
                 spawn_map[fid] = {"labels": bcas_labels, "rate": bcas_rate, "par": par}
-
-        for fid in r1_ids:
-            spawn_map[fid] = {"labels": dnbi_labels, "rate": dnbi_rate, "par": par}
+            if dnbi_rate > 0:
+                for fid in self._parse_spawning_points(row["dnbi_spawning_points"]):
+                    spawn_map[fid] = {"labels": dnbi_labels, "rate": dnbi_rate, "par": par}
 
         return spawn_map
 
