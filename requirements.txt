@@ -1,0 +1,10 @@
+salabim
+ema-workbench[recommended]
+pandas
+numpy
+scipy
+scikit-learn
+matplotlib
+optuna
+pyyaml
+openpyxl
