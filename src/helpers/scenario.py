@@ -229,7 +229,7 @@ def load_casualty_config_from_scenario(scenario: dict) -> dict:
 
     # ── Config-pointer format ────────────────────────────────────────────────
     if "config" in cas_gen:
-        with open(resolve(cas_gen["config"]), "r") as f:
+        with open(resolve(cas_gen["config"]), "r", encoding="utf-8") as f:
             raw = yaml.safe_load(f)
 
         diagnosis_mix_df = pd.read_excel(resolve(raw["diagnosis_mix"]))

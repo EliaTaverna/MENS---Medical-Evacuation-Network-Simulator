@@ -49,7 +49,7 @@ def load_experiment(experiment_path: str) -> dict:
         ``scenario``, ``uncertainties``, ``levers``, ``outcomes``,
         ``array_outcomes``, ``run_settings``, and ``output_folder``.
     """
-    with open(experiment_path, "r") as f:
+    with open(experiment_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -119,7 +119,7 @@ def _load_casualty_config(scenario: dict) -> dict:
     base_path = Path(scenario["_base_path"])
 
     config_path = base_path / cas_gen["config"]
-    with open(config_path, "r") as f:
+    with open(config_path, "r", encoding="utf-8") as f:
         raw = yaml.safe_load(f)
 
     diagnosis_mix_df = pd.read_excel(base_path / raw["diagnosis_mix"])
