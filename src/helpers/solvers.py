@@ -138,7 +138,8 @@ def solve_greedy(
     if df.empty or not idle_ambulances:
         return df
 
-    caps      = {a.amb_id: int(getattr(a, "capacity", 1)) for a in idle_ambulances}
+    caps_t1t2 = {a.amb_id: int(getattr(a, "t1_t2_capacity", 1)) for a in idle_ambulances}
+    caps_t3   = {a.amb_id: int(getattr(a, "t3_capacity",    1)) for a in idle_ambulances}
     idle_pool = list(idle_ambulances)
     assigned  = pd.Series(False, index=df.index)
 
@@ -200,11 +201,19 @@ def solve_greedy(
             assigned[anchor.name] = True
             continue
 
-        cap         = caps.get(best_amb.amb_id, 1)
-        same_origin = pending[
+        cap_t1t2    = caps_t1t2.get(best_amb.amb_id, 1)
+        cap_t3      = caps_t3.get(best_amb.amb_id, 1)
+        same_origin_pool = pending[
             (pending["issuing_facility_id"] == origin)
             & pending["eligible_ambulances"].apply(lambda ea: best_amb.amb_id in (ea or []))
-        ].head(cap)
+        ]
+        t1t2_batch  = same_origin_pool[
+            same_origin_pool["triage"].str.startswith(("T1", "T2"))
+        ].head(cap_t1t2)
+        t3_batch    = same_origin_pool[
+            same_origin_pool["triage"].str.startswith("T3")
+        ].head(cap_t3)
+        same_origin = pd.concat([t1t2_batch, t3_batch])
 
         for idx in same_origin.index:
             df.loc[idx, "assigned_facility_id"] = best_dest

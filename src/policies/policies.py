@@ -153,9 +153,13 @@ def craft_plans(
         if gg.empty:
             continue
 
-        # choose up to capacity reqs from this pickup facility
+        # choose up to capacity reqs from this pickup facility, split by triage
         gg = gg.sample(frac=1).reset_index(drop=True)
-        gg = gg.iloc[: min(int(amb.capacity), len(gg))]
+        t1t2 = gg[gg["triage"].str.startswith(("T1", "T2"))].iloc[:amb.t1_t2_capacity]
+        t3   = gg[gg["triage"].str.startswith("T3")].iloc[:amb.t3_capacity]
+        gg   = pd.concat([t1t2, t3]).reset_index(drop=True)
+        if gg.empty:
+            continue
 
         # dropoff facility = most common among the selected ones
         dropoff_facility_id = gg["assigned_facility_id"].value_counts().index[0]

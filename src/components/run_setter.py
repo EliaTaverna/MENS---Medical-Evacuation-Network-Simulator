@@ -5,6 +5,7 @@ from __future__ import annotations
 import gc
 import random
 import numpy as np
+import pandas as pd
 
 from src import load_triage_weights_from_scenario
 from src.helpers.casualty_generator import generate_casualties_df_from_waves
@@ -56,9 +57,14 @@ class RunSetter:
         seeds       = self._derive_seeds(master_seed)
         data     = dict(self.base_data)
         data     = self._apply_r2_retreat(data, kwargs)
+        data     = self._apply_r1_access(data, kwargs)
         data     = self._apply_dcs_capacity(data, kwargs)
-        data     = self._apply_remove_ambulances_ccp_r1(data, kwargs, seeds["ambulances"])
-        data     = self._apply_remove_ambulances_r1_r2(data, kwargs, seeds["ambulances"])
+        data     = self._apply_pec_capacity(data, kwargs)
+        data     = self._apply_dcr_capacity(data, kwargs)
+        data     = self._apply_set_ambulances_ccp_r1(data, kwargs, seeds["ambulances"])
+        data     = self._apply_set_ambulances_r1_r2(data, kwargs, seeds["ambulances"])
+        data     = self._apply_amb_speed_ccp_r1(data, kwargs)
+        data     = self._apply_amb_speed_r1_r2(data, kwargs)
         data     = self._apply_casualties(data, kwargs, seeds["casualties"],
                                           battalion_seed=seeds["battalions"])
         levers   = self._apply_levers(kwargs, master_seed)
@@ -125,6 +131,56 @@ class RunSetter:
         data["distance_matrix"] = dm
         return data
 
+    def _apply_r1_access(self, data: dict, kwargs: dict) -> dict:
+        """Set CCP↔R1 distances for the closest and second-closest R1 per CCP.
+
+        Rankings are determined once from the original (unmodified) distance
+        matrix in self.base_data, so they are stable regardless of lever values
+        or other modifications applied earlier in prepare().
+
+        Only CCP↔R1 entries are touched; all other distances are unchanged.
+        Either lever can be omitted independently.
+        """
+        closest_km = kwargs.get("r1_closest_km")
+        second_km  = kwargs.get("r1_second_km")
+
+        if closest_km is None and second_km is None:
+            return data
+
+        facility_df = data["facility_df"]
+        r1_ids  = facility_df.loc[
+            facility_df["facility_type"] == "Role1", "facility_id"
+        ].tolist()
+        ccp_ids = facility_df.loc[
+            facility_df["facility_type"] == "CCP", "facility_id"
+        ].tolist()
+
+        ref_dm = self.base_data["distance_matrix"]
+        dm     = data["distance_matrix"].copy()
+
+        r1_ids  = [r for r in r1_ids  if r in ref_dm.index]
+        ccp_ids = [c for c in ccp_ids if c in ref_dm.index]
+
+        if not r1_ids or not ccp_ids:
+            return data
+
+        for ccp in ccp_ids:
+            ranked = ref_dm.loc[ccp, r1_ids].sort_values()
+            distinct = ranked.unique()  # sorted ascending, ties collapsed
+
+            if closest_km is not None and len(distinct) >= 1:
+                for r1 in ranked.index[ranked == distinct[0]]:
+                    dm.loc[ccp, r1] = float(closest_km)
+                    dm.loc[r1, ccp] = float(closest_km)
+
+            if second_km is not None and len(distinct) >= 2:
+                for r1 in ranked.index[ranked == distinct[1]]:
+                    dm.loc[ccp, r1] = float(second_km)
+                    dm.loc[r1, ccp] = float(second_km)
+
+        data["distance_matrix"] = dm
+        return data
+
     def _apply_dcs_capacity(self, data: dict, kwargs: dict) -> dict:
         """Set the capacity of every DCS unit across all facilities."""
         cap = kwargs.get("dcs_capacity")
@@ -136,35 +192,140 @@ class RunSetter:
         data["units_df"] = units_df
         return data
 
-    def _apply_remove_ambulances_ccp_r1(self, data: dict, kwargs: dict, seed: int) -> dict:
-        """Randomly remove N ambulances from the CCP→R1 leg (starters at AXP locations)."""
-        n = int(kwargs.get("n_remove_amb_ccp_r1", 0))
-        return self._remove_ambulances(data, n, start_prefix="axp_", seed=seed) if n else data
+    def _apply_amb_speed_ccp_r1(self, data: dict, kwargs: dict) -> dict:
+        """Set the speed of all CCP→R1 ambulances (starters at AXP locations)."""
+        speed = kwargs.get("amb_speed_ccp_r1")
+        if speed is None:
+            return data
 
-    def _apply_remove_ambulances_r1_r2(self, data: dict, kwargs: dict, seed: int) -> dict:
-        """Randomly remove N ambulances from the R1→R2 leg (starters at R1 locations)."""
-        n = int(kwargs.get("n_remove_amb_r1_r2", 0))
-        return self._remove_ambulances(data, n, start_prefix="r1_", seed=seed) if n else data
+        amb_df = data["ambulance_df"].copy()
+        mask = amb_df["start_loc_id"].str.startswith("axp_")
+        amb_df.loc[mask, "speed_kmh"] = float(speed)
+        data["ambulance_df"] = amb_df
+        return data
 
-    def _remove_ambulances(self, data: dict, n: int, start_prefix: str, seed: int) -> dict:
-        """Remove n randomly selected ambulances from the given leg.
+    def _apply_amb_speed_r1_r2(self, data: dict, kwargs: dict) -> dict:
+        """Set the speed of all R1→R2 ambulances (starters at R1 locations)."""
+        speed = kwargs.get("amb_speed_r1_r2")
+        if speed is None:
+            return data
 
-        Selection is seeded for reproducibility. If n exceeds the available
-        ambulances on the leg, all of them are removed.
+        amb_df = data["ambulance_df"].copy()
+        mask = amb_df["start_loc_id"].str.startswith("r1_")
+        amb_df.loc[mask, "speed_kmh"] = float(speed)
+        data["ambulance_df"] = amb_df
+        return data
+
+    def _apply_pec_capacity(self, data: dict, kwargs: dict) -> dict:
+        """Set the capacity of every PEC unit across all facilities."""
+        cap = kwargs.get("pec_capacity")
+        if cap is None:
+            return data
+
+        units_df = data["units_df"].copy()
+        units_df.loc[units_df["service_type"] == "PEC", "capacity"] = int(cap)
+        data["units_df"] = units_df
+        return data
+
+    def _apply_dcr_capacity(self, data: dict, kwargs: dict) -> dict:
+        """Set the capacity of every DCR unit across all facilities."""
+        cap = kwargs.get("dcr_capacity")
+        if cap is None:
+            return data
+
+        units_df = data["units_df"].copy()
+        units_df.loc[units_df["service_type"] == "DCR", "capacity"] = int(cap)
+        data["units_df"] = units_df
+        return data
+
+    def _apply_set_ambulances_ccp_r1(self, data: dict, kwargs: dict, seed: int) -> dict:
+        """Set the total number of CCP→R1 ambulances (starters at AXP locations)."""
+        n = kwargs.get("n_amb_ccp_r1")
+        if n is None:
+            return data
+        return self._set_ambulances(data, int(n), start_prefix="axp_", seed=seed)
+
+    def _apply_set_ambulances_r1_r2(self, data: dict, kwargs: dict, seed: int) -> dict:
+        """Set the total number of R1→R2 ambulances (starters at R1 locations)."""
+        n = kwargs.get("n_amb_r1_r2")
+        if n is None:
+            return data
+        return self._set_ambulances(data, int(n), start_prefix="r1_", seed=seed)
+
+    def _set_ambulances(self, data: dict, n: int, start_prefix: str, seed: int) -> dict:
+        """Set the number of ambulances on a leg to exactly n.
+
+        If n > current count: duplicates random ambulances from the leg, assigning
+        new unique IDs, and registers them with the owning C2 and all ambulance
+        eligibility datasets (inheriting the source ambulance's eligibility row).
+        If n < current count: removes randomly selected ambulances from the leg,
+        the C2 roster, and the eligibility datasets.
+        If n == current count: no-op.
         """
-        amb_df = data["ambulance_df"]
-        c2_df  = data["c2_df"]
+        rng      = random.Random(seed)
+        amb_df   = data["ambulance_df"]
+        c2_df    = data["c2_df"]
+        amb_elig = data.get("amb_eligibility_datasets", {})
 
         candidates = amb_df[amb_df["start_loc_id"].str.startswith(start_prefix)]["amb_id"].tolist()
-        n = min(n, len(candidates))
-        to_remove = set(random.Random(seed).sample(candidates, n))
+        current_n  = len(candidates)
 
-        data["ambulance_df"] = amb_df[~amb_df["amb_id"].isin(to_remove)].reset_index(drop=True)
-        new_c2_df = c2_df.copy()
-        new_c2_df["ambulance_ids"] = new_c2_df["ambulance_ids"].apply(
-            lambda ids: [aid for aid in ids if aid not in to_remove]
-        )
-        data["c2_df"] = new_c2_df
+        if n == current_n or not candidates:
+            return data
+
+        if n < current_n:
+            to_remove = set(rng.sample(candidates, current_n - n))
+
+            data["ambulance_df"] = (
+                amb_df[~amb_df["amb_id"].isin(to_remove)].reset_index(drop=True)
+            )
+            new_c2_df = c2_df.copy()
+            new_c2_df["ambulance_ids"] = new_c2_df["ambulance_ids"].apply(
+                lambda ids: [aid for aid in ids if aid not in to_remove]
+            )
+            data["c2_df"] = new_c2_df
+            new_elig = {}
+            for k, df in amb_elig.items():
+                new_elig[k] = df.loc[[i for i in df.index if i not in to_remove]]
+            data["amb_eligibility_datasets"] = new_elig
+
+        else:
+            amb_df   = amb_df.copy()
+            new_c2_df = c2_df.copy()
+            new_elig  = {k: df.copy() for k, df in amb_elig.items()}
+            existing_ids = set(amb_df["amb_id"].tolist())
+
+            for _ in range(n - current_n):
+                source_id  = rng.choice(candidates)
+                source_row = amb_df[amb_df["amb_id"] == source_id].iloc[0].copy()
+
+                counter = 1
+                while True:
+                    new_id = f"{source_id}_x{counter}"
+                    if new_id not in existing_ids:
+                        break
+                    counter += 1
+                existing_ids.add(new_id)
+
+                source_row["amb_id"] = new_id
+                amb_df = pd.concat([amb_df, pd.DataFrame([source_row])], ignore_index=True)
+
+                # register with the same C2 as the source ambulance
+                new_c2_df["ambulance_ids"] = new_c2_df["ambulance_ids"].apply(
+                    lambda ids, sid=source_id, nid=new_id: ids + [nid] if sid in ids else ids
+                )
+
+                # inherit eligibility rows from source
+                for k, df in new_elig.items():
+                    if source_id in df.index:
+                        new_row = df.loc[[source_id]].copy()
+                        new_row.index = [new_id]
+                        new_elig[k] = pd.concat([df, new_row])
+
+            data["ambulance_df"]           = amb_df
+            data["c2_df"]                  = new_c2_df
+            data["amb_eligibility_datasets"] = new_elig
+
         return data
 
     # ── Casualty generation ───────────────────────────────────────────────────

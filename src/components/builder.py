@@ -89,7 +89,8 @@ class ModelBuilder:
             amb = Ambulance(
                 name=r.amb_id,
                 amb_id=r.amb_id,
-                capacity=int(r.capacity),
+                t1_t2_capacity=int(r.t1_t2_capacity),
+                t3_capacity=int(r.t3_capacity),
                 speed_kmh=float(r.speed_kmh),
                 start_loc_id=r.start_loc_id,
                 c2_id=r.c2_id,

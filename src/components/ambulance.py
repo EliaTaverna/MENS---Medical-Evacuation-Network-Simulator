@@ -17,13 +17,15 @@ class Ambulance(sim.Component):
     def setup(
         self,
         amb_id: str,
-        capacity: int,
+        t1_t2_capacity: int,
+        t3_capacity: int,
         speed_kmh: float,
         start_loc_id: str,
         c2_id: str,
     ):
         self.amb_id = amb_id
-        self.capacity = int(capacity)
+        self.t1_t2_capacity = int(t1_t2_capacity)
+        self.t3_capacity    = int(t3_capacity)
         self.speed_kmh = float(speed_kmh)
         self.start_loc_id = start_loc_id
         self.c2_id = c2_id
