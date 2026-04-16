@@ -17,7 +17,7 @@ from src.policies.policies import (
     craft_plans,
     dispatch_ambulances,
 )
-from src.helpers.solvers import solve_greedy
+from src.policies.solvers import solve_greedy
 
 _BATCH_WINDOW = 2  # simulated minutes to wait before running dispatch
 

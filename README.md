@@ -215,6 +215,8 @@ division, brigade, battalion, par, involved, bcas_spawning_points, dnbi_spawning
 
 `par` is personnel at risk. Only rows with `involved == True` generate baseline BCAS casualties. `bcas_spawning_points` is the list of CCP IDs where battle casualties can spawn. `dnbi_spawning_points` is the list of Role 1 or other facility IDs where DNBI casualties can spawn when `dnbi_rate > 0`.
 
+When `n_battalions_in_combat` is used in a multi-run experiment, the model randomly selects that many battalions and sums their `par` values into a single total. This total PAR is then used uniformly across all spawning points of the selected battalions to compute expected casualties. Because of this, the casualty calculation is most accurate when all battalions have equal `par` values. If battalions have unequal `par`, the model still applies the same summed total to every spawning point, which can over- or under-represent casualties at individual CCPs.
+
 The older `spawning_points` column is no longer the current schema.
 
 `diagnosis_mix.xlsx`
@@ -301,12 +303,16 @@ The single-run path can generate casualties dynamically from this config. If you
 
 The dataset-builder notebook builds the remaining network datasets and the scenario YAML.
 
-Main notebooks:
+Notebooks live under `dataset_generation_notebooks/`:
 
 ```text
-datasets_builder.ipynb
-datasets_builder_elia_testing.ipynb
+dataset_generation_notebooks/
+├── datasets_builder_elia_testing.ipynb   ← working copy (edit freely)
+└── template/
+    └── datasets_builder.ipynb            ← canonical template (copy before editing)
 ```
+
+The `OUT_BASE` path in each notebook is already set relative to its own location, so the notebooks are runnable in place — no `cd` needed. If you copy the template into a different directory, adjust `OUT_BASE` to point back at `data/single_run/input/`.
 
 The notebook is driven by its first configuration cell. The important fields are:
 
@@ -316,7 +322,10 @@ N_R1 = 1
 N_AXP = 1
 N_R2 = 1
 
-OUT_BASE = pathlib.Path("data/single_run/input")
+# For dataset_generation_notebooks/datasets_builder_elia_testing.ipynb (one level deep):
+OUT_BASE = pathlib.Path("../data/single_run/input")
+# For dataset_generation_notebooks/template/datasets_builder.ipynb (two levels deep):
+# OUT_BASE = pathlib.Path("../../data/single_run/input")
 SUFFIX = "elia_testing"
 
 CASUALTY_CONFIG = f"config_{SUFFIX}"
@@ -359,7 +368,7 @@ scenarios/scenario_<suffix>.yaml
 Recommended workflow:
 
 1. Build or edit the casualty settings first.
-2. Create a copy of a dataset builder notebook and open it.
+2. Copy `dataset_generation_notebooks/template/datasets_builder.ipynb` into `dataset_generation_notebooks/` and rename it (e.g. `datasets_builder_<suffix>.ipynb`). Update `OUT_BASE` from `../../data/single_run/input` to `../data/single_run/input` to account for the shallower depth.
 3. Set `SUFFIX` and `CASUALTY_CONFIG` to match the casualty config.
 4. Set facility counts, geometry, ambulance parameters, unit capacities, and simulation duration.
 5. Run the notebook top to bottom.
@@ -422,7 +431,7 @@ force_structure_<suffix>.xlsx
 config_<suffix>.yaml
 ```
 
-2. Create a copy of a dataset builder notebook and open it.
+2. Copy `dataset_generation_notebooks/template/datasets_builder.ipynb` into `dataset_generation_notebooks/` and rename it; update `OUT_BASE` to `../data/single_run/input`.
 3. Set `SUFFIX`, `CASUALTY_CONFIG`, and the network parameters.
 4. Run the notebook to create the remaining datasets and scenario YAML.
 5. Open `src/launch/runner_single.py`.
@@ -483,6 +492,14 @@ Experiment files live under:
 ```text
 data/multi_run/input/
 ```
+
+A full experiment template listing every available uncertainty, lever, and outcome is at:
+
+```text
+data/multi_run/input/template/experiment_template.yaml
+```
+
+To create a new experiment, copy the template, rename it, and remove or comment out the parameters you do not need.
 
 Minimal structure:
 
