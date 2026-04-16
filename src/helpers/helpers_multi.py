@@ -13,6 +13,7 @@ from ema_workbench import (
     ScalarOutcome, ArrayOutcome, SequentialEvaluator, perform_experiments,
 )
 from ema_workbench.em_framework.evaluators import Samplers
+from ema_workbench.util.utilities import save_results
 
 _SAMPLER_MAP = {
     "lhs":          Samplers.LHS,
@@ -418,6 +419,9 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
     unc_sampler   = _SAMPLER_MAP.get(str(run_settings.get("uncertainty_sampler", "lhs")).lower(), Samplers.LHS)
     lever_sampler = _SAMPLER_MAP.get(str(run_settings.get("lever_sampler",       "lhs")).lower(), Samplers.LHS)
 
+    # EMA treats policies=0 as "no levers → 1 dummy policy"; reflect that in display
+    n_policies_display = max(n_policies, 1)
+
     if max_parallel > 1:
         from ema_workbench import MultiprocessingEvaluator
         evaluator_cls    = MultiprocessingEvaluator
@@ -428,7 +432,7 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
 
     # ── No batching ───────────────────────────────────────────────────────────
     if not batch_size:
-        print(f"Running {n_scenarios} scenarios × {n_policies} policies "
+        print(f"Running {n_scenarios} scenarios × {n_policies_display} policies "
               f"(max_parallel={max_parallel}, unc={unc_sampler.name}, levers={lever_sampler.name})...")
         with evaluator_cls(model, **evaluator_kwargs) as evaluator:
             experiments_df, outcomes = perform_experiments(
@@ -445,9 +449,9 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
     # memory accumulated inside a worker (Python heap fragmentation, salabim
     # residuals, etc.) is released by the OS when the process exits, giving
     # each batch a clean slate.
-    n_total   = n_scenarios * n_policies
+    n_total   = n_scenarios * n_policies_display
     n_batches = (n_scenarios + batch_size - 1) // batch_size
-    print(f"Running {n_scenarios} scenarios × {n_policies} policies "
+    print(f"Running {n_scenarios} scenarios × {n_policies_display} policies "
           f"in {n_batches} batches of {batch_size} "
           f"(max_parallel={max_parallel}, unc={unc_sampler.name}, levers={lever_sampler.name}, "
           f"total={n_total} runs)...")
@@ -458,7 +462,7 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
     for batch_id in range(n_batches):
         batch_n = min(batch_size, n_scenarios - batch_id * batch_size)
         print(f"\n--- Batch {batch_id + 1}/{n_batches} "
-              f"({batch_n} scenarios × {n_policies} policies) ---")
+              f"({batch_n} scenarios × {n_policies_display} policies) ---")
 
         with evaluator_cls(model, **evaluator_kwargs) as evaluator:
             exp_df, outcomes = perform_experiments(
@@ -596,6 +600,15 @@ def save_experiment_results(experiments_df: pd.DataFrame, outcomes: dict,
         np.savez_compressed(run_folder / "timeseries.npz", **array_outcomes)
         shapes = {k: v.shape for k, v in array_outcomes.items()}
         print(f"  timeseries.npz: {len(array_outcomes)} arrays — {shapes}")
+
+    # Persist the raw (experiments, outcomes) tuple exactly as returned by
+    # perform_experiments, in EMA's native tarball format.  Reload later with:
+    #     from ema_workbench import load_results
+    #     experiments, outcomes = load_results("ema_results.tar.gz")
+    ema_results_path = run_folder / "ema_results.tar.gz"
+    save_results((experiments_df, outcomes), str(ema_results_path))
+    print(f"  ema_results.tar.gz: raw bench output ({len(experiments_df)} runs, "
+          f"{len(outcomes)} outcomes)")
 
     # Remove intermediate batch files (temporary only)
     for f in run_folder.glob("batch_*"):

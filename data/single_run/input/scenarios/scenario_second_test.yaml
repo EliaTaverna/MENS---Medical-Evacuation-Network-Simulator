@@ -1,0 +1,45 @@
+name: scenario_second_test
+seed: 42
+description: Auto-generated topology-driven scenario
+components:
+  distance_matrix: components/distances/distance_matrix_second_test.xlsx
+  coordinates: components/distances/coordinates_second_test.xlsx
+  axp: components/AXPs/axp_second_test.xlsx
+  facilities: components/facilities/facilities_second_test.xlsx
+  units: components/units/units_second_test.xlsx
+  ambulances: components/ambulances/amb_second_test.xlsx
+  c2: components/c2/c2_second_test.xlsx
+policy_matrixes:
+  facility_eligibility:
+    0: policy_matrixes/facility_eligibility/facility_eligibility_second_test_strict.xlsx
+    1: policy_matrixes/facility_eligibility/facility_eligibility_second_test_loose.xlsx
+  ambulance_eligibility:
+    0: policy_matrixes/ambulance_eligibility/ambulance_eligibility_second_test_strict.xlsx
+    1: policy_matrixes/ambulance_eligibility/ambulance_eligibility_second_test_loose.xlsx
+casualty_generation:
+  config: casualty_generation_settings/sampling_settings/config_second_test.yaml
+levers:
+  dispatch_policy: greedy
+  facility_eligibility: 0
+  ambulance_eligibility: 0
+simulation:
+  till: 7200
+  trace: false
+  data_collector_interval: 10.0
+video:
+  enabled: true
+  fps: 24
+  time_scale: 1.0
+  dpi: 100
+  state_log_interval: 5.0
+  start_time: 0
+  duration: 100
+logs:
+  enabled: true
+  path: simulation_logs
+outputs:
+  patient_log: true
+  safe_patients: true
+  transport_events: true
+  wait_times: true
+  facility_states: false

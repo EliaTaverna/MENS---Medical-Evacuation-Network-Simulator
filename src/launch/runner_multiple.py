@@ -2,7 +2,17 @@ from __future__ import annotations
 
 import os
 import sys
+import warnings
 from pathlib import Path
+
+# ── Silence the cosmetic "ipyparallel not installed" UserWarning from
+#    ema_workbench.em_framework in BOTH this process and every MP worker:
+#    - filterwarnings handles the main process
+#    - PYTHONWARNINGS is inherited by spawned workers on Windows and read
+#      by the Python interpreter at startup, before ema_workbench is imported
+warnings.filterwarnings("ignore", message=".*ipyparallel.*")
+os.environ.setdefault("PYTHONWARNINGS", "ignore::UserWarning:ema_workbench")
+
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 os.chdir(_REPO_ROOT)
 sys.path.insert(0, str(_REPO_ROOT))
@@ -15,7 +25,7 @@ from src.helpers.helpers_multi import (
 )
 
 # ── Point this at your experiment YAML ───────────────────────────────────────
-EXPERIMENT_PATH = "data/multi_run/input/experiment_elia_testing.yaml"
+EXPERIMENT_PATH = "data/multi_run/input/experiment_second_test.yaml"
 # ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

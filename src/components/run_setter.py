@@ -58,10 +58,11 @@ class RunSetter:
         data     = dict(self.base_data)
         data     = self._apply_r2_retreat(data, kwargs)
         data     = self._apply_r1_access(data, kwargs)
+        data     = self._apply_distance_overrides(data, kwargs)
         data     = self._apply_dcs_capacity(data, kwargs)
         data     = self._apply_pec_capacity(data, kwargs)
         data     = self._apply_dcr_capacity(data, kwargs)
-        data     = self._apply_set_ambulances_ccp_r1(data, kwargs, seeds["ambulances"])
+        data     = self._apply_set_ambulances_r1_to_ccp(data, kwargs, seeds["ambulances"])
         data     = self._apply_set_ambulances_r1_r2(data, kwargs, seeds["ambulances"])
         data     = self._apply_amb_speed_ccp_r1(data, kwargs)
         data     = self._apply_amb_speed_r1_r2(data, kwargs)
@@ -181,6 +182,45 @@ class RunSetter:
         data["distance_matrix"] = dm
         return data
 
+    def _apply_distance_overrides(self, data: dict, kwargs: dict) -> dict:
+        """Override arbitrary pairwise distances from `distance_<id1>__<id2>` levers.
+
+        Any kwarg whose key starts with ``distance_`` and whose tail splits
+        on ``__`` into exactly two non-empty tokens is treated as an explicit
+        override for that facility pair. Both ``dm[id1, id2]`` and
+        ``dm[id2, id1]`` are set to the lever value (km).
+
+        Separator is a double underscore because facility IDs themselves
+        contain single underscores (e.g. ``r1_br1_bt1_1``). Unknown IDs raise
+        — a typo in the lever name should fail loudly, not be ignored.
+        Applied after ``_apply_r2_retreat`` and ``_apply_r1_access`` so
+        explicit overrides always win over the programmatic shifts.
+        """
+        overrides = []
+        for key, val in kwargs.items():
+            if not key.startswith("distance_") or val is None:
+                continue
+            tail = key[len("distance_"):]
+            parts = tail.split("__")
+            if len(parts) != 2 or not parts[0] or not parts[1]:
+                continue
+            overrides.append((key, parts[0], parts[1], float(val)))
+
+        if not overrides:
+            return data
+
+        dm = data["distance_matrix"].copy()
+        for key, id1, id2, val in overrides:
+            if id1 not in dm.index or id2 not in dm.index:
+                raise ValueError(
+                    f"Lever {key!r}: facility id {id1!r} or {id2!r} not in "
+                    f"distance matrix."
+                )
+            dm.loc[id1, id2] = val
+            dm.loc[id2, id1] = val
+        data["distance_matrix"] = dm
+        return data
+
     def _apply_dcs_capacity(self, data: dict, kwargs: dict) -> dict:
         """Set the capacity of every DCS unit across all facilities."""
         cap = kwargs.get("dcs_capacity")
@@ -193,25 +233,30 @@ class RunSetter:
         return data
 
     def _apply_amb_speed_ccp_r1(self, data: dict, kwargs: dict) -> dict:
-        """Set the speed of all CCP→R1 ambulances (starters at AXP locations)."""
+        """Set the speed of all CCP→R1 ambulances (dispatched by C2_CCP_R1).
+
+        Partitioning key is ``c2_id``, not ``start_loc_id`` prefix: the prefix
+        scheme was ambiguous once the 3-fleet layout introduced R1-homed
+        ambulances on both legs, and was reversed even in legacy scenarios.
+        """
         speed = kwargs.get("amb_speed_ccp_r1")
         if speed is None:
             return data
 
         amb_df = data["ambulance_df"].copy()
-        mask = amb_df["start_loc_id"].str.startswith("axp_")
+        mask = amb_df["c2_id"].str.lower() == "c2_ccp_r1"
         amb_df.loc[mask, "speed_kmh"] = float(speed)
         data["ambulance_df"] = amb_df
         return data
 
     def _apply_amb_speed_r1_r2(self, data: dict, kwargs: dict) -> dict:
-        """Set the speed of all R1→R2 ambulances (starters at R1 locations)."""
+        """Set the speed of all R1→R2 ambulances (dispatched by C2_R1_R2)."""
         speed = kwargs.get("amb_speed_r1_r2")
         if speed is None:
             return data
 
         amb_df = data["ambulance_df"].copy()
-        mask = amb_df["start_loc_id"].str.startswith("r1_")
+        mask = amb_df["c2_id"].str.lower() == "c2_r1_r2"
         amb_df.loc[mask, "speed_kmh"] = float(speed)
         data["ambulance_df"] = amb_df
         return data
@@ -238,22 +283,52 @@ class RunSetter:
         data["units_df"] = units_df
         return data
 
-    def _apply_set_ambulances_ccp_r1(self, data: dict, kwargs: dict, seed: int) -> dict:
-        """Set the total number of CCP→R1 ambulances (starters at AXP locations)."""
-        n = kwargs.get("n_amb_ccp_r1")
+    def _apply_set_ambulances_r1_to_ccp(self, data: dict, kwargs: dict, seed: int) -> dict:
+        """Set the number of CCP→R1 ambulances (dispatched by C2_CCP_R1) PER R1.
+
+        Semantics: ``n`` is interpreted as the count at each Role-1 home base.
+        The resulting total fleet is ``n * number_of_R1s`` that host this leg.
+        Each home base is resized independently so counts are deterministic
+        (e.g. n=4 with 2 R1s → 4 at r1_a, 4 at r1_b; not a random 3/5 split).
+        """
+        n = kwargs.get("n_amb_r1_to_ccp")
         if n is None:
             return data
-        return self._set_ambulances(data, int(n), start_prefix="axp_", seed=seed)
+
+        amb_df = data["ambulance_df"]
+        mask   = amb_df["c2_id"].str.lower() == "c2_ccp_r1"
+        if not mask.any():
+            return data
+
+        homes = sorted(amb_df.loc[mask, "start_loc_id"].unique().tolist())
+        rng   = random.Random(seed)
+        for home in homes:
+            sub_seed = rng.randrange(1 << 30)
+            data = self._set_ambulances(
+                data, int(n), c2_id="c2_ccp_r1", seed=sub_seed, start_loc_id=home
+            )
+        return data
 
     def _apply_set_ambulances_r1_r2(self, data: dict, kwargs: dict, seed: int) -> dict:
-        """Set the total number of R1→R2 ambulances (starters at R1 locations)."""
+        """Set the total number of R1→R2 ambulances (dispatched by C2_R1_R2)."""
         n = kwargs.get("n_amb_r1_r2")
         if n is None:
             return data
-        return self._set_ambulances(data, int(n), start_prefix="r1_", seed=seed)
+        return self._set_ambulances(data, int(n), c2_id="c2_r1_r2", seed=seed)
 
-    def _set_ambulances(self, data: dict, n: int, start_prefix: str, seed: int) -> dict:
-        """Set the number of ambulances on a leg to exactly n.
+    def _set_ambulances(self, data: dict, n: int, c2_id: str, seed: int,
+                        start_loc_id: str = None) -> dict:
+        """Set the number of ambulances on a leg (optionally at a single home) to exactly n.
+
+        The leg is identified by the dispatching C2 (``c2_id`` column in
+        ``ambulance_df``), not by ``start_loc_id`` prefix. This works for both
+        the legacy 2-fleet layout (CCP→R1 at R1, R1→R2 at AXP) and the new
+        3-fleet layout (Fleet 1 CCP→R1 at R1, Fleet 2 R1→R2 at R1,
+        Fleet 3 R1→R2 at AXP).
+
+        If ``start_loc_id`` is given, the target ``n`` is applied only within
+        that home base (useful for per-R1 sizing); otherwise it's applied to
+        the whole C2 group.
 
         If n > current count: duplicates random ambulances from the leg, assigning
         new unique IDs, and registers them with the owning C2 and all ambulance
@@ -267,7 +342,10 @@ class RunSetter:
         c2_df    = data["c2_df"]
         amb_elig = data.get("amb_eligibility_datasets", {})
 
-        candidates = amb_df[amb_df["start_loc_id"].str.startswith(start_prefix)]["amb_id"].tolist()
+        mask = amb_df["c2_id"].str.lower() == c2_id.lower()
+        if start_loc_id is not None:
+            mask &= amb_df["start_loc_id"] == start_loc_id
+        candidates = amb_df.loc[mask, "amb_id"].tolist()
         current_n  = len(candidates)
 
         if n == current_n or not candidates:

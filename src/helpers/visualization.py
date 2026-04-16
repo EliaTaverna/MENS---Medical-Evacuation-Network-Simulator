@@ -244,16 +244,39 @@ def plot_network_static(
 
     fig, ax = plt.subplots(figsize=figsize)
 
-    # Draw edges (connections) - only for nearby facilities
+    # Draw edges (connections). Label one representative per unique km value
+    # so the plot shows every distance class exactly once, instead of piling
+    # overlapping labels on top of each other at edge midpoints.
     locations = list(distance_matrix.index)
+    labeled_km = set()
     for i, loc1 in enumerate(locations):
         for j, loc2 in enumerate(locations):
-            if i < j:
-                dist = distance_matrix.loc[loc1, loc2]
-                if dist < 25:
-                    x1, y1 = positions[loc1]
-                    x2, y2 = positions[loc2]
-                    ax.plot([x1, x2], [y1, y2], 'k-', alpha=0.1, linewidth=0.5)
+            if i >= j:
+                continue
+            dist = distance_matrix.loc[loc1, loc2]
+            try:
+                d_val = float(dist)
+            except (TypeError, ValueError):
+                continue
+            if not np.isfinite(d_val) or d_val <= 0:
+                continue
+            x1, y1 = positions[loc1]
+            x2, y2 = positions[loc2]
+            ax.plot([x1, x2], [y1, y2], 'k-', alpha=0.35, linewidth=0.6, zorder=1)
+            key = round(d_val, 6)
+            if key not in labeled_km:
+                labeled_km.add(key)
+                mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+                ax.annotate(
+                    f"{d_val:g} km",
+                    (mx, my),
+                    fontsize=8,
+                    ha="center",
+                    va="center",
+                    bbox=dict(boxstyle="round,pad=0.2", fc="white",
+                              ec="#555555", lw=0.6, alpha=0.95),
+                    zorder=2,
+                )
 
     # Draw facilities
     for loc_id, (x, y) in positions.items():
@@ -582,12 +605,34 @@ def create_transport_video(
 
         return ambulance_artists + patient_artists + facility_text_artists + [time_text]
 
-    print(f"Creating animation with {n_frames} frames...")
+    print(f"Creating animation with {n_frames} frames "
+          f"(sim {start_time:.0f}→{max_time:.0f} min, time_scale={time_scale}, fps={fps}, "
+          f"→ {n_frames/fps:.1f} s of video)...")
     anim = FuncAnimation(fig, animate, init_func=init, frames=n_frames, interval=1000//fps, blit=False)
 
     print(f"Saving to {save_path}...")
     writer = FFMpegWriter(fps=fps, metadata={'title': 'MEDEVAC Simulation'}, bitrate=5000)
-    anim.save(save_path, writer=writer, dpi=dpi)
+
+    # Per-frame progress — rendering 1000+ frames at dpi=100 with a large
+    # figure takes many minutes, and without output the run looks hung.
+    # Report every ~1% (or every 10 frames, whichever is more often) and show
+    # elapsed + ETA so the user can decide whether to wait.
+    import time as _time
+    _report_every = max(1, min(10, n_frames // 100 or 1))
+    _t0 = _time.time()
+    def _progress(current_frame, total_frames):
+        done = current_frame + 1
+        if done == 1 or done == total_frames or done % _report_every == 0:
+            elapsed = _time.time() - _t0
+            pct     = 100.0 * done / total_frames
+            rate    = done / elapsed if elapsed > 0 else 0.0
+            eta     = (total_frames - done) / rate if rate > 0 else float("inf")
+            print(f"  frame {done:>5d}/{total_frames}  ({pct:5.1f}%)  "
+                  f"elapsed {elapsed:6.1f}s  "
+                  f"rate {rate:4.1f} fps  "
+                  f"ETA {eta:6.0f}s", flush=True)
+
+    anim.save(save_path, writer=writer, dpi=dpi, progress_callback=_progress)
     print(f"Video saved to {save_path}")
 
     plt.close(fig)

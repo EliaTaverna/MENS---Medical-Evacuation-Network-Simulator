@@ -11,7 +11,7 @@ from src.helpers.helpers_multi import replay_run
 
 if __name__ == "__main__":
     replay_run(
-        results_csv="data/multi_run/output/20260414_131040_scenario_elia_testing/results.csv",
-        scenario_path="data/single_run/input/scenarios/scenario_elia_testing.yaml",
-        row_index=1,
+        results_csv="data/multi_run/output/20260416_185412_scenario_second_test/results.csv",
+        scenario_path="data/single_run/input/scenarios/scenario_second_test.yaml",
+        seed=3109,
     )

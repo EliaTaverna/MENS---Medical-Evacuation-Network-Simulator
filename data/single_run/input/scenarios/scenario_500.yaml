@@ -1,0 +1,44 @@
+name: scenario_500
+seed: 42
+description: Auto-generated topology-driven scenario
+components:
+  distance_matrix: components/distances/distance_matrix_500.xlsx
+  axp: components/AXPs/axp_500.xlsx
+  facilities: components/facilities/facilities_500.xlsx
+  units: components/units/units_500.xlsx
+  ambulances: components/ambulances/amb_500.xlsx
+  c2: components/c2/c2_500.xlsx
+policy_matrixes:
+  facility_eligibility:
+    0: policy_matrixes/facility_eligibility/facility_eligibility_500_strict.xlsx
+    1: policy_matrixes/facility_eligibility/facility_eligibility_500_loose.xlsx
+  ambulance_eligibility:
+    0: policy_matrixes/ambulance_eligibility/ambulance_eligibility_500_strict.xlsx
+    1: policy_matrixes/ambulance_eligibility/ambulance_eligibility_500_loose.xlsx
+casualty_generation:
+  config: casualty_generation_settings/sampling_settings/config_500.yaml
+levers:
+  dispatch_policy: greedy
+  facility_eligibility: 0
+  ambulance_eligibility: 0
+simulation:
+  till: 7200
+  trace: false
+  data_collector_interval: 10.0
+video:
+  enabled: false
+  fps: 24
+  time_scale: 5.0
+  dpi: 100
+  state_log_interval: 5.0
+  start_time: 0
+  duration: null
+logs:
+  enabled: true
+  path: simulation_logs
+outputs:
+  patient_log: true
+  safe_patients: true
+  transport_events: true
+  wait_times: true
+  facility_states: false

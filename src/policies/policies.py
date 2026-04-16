@@ -1,6 +1,7 @@
 """Policy functions and registries for C2 decision making."""
 
 from __future__ import annotations
+import math
 import pandas as pd
 import salabim as sim
 from typing import List, Optional, TYPE_CHECKING
@@ -194,8 +195,15 @@ def craft_plans(
 def dispatch_ambulances(c2: "TransportC2", plans_craft: dict[str, list["PlanStep"]]):
     """
     Equip ambulances with a plan and dispatch them (activate).
+
+    Before dispatch, every leg in the plan (amb.location → step[0],
+    step[i] → step[i+1]) is checked against env.distance_matrix. A non-finite
+    distance means C2 picked a forbidden edge — that is a config/eligibility
+    bug, so we raise rather than let the ambulance silently vanish into a
+    sentinel-sized trip.
     """
     env = c2.env
+    dm = getattr(env, "distance_matrix", None)
 
     for amb_id, plan in (plans_craft or {}).items():
         amb = env.amb_by_id.get(amb_id)
@@ -205,6 +213,32 @@ def dispatch_ambulances(c2: "TransportC2", plans_craft: dict[str, list["PlanStep
         # avoid double dispatch
         if amb not in c2.idle_ambulances:
             continue
+
+        # validate every planned leg is reachable
+        if dm is not None and plan:
+            route_ids = [amb._loc_id(amb.location)] + [amb._loc_id(s.facility) for s in plan]
+            for a, b in zip(route_ids, route_ids[1:]):
+                if a == b:
+                    continue
+                if a not in dm.index or b not in dm.columns:
+                    raise ValueError(
+                        f"C2 {c2.c2_id} assigned ambulance {amb_id} a leg "
+                        f"{a!r} -> {b!r} missing from the distance matrix."
+                    )
+                d = dm.loc[a, b]
+                # Accept any numeric scalar — numpy.int64 / numpy.float64
+                # both fail `isinstance(d, (int, float))` on some versions, so
+                # coerce via float() and fall back to NaN for non-numeric.
+                try:
+                    d_val = float(d)
+                except (TypeError, ValueError):
+                    d_val = float("nan")
+                if not math.isfinite(d_val):
+                    raise ValueError(
+                        f"C2 {c2.c2_id} assigned ambulance {amb_id} a forbidden "
+                        f"leg {a!r} -> {b!r} (distance={d!r}). Check facility/"
+                        f"ambulance eligibility matrices against the distance matrix."
+                    )
 
         # attach plan
         amb.plan = plan

@@ -92,13 +92,44 @@ outputs:
 
 The scenario seed is the master seed for a single run. In multi-run experiments, the `seed` column usually comes from the experiment YAML instead.
 
+### Facility ID Naming
+
+All facility IDs produced by the dataset builder follow a hierarchical `role_br{N}_bt{M}_{i}` scheme, where the brigade and (when applicable) battalion are embedded directly in the ID. Battalion-level facilities (CCP, Role 1) carry both a brigade and a battalion slot. Brigade-level facilities (Role 2 basic, Role 2 enhanced, AXP) carry only a brigade slot.
+
+| Type            | Template                     | Parent    | Example IDs                                   |
+|-----------------|------------------------------|-----------|-----------------------------------------------|
+| CCP             | `ccp_br{N}_bt{M}_{i}`        | battalion | `ccp_br1_bt1_1`, `ccp_br1_bt2_1`, ...         |
+| Role 1          | `r1_br{N}_bt{M}_{i}`         | battalion | `r1_br1_bt1_1`, `r1_br2_bt1_1`, ...           |
+| Role 2 basic    | `r2b_br{N}_{i}`              | brigade   | `r2b_br1_1`, `r2b_br2_1`, ...                 |
+| Role 2 enhanced | `r2e_br{N}_{i}`              | brigade   | `r2e_br1_1`, `r2e_br2_1`, ...                 |
+| AXP             | `axp_br{N}_{i}`              | brigade   | `axp_br1_1`, `axp_br2_1`, ...                 |
+
+Battalion numbering **resets per brigade**: every brigade has its own `bt1..bt{N_BN_PER_BRIGADE}`. So `r1_br1_bt1_1` and `r1_br2_bt1_1` are distinct facilities in two different brigades. The parent brigade/battalion is readable from the ID itself — no external mapping needed.
+
+How to read an ID:
+
+```
+r1_br2_bt1_1
+│   │   │  └─ 1st Role 1 inside this battalion
+│   │   └──── battalion 1 (within brigade 2)
+│   └──────── brigade 2
+└──────────── Role 1
+
+r2b_br3_1
+│   │   └─ 1st Role-2-basic inside brigade 3
+│   └───── brigade 3
+└───────── Role 2 basic
+```
+
+The same IDs are used everywhere downstream: distance matrix row/column labels, `facilities.xlsx`, `units.xlsx`, ambulance `start_loc_id` and eligibility columns, C2 rosters, and multi-run lever names. When writing a per-pair distance lever such as `distance_r1_br1_bt1_1__r2b_br1_1`, the double underscore separates the two IDs (each ID itself contains single underscores).
+
 ### Component Datasets
 
 Component files are Excel files in `data/single_run/input/components/`.
 
 `distance_matrix.xlsx`
 
-Square matrix of travel distances in km. Row and column labels are location IDs such as `ccp_1`, `r1_1`, `r2_1`, and `axp_1`. The matrix must include every location that an ambulance can depart from or arrive at.
+Square matrix of travel distances in km. Row and column labels are facility IDs following the scheme above (`ccp_br1_bt1_1`, `r1_br1_bt1_1`, `r2b_br1_1`, `r2e_br1_1`, `axp_br1_1`, …). The matrix must include every location that an ambulance can depart from or arrive at. Unreachable pairs are written as empty cells (NaN); at run time the C2 dispatcher raises if it ever assigns an ambulance along such a leg.
 
 `coordinates.xlsx`
 
@@ -227,13 +258,13 @@ One row per triage label. Expected columns:
 triage, frequency, lifetime_distribution, lifetime_low, lifetime_mode, lifetime_high
 ```
 
-Typical labels include:
+The set of triage labels is **hardcoded** in the engine and cannot be extended or renamed from this file:
 
 ```text
 T1_BCAS, T2_BCAS, T3_BCAS, KIA_BCAS, MIA_BCAS, T1_DNBI, T2_DNBI, T3_DNBI
 ```
 
-KIA/MIA rows may be generated but are filtered out before the simulation run.
+Only the per-label `frequency` and lifetime parameters are user-editable — i.e. you can reshape the mix, but not introduce new diagnosis types. KIA/MIA rows may be generated but are filtered out before the simulation run.
 
 `prescriptions.xlsx`
 
