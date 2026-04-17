@@ -21,6 +21,7 @@ _SAMPLER_MAP = {
     "ff":           Samplers.FF,
     "mc":           Samplers.MC,
     "uniform_lhs":  Samplers.UNIFORM_LHS,
+    "sobol":        Samplers.SOBOL,
 }
 
 from src import (
