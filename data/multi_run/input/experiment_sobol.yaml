@@ -1,0 +1,195 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT — Sobol sensitivity analysis on scenario_second_test
+# ═══════════════════════════════════════════════════════════════════════════════
+# Sobol design: Saltelli sampler → N*(2k+2) runs per policy, where k is the
+# number of uncertainties and N is `n_scenarios` below.
+#
+# Here k = 10 uncertainties, n_scenarios = 256 → 5632 runs per policy.
+# Levers = 2x2 eligibility grid, sampled full-factorial → 4 policies.
+# Total = 5632 * 4 = 22,528 runs. Scale n_scenarios up (power of 2) for
+# tighter S_i / S_ij confidence intervals.
+#
+# IMPORTANT vs experiment_second_test.yaml:
+#   - `seed` removed from uncertainties (Sobol would attribute stochastic
+#     noise to seed itself; keep it implicit or interpret S_i(seed) as noise).
+#   - `n_battalions_in_combat` converted from CategoricalParameter to Integer
+#     (Sobol requires a continuous/integer hypercube, not categoricals).
+#   - All former levers except the eligibility pair are now uncertainties.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_second_test.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES  (admissible / physically-plausible ranges)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+uncertainties:
+
+  # ── Casualty generation ─────────────────────────────────────────────────────
+  # baseline 0.05
+  - name: bcas_rate
+    type: real
+    lower: 0.01
+    upper: 0.10
+
+  # baseline 3
+  - name: waves_per_day
+    type: integer
+    lower: 1
+    upper: 6
+
+  # baseline 30 min. Lower bound 5 (below that a "wave" is effectively a spike)
+  - name: wave_duration_min
+    type: integer
+    lower: 5
+    upper: 240
+
+  # 2 battalions in this scenario → admissible [1, 2]
+  - name: n_battalions_in_combat
+    type: integer
+    lower: 1
+    upper: 2
+
+  # ── MTF unit capacities (baseline 2) ────────────────────────────────────────
+  - name: dcr_capacity
+    type: integer
+    lower: 1
+    upper: 10
+
+  - name: pec_capacity
+    type: integer
+    lower: 1
+    upper: 10
+
+  # ── Ambulance fleet (CCP→R1) ────────────────────────────────────────────────
+  # baseline 2 per R1
+  - name: n_amb_r1_to_ccp
+    type: integer
+    lower: 1
+    upper: 10
+
+  # baseline 30 km/h. Military ambulances realistically 10–60 km/h
+  - name: amb_speed_ccp_r1
+    type: integer
+    lower: 10
+    upper: 60
+
+  # ── Distances ───────────────────────────────────────────────────────────────
+  # baseline CCP ↔ same-BN R1: 3 km
+  - name: r1_closest_km
+    type: integer
+    lower: 1
+    upper: 10
+
+  # baseline CCP ↔ neighbour-BN R1: 7 km. Kept strictly > r1_closest_km range.
+  - name: r1_second_km
+    type: integer
+    lower: 5
+    upper: 25
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS — only the eligibility pair
+# ═══════════════════════════════════════════════════════════════════════════════
+
+levers:
+
+  # 0 = strict (same-BN only), 1 = loose (adds neighbour-BN)
+  - name: facility_eligibility
+    type: integer
+    lower: 0
+    upper: 1
+
+  # 0 = strict, 1 = loose
+  - name: ambulance_eligibility
+    type: integer
+    lower: 0
+    upper: 1
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  - death_rate
+  - safe_rate
+
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+  - n_dead_T1_BCAS
+  - n_dead_T2_BCAS
+  - n_dead_T3_BCAS
+
+  - mean_wait_care_T1_BCAS
+  - mean_wait_care_T2_BCAS
+  - mean_wait_care_T3_BCAS
+  - mean_wait_transport_T1_BCAS
+  - mean_wait_transport_T2_BCAS
+  - mean_wait_transport_T3_BCAS
+
+  - total_transport_time
+
+  - waiting_transport_ccp_t1_bcas_dcr
+  - waiting_transport_ccp_t2_bcas_dcr
+  - waiting_transport_ccp_t3_bcas_pec
+
+  - waiting_care_dcr_t1_bcas_dcr
+  - waiting_care_dcr_t2_bcas_dcr
+
+  - waiting_care_pec_t3_bcas_pec
+
+  - transit_ccp_role1_t1_bcas_dcr
+  - transit_ccp_role1_t2_bcas_dcr
+  - transit_ccp_role1_t3_bcas_pec
+
+  - in_care_dcr_t1_bcas_dcr
+  - in_care_dcr_t2_bcas_dcr
+
+  - in_care_pec_t3_bcas_pec
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARRAY OUTCOMES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+array_outcomes:
+
+  - ts_transport_r1_br1_bt1_1_T1
+  - ts_transport_r1_br1_bt1_1_T2
+  - ts_transport_r1_br1_bt1_1_T3
+  - ts_transport_r1_br1_bt2_1_T1
+  - ts_transport_r1_br1_bt2_1_T2
+  - ts_transport_r1_br1_bt2_1_T3
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+#   Sobol design size (per policy): N * (2k + 2)
+#     N = n_scenarios = 256
+#     k = 10 uncertainties
+#     → 256 * 22 = 5632 runs per policy
+#
+#   Levers: full factorial of 2×2 eligibility grid → n_policies = 4
+#   Total runs: 5632 * 4 = 22,528
+#
+#   For publication-quality S_i / S_ij, bump n_scenarios to 512 or 1024.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 256
+  n_policies: 4
+  uncertainty_sampler: sobol
+  lever_sampler: ff
+  batch_size: 256
+  max_parallel: 4
