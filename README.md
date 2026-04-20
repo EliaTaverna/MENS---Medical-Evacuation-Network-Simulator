@@ -603,6 +603,55 @@ wave_duration_min: [10, 20, 40, 50]
 
 full factorial creates `2 * 4 = 8` policy combinations. With `n_scenarios: 1000`, that gives about `1000 * 8 = 8000` runs.
 
+### Samplers and batching
+
+`uncertainty_sampler` and `lever_sampler` accept: `lhs`, `mc`, `uniform_lhs`, `ff` (or `fullfactorial`), and `sobol`.
+
+Batching (`batch_size` in `run_settings`) splits the `n_scenarios` loop into chunks that are sampled and executed independently, re-opening the evaluator between chunks so worker RAM is released. This is fine for memoryless samplers but breaks structured designs:
+
+| Sampler | Batchable? |
+|---|---|
+| `lhs`, `mc`, `uniform_lhs` | Yes |
+| `ff` / `fullfactorial` | Yes (deterministic grid) |
+| `sobol` | **No** |
+
+For Sobol, the design is a Saltelli matrix of `N * (2k + 2)` rows, where `k` is the number of uncertainties and `N = n_scenarios`. The A, B, and AB_i sub-blocks are constructed together. Batching re-invokes the sampler per batch, so concatenating B batches of size `N'` produces B independent Sobol designs rather than one design of size `B * N'`. SALib's `sobol.analyze` will either error or silently return wrong first- and total-order indices.
+
+When `uncertainty_sampler: sobol`, set `batch_size: 0` (or any value `>= n_scenarios`) so the whole design runs in one call. If memory is the problem at large `N`, lower `max_parallel` or fix levers and loop over policies manually instead of batching scenarios.
+
+### Sobol sensitivity analysis
+
+Typical experiment layout for a Sobol run:
+
+```yaml
+run_settings:
+  n_scenarios: 256         # N in Saltelli's N*(2k+2); use a power of 2
+  n_policies: 4            # e.g. 2x2 eligibility grid via ff
+  uncertainty_sampler: sobol
+  lever_sampler: ff
+  batch_size: 0            # must NOT batch for Sobol
+  max_parallel: 4
+```
+
+Total runs per policy: `N * (2k + 2)`. Rules of thumb: `N >= 512` for stable first-order indices `S_i`, `N >= 1024` for second-order indices `S_ij`.
+
+Sobol requires a continuous or integer hypercube — `CategoricalParameter` is not supported. Convert categoricals to integer parameters or drop them.
+
+The raw `(experiments_df, outcomes)` tuple is saved to `ema_results.tar.gz`. Compute indices with:
+
+```python
+from ema_workbench import load_results
+from ema_workbench.em_framework.salib_connectors import get_SALib_problem
+from SALib.analyze import sobol
+
+experiments, outcomes = load_results("ema_results.tar.gz")
+problem = get_SALib_problem(model.uncertainties)
+Si = sobol.analyze(problem, outcomes["death_rate"], calc_second_order=True)
+# Si["S1"], Si["ST"], Si["S2"] with confidence intervals
+```
+
+The same `(experiments, outcomes["death_rate"])` pair can be fed into `ema_workbench.analysis.prim.Prim` or `feature_scoring.get_feature_scores_all` for scenario discovery on the Sobol design (note the design is not i.i.d. — interpret density/coverage as fractions of the Sobol sample, not of input space).
+
 ### Multi-Run Steps
 
 1. Make sure the target single-run scenario works first.
