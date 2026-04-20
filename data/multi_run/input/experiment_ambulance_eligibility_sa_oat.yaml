@@ -1,0 +1,132 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# OAT SA — axis: ambulance_eligibility
+# Purpose: ambulance routing matrix (0 = strict, 1 = loose)
+# Scenario: 3 brigades × 3 battalions, big R2-enhanced, no R2-basic.
+# Design: full factorial. seed (30 values) × ambulance_eligibility (2 values) = 60 runs.
+# Everything not listed here uses the scenario / casualty-config baseline
+# (notably facility_eligibility = 0, ambulance_eligibility = 0,
+# bcas_rate = 0.05, waves_per_day = 3, wave_duration_min = 30, n_days = 1).
+# Baseline for this axis: 0
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_3_brigades_3_battalions_big_r2e_no_r2b.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES — the seed axis plus the one swept parameter
+# ═══════════════════════════════════════════════════════════════════════════════
+
+uncertainties:
+
+  - name: seed
+    type: categorical
+    values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
+
+  - name: ambulance_eligibility
+    type: categorical
+    values: [0, 1]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS — none; all other knobs stay at scenario default
+# ═══════════════════════════════════════════════════════════════════════════════
+
+levers: []
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  # ── Overall mortality and survival ────────────────────────────────────────
+  - death_rate
+  - safe_rate
+
+  # ── Mortality by BCAS triage ──────────────────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+
+  # ── Patient and death counts ──────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+  - n_dead_T1_BCAS
+  - n_dead_T2_BCAS
+  - n_dead_T3_BCAS
+
+  # ── Mean wait times (minutes) ─────────────────────────────────────────────
+  - mean_wait_care_T1_BCAS
+  - mean_wait_care_T2_BCAS
+  - mean_wait_care_T3_BCAS
+  - mean_wait_transport_T1_BCAS
+  - mean_wait_transport_T2_BCAS
+  - mean_wait_transport_T3_BCAS
+
+  # ── Ambulance travel ──────────────────────────────────────────────────────
+  - total_transport_time
+
+  # ── Queue phases (DCR/PEC only — this scenario has no DCS prescription) ──
+  - waiting_transport_ccp_t1_bcas_dcr
+  - waiting_transport_ccp_t2_bcas_dcr
+  - waiting_transport_ccp_t3_bcas_pec
+  - waiting_care_dcr_t1_bcas_dcr
+  - waiting_care_dcr_t2_bcas_dcr
+  - waiting_care_pec_t3_bcas_pec
+  - transit_ccp_role1_t1_bcas_dcr
+  - transit_ccp_role1_t2_bcas_dcr
+  - transit_ccp_role1_t3_bcas_pec
+  - in_care_dcr_t1_bcas_dcr
+  - in_care_dcr_t2_bcas_dcr
+  - in_care_pec_t3_bcas_pec
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARRAY OUTCOMES (one per R1 × triage tier)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+array_outcomes:
+
+  - ts_transport_r1_br1_bt1_1_T1
+  - ts_transport_r1_br1_bt1_1_T2
+  - ts_transport_r1_br1_bt1_1_T3
+  - ts_transport_r1_br1_bt2_1_T1
+  - ts_transport_r1_br1_bt2_1_T2
+  - ts_transport_r1_br1_bt2_1_T3
+  - ts_transport_r1_br1_bt3_1_T1
+  - ts_transport_r1_br1_bt3_1_T2
+  - ts_transport_r1_br1_bt3_1_T3
+  - ts_transport_r1_br2_bt1_1_T1
+  - ts_transport_r1_br2_bt1_1_T2
+  - ts_transport_r1_br2_bt1_1_T3
+  - ts_transport_r1_br2_bt2_1_T1
+  - ts_transport_r1_br2_bt2_1_T2
+  - ts_transport_r1_br2_bt2_1_T3
+  - ts_transport_r1_br2_bt3_1_T1
+  - ts_transport_r1_br2_bt3_1_T2
+  - ts_transport_r1_br2_bt3_1_T3
+  - ts_transport_r1_br3_bt1_1_T1
+  - ts_transport_r1_br3_bt1_1_T2
+  - ts_transport_r1_br3_bt1_1_T3
+  - ts_transport_r1_br3_bt2_1_T1
+  - ts_transport_r1_br3_bt2_1_T2
+  - ts_transport_r1_br3_bt2_1_T3
+  - ts_transport_r1_br3_bt3_1_T1
+  - ts_transport_r1_br3_bt3_1_T2
+  - ts_transport_r1_br3_bt3_1_T3
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS — full factorial, one policy, no batching
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 60
+  n_policies: 1
+  uncertainty_sampler: ff
+  lever_sampler: ff
+  batch_size: 0
+  max_parallel: 4

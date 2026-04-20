@@ -1,0 +1,283 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT — Sobol sensitivity analysis on scenario_3_brigades_3_battalions_big_r2e_no_r2b
+# ═══════════════════════════════════════════════════════════════════════════════
+# Saltelli design: N*(2k+2) runs per policy, where k is the number of
+# uncertainties and N is n_scenarios below. Sobol requires a continuous /
+# integer hypercube — no categoricals — so `seed` is NOT an uncertainty
+# (its variance would otherwise be attributed as S_i(seed) = noise).
+#
+# Here  k = 18 uncertainties, n_scenarios = 256  →  9 728 runs per policy.
+# Levers = 2×2 eligibility (pooling) grid, sampled full-factorial → 4 policies.
+# Total = 38 912 runs. Bump N (power of 2) for tighter S_i / S_ij CIs.
+#
+# Levers are limited to the eligibility pair because those are the only
+# actual policy decisions in this study (pooling strictness). Everything
+# else — capacities, fleet sizes, ambulance speeds, distances — is treated
+# as an uncertainty whose sensitivity we want to quantify.
+#
+# Skipped axes: r2_basic_* only (scenario has 0 R2-basic facilities, so the
+# paired-r1 loop is structurally empty regardless of prescriptions).
+# Note: dcs_capacity, n_amb_r1_r2, amb_speed_r1_r2, r2_enhanced_r1_* are
+# *currently* silent with the default prescriptions file (T1/T2 BCAS →
+# [DCR], T3 BCAS → [PEC] — nothing routes to Role 2). They're included
+# here in anticipation of prescriptions being updated to include DCS.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_3_brigades_3_battalions_big_r2e_no_r2b.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES  (admissible / physically-plausible ranges)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+uncertainties:
+
+  # ── Casualty generation ────────────────────────────────────────────────────
+  # baseline 0.05 (config_3_brigades_..._no_r2b.yaml)
+  - name: bcas_rate
+    type: real
+    lower: 0.01
+    upper: 0.10
+
+  # baseline 3. Upper bound 6 keeps wave_duration × waves_per_day ≤ 1440.
+  - name: waves_per_day
+    type: integer
+    lower: 1
+    upper: 6
+
+  # baseline 30 min. Floor 5 (below that a wave is effectively a spike).
+  - name: wave_duration_min
+    type: integer
+    lower: 5
+    upper: 240
+
+  # Scenario simulation.till = 7200 min = 5 days  →  upper bound 5.
+  - name: n_days
+    type: integer
+    lower: 1
+    upper: 5
+
+  # BCAS triage-mix knobs. Each is capped at 0.5; the code tolerates sums up
+  # to 1.0 (at which point T3/KIA/MIA all go to zero). Sobol samples from
+  # the product uniform; pathological (sum > 1) draws are vanishingly rare
+  # inside floating-point tolerance and would raise ValueError if they hit.
+  - name: fraction_t1_bcas
+    type: real
+    lower: 0.0
+    upper: 0.5
+
+  - name: fraction_t2_bcas
+    type: real
+    lower: 0.0
+    upper: 0.5
+
+  # ── Force / doctrine ───────────────────────────────────────────────────────
+  # 9 battalions total in this scenario.
+  - name: n_battalions_in_combat
+    type: integer
+    lower: 1
+    upper: 9
+
+  # ── MTF unit capacities (baseline 2 for both; DCS not used in scenario) ────
+  - name: dcr_capacity
+    type: integer
+    lower: 1
+    upper: 8
+
+  - name: pec_capacity
+    type: integer
+    lower: 1
+    upper: 8
+
+  # ── Ambulance fleet (CCP→R1 only — R1→R2 leg is a no-op here) ──────────────
+  # baseline 2 per R1
+  - name: n_amb_r1_to_ccp
+    type: integer
+    lower: 1
+    upper: 8
+
+  # baseline 30 km/h. Military ambulances realistically 15-60 km/h.
+  - name: amb_speed_ccp_r1
+    type: integer
+    lower: 15
+    upper: 60
+
+  # ── CCP↔R1 distances (topology-based) ──────────────────────────────────────
+  # baseline CCP ↔ same-BN R1: 3 km
+  - name: r1_ccp_same_km
+    type: real
+    lower: 1
+    upper: 10
+
+  # baseline CCP ↔ neighbour-BN R1: 7 km. Kept strictly above same-BN range.
+  - name: r1_ccp_neighbor_km
+    type: real
+    lower: 5
+    upper: 25
+
+  # ── R2 capacity / R1→R2 transport / R2↔R1 distances ───────────────────────
+  # Silent no-ops under the current prescriptions file (no DCS route).
+  # Active once any prescription contains DCS (patient routed from R1 to R2).
+  # baseline DCS capacity at each R2-enhanced: 6
+  - name: dcs_capacity
+    type: integer
+    lower: 1
+    upper: 12
+
+  # baseline R1→R2 fleet total: 30 (18 R1-homed + 12 AXP-homed)
+  - name: n_amb_r1_r2
+    type: integer
+    lower: 5
+    upper: 60
+
+  # baseline R1→R2 ambulance speed: 30 km/h
+  - name: amb_speed_r1_r2
+    type: integer
+    lower: 15
+    upper: 60
+
+  # baseline R1 ↔ same-BDE R2-enhanced: 12 km
+  - name: r2_enhanced_r1_same_km
+    type: real
+    lower: 5
+    upper: 40
+
+  # baseline R1 ↔ neighbour-BDE R2-enhanced: 25 km. Kept strictly above same.
+  - name: r2_enhanced_r1_neighbor_km
+    type: real
+    lower: 15
+    upper: 60
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS — the eligibility pair (2×2 full factorial → 4 policies)
+# Pooling is the only real policy decision; everything else is sampled as
+# an uncertainty above.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+levers:
+
+  # 0 = strict (same-BN only), 1 = loose (adds neighbour-BN)
+  - name: facility_eligibility
+    type: integer
+    lower: 0
+    upper: 1
+
+  # 0 = strict, 1 = loose (same semantics, for ambulance routing)
+  - name: ambulance_eligibility
+    type: integer
+    lower: 0
+    upper: 1
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# BCAS only (dnbi_rate = 0). Prescriptions: DCR / PEC only (no DCS).
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  # ── Overall mortality and survival ────────────────────────────────────────
+  - death_rate
+  - safe_rate
+
+  # ── Mortality by BCAS triage ──────────────────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+
+  # ── Patient and death counts ──────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+  - n_dead_T1_BCAS
+  - n_dead_T2_BCAS
+  - n_dead_T3_BCAS
+
+  # ── Mean wait times (minutes) ─────────────────────────────────────────────
+  - mean_wait_care_T1_BCAS
+  - mean_wait_care_T2_BCAS
+  - mean_wait_care_T3_BCAS
+  - mean_wait_transport_T1_BCAS
+  - mean_wait_transport_T2_BCAS
+  - mean_wait_transport_T3_BCAS
+
+  # ── Ambulance travel ──────────────────────────────────────────────────────
+  - total_transport_time
+
+  # ── Queue phases (DCR / PEC paths only) ───────────────────────────────────
+  - waiting_transport_ccp_t1_bcas_dcr
+  - waiting_transport_ccp_t2_bcas_dcr
+  - waiting_transport_ccp_t3_bcas_pec
+  - waiting_care_dcr_t1_bcas_dcr
+  - waiting_care_dcr_t2_bcas_dcr
+  - waiting_care_pec_t3_bcas_pec
+  - transit_ccp_role1_t1_bcas_dcr
+  - transit_ccp_role1_t2_bcas_dcr
+  - transit_ccp_role1_t3_bcas_pec
+  - in_care_dcr_t1_bcas_dcr
+  - in_care_dcr_t2_bcas_dcr
+  - in_care_pec_t3_bcas_pec
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARRAY OUTCOMES (one per R1 × triage tier; 9 R1s × 3 = 27)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+array_outcomes:
+
+  - ts_transport_r1_br1_bt1_1_T1
+  - ts_transport_r1_br1_bt1_1_T2
+  - ts_transport_r1_br1_bt1_1_T3
+  - ts_transport_r1_br1_bt2_1_T1
+  - ts_transport_r1_br1_bt2_1_T2
+  - ts_transport_r1_br1_bt2_1_T3
+  - ts_transport_r1_br1_bt3_1_T1
+  - ts_transport_r1_br1_bt3_1_T2
+  - ts_transport_r1_br1_bt3_1_T3
+  - ts_transport_r1_br2_bt1_1_T1
+  - ts_transport_r1_br2_bt1_1_T2
+  - ts_transport_r1_br2_bt1_1_T3
+  - ts_transport_r1_br2_bt2_1_T1
+  - ts_transport_r1_br2_bt2_1_T2
+  - ts_transport_r1_br2_bt2_1_T3
+  - ts_transport_r1_br2_bt3_1_T1
+  - ts_transport_r1_br2_bt3_1_T2
+  - ts_transport_r1_br2_bt3_1_T3
+  - ts_transport_r1_br3_bt1_1_T1
+  - ts_transport_r1_br3_bt1_1_T2
+  - ts_transport_r1_br3_bt1_1_T3
+  - ts_transport_r1_br3_bt2_1_T1
+  - ts_transport_r1_br3_bt2_1_T2
+  - ts_transport_r1_br3_bt2_1_T3
+  - ts_transport_r1_br3_bt3_1_T1
+  - ts_transport_r1_br3_bt3_1_T2
+  - ts_transport_r1_br3_bt3_1_T3
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+#   Sobol design size (per policy): N * (2k + 2)
+#     N = n_scenarios = 256
+#     k = 18 uncertainties
+#     → 256 * 38 = 9 728 runs per policy
+#
+#   Levers: full-factorial 2×2 eligibility grid → n_policies = 4
+#   Total runs: 9 728 * 4 = 38 912
+#
+#   For publication-quality S_i / S_ij, bump n_scenarios to 512 or 1024.
+#   batch_size MUST be 0 for Sobol — batching re-invokes the sampler per
+#   batch and produces B independent Saltelli designs instead of one, which
+#   breaks SALib's S_i / S_T computation (see README "Samplers and batching").
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 256
+  n_policies: 4
+  uncertainty_sampler: sobol
+  lever_sampler: ff
+  batch_size: 0
+  max_parallel: 4
