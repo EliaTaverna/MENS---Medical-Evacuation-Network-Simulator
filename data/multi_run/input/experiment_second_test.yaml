@@ -33,19 +33,19 @@ uncertainties:
     lower: 1
     upper: 10000
 
-  # config_second_test.yaml baseline: 0.05
+  # config_template.yaml baseline: 0.05
   - name: bcas_rate
     type: real
     lower: 0.01
     upper: 0.10
 
-  # config_second_test.yaml baseline: 3
+  # config_template.yaml baseline: 3
   - name: waves_per_day
     type: integer
     lower: 1
     upper: 6
 
-  # config_second_test.yaml baseline: 30 min
+  # config_template.yaml baseline: 30 min
   - name: wave_duration_min
     type: integer
     lower: 1
@@ -57,7 +57,7 @@ uncertainties:
     values: [ 1, 2 ]
 
   # scenario_second_test has simulation.till = 7200 min = 5 days
-  # (config_second_test.yaml baseline is 1 day, but we can sweep 1..5)
+  # (config_template.yaml baseline is 1 day, but we can sweep 1..5)
 #  - name: n_days
 #    type: integer
 #    lower: 1

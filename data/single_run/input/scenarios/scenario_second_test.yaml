@@ -17,7 +17,7 @@ policy_matrixes:
     0: policy_matrixes/ambulance_eligibility/ambulance_eligibility_second_test_strict.xlsx
     1: policy_matrixes/ambulance_eligibility/ambulance_eligibility_second_test_loose.xlsx
 casualty_generation:
-  config: casualty_generation_settings/sampling_settings/config_second_test.yaml
+  config: casualty_generation_settings/sampling_settings/config_template.yaml
 levers:
   dispatch_policy: greedy
   facility_eligibility: 0
