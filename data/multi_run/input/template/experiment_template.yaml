@@ -88,15 +88,54 @@ levers:
     type: categorical
     values: [1, 2, 3, 6]
 
-  # Shifts all Role 2 facilities away from the front line by this many km.
-  # Adds retreat_km to every distance between an R2 node and any non-R2 node.
-  # Inter-R2 distances stay unchanged (the formation retreats together).
-  # Range: >= 0. A value of 0 means no retreat (baseline position).
-  #   Upper bound depends on your network geometry; large values push R2
-  #   very far from R1, increasing transport time significantly.
-  - name: r2_retreat_km
+  # ── CCP↔R1 distance levers ───────────────────────────────────────────────
+  # Two levers rewrite every CCP↔R1 distance, partitioned by battalion tier.
+  # Pairs are enumerated from force_structure_df: for each battalion row,
+  # r1_ids × ccp_ids is the "same" tier; neighbor_r1_ids × ccp_ids is the
+  # "neighbor" tier (R1s of neighbor battalions in the same brigade).
+
+  - name: r1_ccp_same_km
     type: real
-    lower: 0
+    lower: 1
+    upper: 30
+
+  - name: r1_ccp_neighbor_km
+    type: real
+    lower: 2
+    upper: 60
+
+  # ── R1↔R2 distance levers ─────────────────────────────────────────────────
+  # Four independent levers rewrite every R1↔R2 distance in the matrix,
+  # partitioned by R2 subtype (basic vs enhanced) and brigade tier (same vs
+  # neighbor). AXP↔R2 distances are NOT touched — use distance_<a>__<b>
+  # overrides if those need to move too. Each lever, when omitted, leaves
+  # the corresponding edges at their scenario baseline.
+  # "Same brigade" = this R2 lives in the R1's brigade.
+  # "Neighbor brigade" = this R2 lives in a brigade adjacent to the R1's
+  # brigade (per the TOROIDAL wiring in the builder notebook).
+  # Pairs are enumerated from force_structure_df: r1_ids × r2b_ids /
+  # r2e_ids (same tier) and r1_ids × neighbor_r2b_ids / neighbor_r2e_ids
+  # (neighbor tier). Silently a no-op if the scenario has no R2 of that
+  # subtype.
+
+  - name: r2_basic_r1_same_km
+    type: real
+    lower: 2
+    upper: 60
+
+  - name: r2_basic_r1_neighbor_km
+    type: real
+    lower: 5
+    upper: 100
+
+  - name: r2_enhanced_r1_same_km
+    type: real
+    lower: 2
+    upper: 60
+
+  - name: r2_enhanced_r1_neighbor_km
+    type: real
+    lower: 5
     upper: 100
 
   # Overrides the capacity (max simultaneous patients) of every DCS unit
@@ -157,26 +196,6 @@ levers:
     type: real
     lower: 20
     upper: 80
-
-  # Sets each CCP's distance to its closest Role 1 facility (in km).
-  # For every CCP, the model looks up which R1 is currently closest in the
-  # ORIGINAL distance matrix (ranking is fixed, not affected by other levers),
-  # and overrides only that CCP<->R1 entry. All tied R1s get the same value.
-  # Only CCP<->R1 entries are touched; R1<->R2 and all other distances are
-  # left untouched.
-  - name: r1_closest_km
-    type: real
-    lower: 2
-    upper: 40
-
-  # Sets each CCP's distance to its second-closest Role 1 facility (in km).
-  # Same logic as r1_closest_km but targets the second-nearest distance tier.
-  # Note: EMA can sample r1_closest_km > r1_second_km freely — the labels
-  # "closest" and "second closest" always refer to the original ranking.
-  - name: r1_second_km
-    type: real
-    lower: 2
-    upper: 60
 
   # ── Per-pair distance overrides ────────────────────────────────────────────
   # Override an arbitrary single entry in the distance matrix (km).

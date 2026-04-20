@@ -241,14 +241,24 @@ force_structure: casualty_generation_settings/military_force_structure/force_str
 Current columns:
 
 ```text
-division, brigade, battalion, par, involved, bcas_spawning_points, dnbi_spawning_points
+division, brigade, battalion, par, involved,
+ccp_ids, r1_ids, r2b_ids, r2e_ids, axp_ids,
+neighbor_r1_ids, neighbor_r2b_ids, neighbor_r2e_ids, neighbor_axp_ids
 ```
 
-`par` is personnel at risk. Only rows with `involved == True` generate baseline BCAS casualties. `bcas_spawning_points` is the list of CCP IDs where battle casualties can spawn. `dnbi_spawning_points` is the list of Role 1 or other facility IDs where DNBI casualties can spawn when `dnbi_rate > 0`.
+`par` is personnel at risk. Only rows with `involved == True` generate baseline casualties.
 
-When `n_battalions_in_combat` is used in a multi-run experiment, the model randomly selects that many battalions and sums their `par` values into a single total. This total PAR is then used uniformly across all spawning points of the selected battalions to compute expected casualties. Because of this, the casualty calculation is most accurate when all battalions have equal `par` values. If battalions have unequal `par`, the model still applies the same summed total to every spawning point, which can over- or under-represent casualties at individual CCPs.
+Per-battalion facility rosters (comma-joined IDs in each cell):
+- `ccp_ids` / `r1_ids` — this battalion's own CCPs and Role 1s.
+- `r2b_ids` / `r2e_ids` / `axp_ids` — this battalion's brigade's Role 2-basic, Role 2-enhanced, and AXPs.
+- `neighbor_r1_ids` — Role 1s of neighbor *battalions* (same brigade).
+- `neighbor_r2b_ids` / `neighbor_r2e_ids` / `neighbor_axp_ids` — Role 2-basic, Role 2-enhanced, and AXPs of neighbor *brigades*.
 
-The older `spawning_points` column is no longer the current schema.
+Empty / missing cells are treated as no IDs (useful when a scenario has no R2-basic, for example).
+
+Spawn-map derivation: BCAS casualties spawn at `ccp_ids`; DNBI casualties spawn at `r1_ids` (when `dnbi_rate > 0`). The older `bcas_spawning_points` / `dnbi_spawning_points` / `spawning_points` columns are no longer read.
+
+When `n_battalions_in_combat` is used in a multi-run experiment, the model randomly selects that many battalions and sums their `par` values into a single total. This total PAR is then used uniformly across all spawning points of the selected battalions to compute expected casualties. Because of this, the casualty calculation is most accurate when all battalions have equal `par` values.
 
 `diagnosis_mix.xlsx`
 
@@ -321,7 +331,9 @@ For a new scenario suffix:
 4. Edit the force-structure file using the current columns:
 
 ```text
-division, brigade, battalion, par, involved, bcas_spawning_points, dnbi_spawning_points
+division, brigade, battalion, par, involved,
+ccp_ids, r1_ids, r2b_ids, r2e_ids, axp_ids,
+neighbor_r1_ids, neighbor_r2b_ids, neighbor_r2e_ids, neighbor_axp_ids
 ```
 
 5. Copy an existing config YAML and rename it to `config_<suffix>.yaml`.

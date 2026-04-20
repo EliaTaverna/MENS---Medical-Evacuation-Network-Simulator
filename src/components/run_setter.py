@@ -56,8 +56,8 @@ class RunSetter:
         master_seed = self._resolve_seed(kwargs)
         seeds       = self._derive_seeds(master_seed)
         data     = dict(self.base_data)
-        data     = self._apply_r2_retreat(data, kwargs)
-        data     = self._apply_r1_access(data, kwargs)
+        data     = self._apply_ccp_r1_distances(data, kwargs)
+        data     = self._apply_r2_r1_distances(data, kwargs)
         data     = self._apply_distance_overrides(data, kwargs)
         data     = self._apply_dcs_capacity(data, kwargs)
         data     = self._apply_pec_capacity(data, kwargs)
@@ -104,80 +104,114 @@ class RunSetter:
 
     # ── Network modifications ─────────────────────────────────────────────────
 
-    def _apply_r2_retreat(self, data: dict, kwargs: dict) -> dict:
-        """Shift all Role 2 facilities away from the front by retreat_km kilometres.
+    def _apply_ccp_r1_distances(self, data: dict, kwargs: dict) -> dict:
+        """Override CCP↔R1 distances via two levers (same-bn / neighbor-bn).
 
-        Adds retreat_km to every distance_matrix entry between a Role 2 node and
-        any non-Role-2 node (row and column).  Inter-Role-2 distances are unchanged
-        because all r2 nodes retreat together as a formation.
+        Levers (all optional, km):
+        - ``r1_ccp_same_km``:     CCP ↔ R1 of the same battalion
+        - ``r1_ccp_neighbor_km``: CCP ↔ R1 of a neighbor battalion (same brigade)
+
+        Each lever, when provided, rewrites every matching distance-matrix entry
+        in both directions (``dm[r1, ccp] = dm[ccp, r1] = value``). Pairs are
+        enumerated from ``force_structure_df``: for each battalion row, own
+        ``ccp_ids`` are paired with own ``r1_ids`` (the "same" tier) and with
+        ``neighbor_r1_ids`` (the "neighbor" tier, i.e. R1s of neighbor
+        battalions in the same brigade).
+
+        Applied before ``_apply_r2_r1_distances`` and
+        ``_apply_distance_overrides`` in ``prepare()``; explicit per-pair
+        overrides still win over these topology-level values.
         """
-        retreat_km = float(kwargs.get("r2_retreat_km", 0.0))
-        if retreat_km == 0.0:
+        same_km = kwargs.get("r1_ccp_same_km")
+        nbr_km  = kwargs.get("r1_ccp_neighbor_km")
+        if same_km is None and nbr_km is None:
             return data
 
-        facility_df = data["facility_df"]
-        r2_ids = set(
-            facility_df.loc[facility_df["facility_type"] == "Role2", "facility_id"].tolist()
-        )
-        if not r2_ids:
+        force_df = self.base_config.get("force_structure_df")
+        if force_df is None:
             return data
 
         dm = data["distance_matrix"].copy()
-        non_r2 = [idx for idx in dm.index if idx not in r2_ids]
 
-        for r2_id in r2_ids:
-            dm.loc[r2_id, non_r2] += retreat_km
-            dm.loc[non_r2, r2_id] += retreat_km
+        def _set_pairs(r1s, ccps, value):
+            if value is None or not r1s or not ccps:
+                return
+            v = float(value)
+            for r1 in r1s:
+                if r1 not in dm.index:
+                    continue
+                for ccp in ccps:
+                    if ccp not in dm.index:
+                        continue
+                    dm.loc[r1, ccp] = v
+                    dm.loc[ccp, r1] = v
+
+        for _, row in force_df.iterrows():
+            ccp_ids     = self._parse_facility_list(row.get("ccp_ids"))
+            r1_ids      = self._parse_facility_list(row.get("r1_ids"))
+            nbr_r1_ids  = self._parse_facility_list(row.get("neighbor_r1_ids"))
+            _set_pairs(r1_ids,     ccp_ids, same_km)
+            _set_pairs(nbr_r1_ids, ccp_ids, nbr_km)
 
         data["distance_matrix"] = dm
         return data
 
-    def _apply_r1_access(self, data: dict, kwargs: dict) -> dict:
-        """Set CCP↔R1 distances for the closest and second-closest R1 per CCP.
+    def _apply_r2_r1_distances(self, data: dict, kwargs: dict) -> dict:
+        """Override R1↔R2 distances via four levers (basic/enhanced × same/neighbor).
 
-        Rankings are determined once from the original (unmodified) distance
-        matrix in self.base_data, so they are stable regardless of lever values
-        or other modifications applied earlier in prepare().
+        Levers (all optional, km):
+        - ``r2_basic_r1_same_km``:     R2-basic ↔ same-brigade R1
+        - ``r2_basic_r1_neighbor_km``: R2-basic ↔ neighbor-brigade R1
+        - ``r2_enhanced_r1_same_km``:  R2-enhanced ↔ same-brigade R1
+        - ``r2_enhanced_r1_neighbor_km``: R2-enhanced ↔ neighbor-brigade R1
 
-        Only CCP↔R1 entries are touched; all other distances are unchanged.
-        Either lever can be omitted independently.
+        Each lever, when provided, rewrites every matching distance-matrix entry
+        in both directions (``dm[r1, r2] = dm[r2, r1] = value``). Pairs are
+        enumerated from ``force_structure_df``: for each battalion row, own
+        ``r1_ids`` are paired with own-brigade ``r2b_ids`` / ``r2e_ids`` (the
+        "same" tier) and with ``neighbor_r2b_ids`` / ``neighbor_r2e_ids`` (the
+        "neighbor" tier). AXP↔R2 entries are not touched — use
+        ``distance_<a>__<b>`` overrides if you need those too.
+
+        Applied after ``_apply_ccp_r1_distances`` and before
+        ``_apply_distance_overrides`` so explicit per-pair overrides always win.
         """
-        closest_km = kwargs.get("r1_closest_km")
-        second_km  = kwargs.get("r1_second_km")
-
-        if closest_km is None and second_km is None:
+        same_basic    = kwargs.get("r2_basic_r1_same_km")
+        nbr_basic     = kwargs.get("r2_basic_r1_neighbor_km")
+        same_enhanced = kwargs.get("r2_enhanced_r1_same_km")
+        nbr_enhanced  = kwargs.get("r2_enhanced_r1_neighbor_km")
+        if all(v is None for v in (same_basic, nbr_basic, same_enhanced, nbr_enhanced)):
             return data
 
-        facility_df = data["facility_df"]
-        r1_ids  = facility_df.loc[
-            facility_df["facility_type"] == "Role1", "facility_id"
-        ].tolist()
-        ccp_ids = facility_df.loc[
-            facility_df["facility_type"] == "CCP", "facility_id"
-        ].tolist()
-
-        ref_dm = self.base_data["distance_matrix"]
-        dm     = data["distance_matrix"].copy()
-
-        r1_ids  = [r for r in r1_ids  if r in ref_dm.index]
-        ccp_ids = [c for c in ccp_ids if c in ref_dm.index]
-
-        if not r1_ids or not ccp_ids:
+        force_df = self.base_config.get("force_structure_df")
+        if force_df is None:
             return data
 
-        for ccp in ccp_ids:
-            ranked = ref_dm.loc[ccp, r1_ids].sort_values()
-            distinct = ranked.unique()  # sorted ascending, ties collapsed
+        dm = data["distance_matrix"].copy()
 
-            if closest_km is not None and len(distinct) >= 1:
-                for r1 in ranked.index[ranked == distinct[0]]:
-                    dm.loc[ccp, r1] = float(closest_km)
-                    dm.loc[r1, ccp] = float(closest_km)
+        def _set_pairs(r1s, r2s, value):
+            if value is None or not r1s or not r2s:
+                return
+            v = float(value)
+            for r1 in r1s:
+                if r1 not in dm.index:
+                    continue
+                for r2 in r2s:
+                    if r2 not in dm.index:
+                        continue
+                    dm.loc[r1, r2] = v
+                    dm.loc[r2, r1] = v
 
-            if second_km is not None and len(distinct) >= 2:
-                for r1 in ranked.index[ranked == distinct[1]]:
-                    dm.loc[ccp, r1] = float(second_km)
-                    dm.loc[r1, ccp] = float(second_km)
+        for _, row in force_df.iterrows():
+            r1_ids       = self._parse_facility_list(row.get("r1_ids"))
+            r2b_ids      = self._parse_facility_list(row.get("r2b_ids"))
+            r2e_ids      = self._parse_facility_list(row.get("r2e_ids"))
+            nbr_r2b_ids  = self._parse_facility_list(row.get("neighbor_r2b_ids"))
+            nbr_r2e_ids  = self._parse_facility_list(row.get("neighbor_r2e_ids"))
+            _set_pairs(r1_ids, r2b_ids,     same_basic)
+            _set_pairs(r1_ids, nbr_r2b_ids, nbr_basic)
+            _set_pairs(r1_ids, r2e_ids,     same_enhanced)
+            _set_pairs(r1_ids, nbr_r2e_ids, nbr_enhanced)
 
         data["distance_matrix"] = dm
         return data
@@ -193,8 +227,8 @@ class RunSetter:
         Separator is a double underscore because facility IDs themselves
         contain single underscores (e.g. ``r1_br1_bt1_1``). Unknown IDs raise
         — a typo in the lever name should fail loudly, not be ignored.
-        Applied after ``_apply_r2_retreat`` and ``_apply_r1_access`` so
-        explicit overrides always win over the programmatic shifts.
+        Applied after ``_apply_ccp_r1_distances`` and ``_apply_r2_r1_distances``
+        so explicit overrides always win over the programmatic shifts.
         """
         overrides = []
         for key, val in kwargs.items():
@@ -469,20 +503,31 @@ class RunSetter:
 
         spawn_map = {}
         for _, row in selected.iterrows():
-            for fid in self._parse_spawning_points(row["bcas_spawning_points"]):
+            for fid in self._parse_facility_list(row["ccp_ids"]):
                 spawn_map[fid] = {"labels": bcas_labels, "rate": bcas_rate, "par": par}
             if dnbi_rate > 0:
-                for fid in self._parse_spawning_points(row["dnbi_spawning_points"]):
+                for fid in self._parse_facility_list(row["r1_ids"]):
                     spawn_map[fid] = {"labels": dnbi_labels, "rate": dnbi_rate, "par": par}
 
         return spawn_map
 
     @staticmethod
-    def _parse_spawning_points(value) -> list:
-        """Parse a spawning_points cell into a list of lowercase CCP IDs."""
+    def _parse_facility_list(value) -> list:
+        """Parse a comma-joined facility-ID cell into a list of lowercase IDs.
+
+        Handles list (from YAML), non-empty string (from Excel), and
+        NaN / None / empty (treated as no IDs).
+        """
+        if value is None:
+            return []
+        if isinstance(value, float) and value != value:  # NaN
+            return []
         if isinstance(value, list):
-            return [c.strip().lower() for c in value]
-        return [c.strip().lower() for c in str(value).strip("[]").split(",")]
+            return [c.strip().lower() for c in value if str(c).strip()]
+        s = str(value).strip("[]").strip()
+        if not s:
+            return []
+        return [c.strip().lower() for c in s.split(",") if c.strip()]
 
     # ── Levers ────────────────────────────────────────────────────────────────
 

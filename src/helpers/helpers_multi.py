@@ -59,25 +59,24 @@ def load_experiment(experiment_path: str) -> dict:
 # CASUALTY CONFIG
 # ============================================================
 
-def _parse_spawning_points(value) -> list:
-    """Parse a spawning_points cell into a list of lowercase CCP IDs.
+def _parse_facility_list(value) -> list:
+    """Parse a comma-joined facility-ID cell into a list of lowercase IDs.
 
-    Accepts either a Python list (from YAML) or a raw string such as
-    ``"[ccp1, ccp2]"`` (from an Excel cell).
-
-    Parameters
-    ----------
-    value : list or str
-        The raw spawning_points value from the force-structure DataFrame.
-
-    Returns
-    -------
-    list[str]
-        Lowercase, stripped CCP facility IDs, e.g. ``["ccp1", "ccp2"]``.
+    Handles the three shapes that end up in a force_structure row:
+    - Python list (from YAML): returned as-is after strip/lower.
+    - Non-empty string (from Excel): split on commas.
+    - NaN / empty / missing: returned as ``[]``.
     """
+    if value is None:
+        return []
+    if isinstance(value, float) and value != value:  # NaN
+        return []
     if isinstance(value, list):
-        return [c.strip().lower() for c in value]
-    return [c.strip().lower() for c in str(value).strip("[]").split(",")]
+        return [c.strip().lower() for c in value if str(c).strip()]
+    s = str(value).strip("[]").strip()
+    if not s:
+        return []
+    return [c.strip().lower() for c in s.split(",") if c.strip()]
 
 
 def _load_casualty_config(scenario: dict) -> dict:
@@ -141,10 +140,10 @@ def _load_casualty_config(scenario: dict) -> dict:
     par_total = int(involved["par"].sum())
     spawn_map = {}
     for _, row in involved.iterrows():
-        for fid in _parse_spawning_points(row["bcas_spawning_points"]):
+        for fid in _parse_facility_list(row["ccp_ids"]):
             spawn_map[fid] = {"labels": bcas_labels, "rate": bcas_rate, "par": par_total}
         if dnbi_rate > 0:
-            for fid in _parse_spawning_points(row["dnbi_spawning_points"]):
+            for fid in _parse_facility_list(row["r1_ids"]):
                 spawn_map[fid] = {"labels": dnbi_labels, "rate": dnbi_rate, "par": par_total}
 
     return {
