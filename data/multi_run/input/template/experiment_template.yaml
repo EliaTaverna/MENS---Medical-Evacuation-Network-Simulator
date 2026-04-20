@@ -70,6 +70,25 @@ uncertainties:
     lower: 1
     upper: 5
 
+  # ── BCAS triage mix ────────────────────────────────────────────────────────
+  # Two levers fix the T1_BCAS and T2_BCAS shares inside the BCAS block
+  # {T1_BCAS, T2_BCAS, T3_BCAS, KIA_BCAS, MIA_BCAS} (which always sums to 1).
+  # Each lever, when provided, pins its label's fraction. The remaining BCAS
+  # labels (T3_BCAS, KIA_BCAS, MIA_BCAS — plus T1 or T2 when only one lever
+  # is set) are rescaled proportionally to their baseline shares to fill the
+  # residual budget 1 - sum(pinned).
+  # Range: [0, 0.5] each. Their sum must be <= 1.0. DNBI mix is not touched.
+
+  - name: fraction_t1_bcas
+    type: real
+    lower: 0.0
+    upper: 0.5
+
+  - name: fraction_t2_bcas
+    type: real
+    lower: 0.0
+    upper: 0.5
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LEVERS

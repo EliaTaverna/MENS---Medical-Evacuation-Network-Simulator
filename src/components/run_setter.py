@@ -442,6 +442,72 @@ class RunSetter:
 
     # ── Casualty generation ───────────────────────────────────────────────────
 
+    def _build_diagnosis_mix_df(self, kwargs: dict):
+        """Return the diagnosis_mix_df, possibly with overridden BCAS shares.
+
+        Levers (both optional, fractions in [0, 0.5]):
+        - ``fraction_t1_bcas``: fixes T1_BCAS share of the BCAS block
+        - ``fraction_t2_bcas``: fixes T2_BCAS share of the BCAS block
+
+        The BCAS block is the subset ``{T1_BCAS, T2_BCAS, T3_BCAS, KIA_BCAS,
+        MIA_BCAS}`` — these five frequencies always sum to 1.0 after the
+        downstream renormalisation per-spawn-point. Each lever, when provided,
+        pins its label's share inside the block. The remaining BCAS labels
+        (T3, KIA, MIA, plus T1 or T2 when only one lever is set) are rescaled
+        proportionally to their baseline shares to fill the residual budget
+        ``1 - sum(pinned)``. DNBI rows are never touched.
+
+        Raises ``ValueError`` if the pinned fractions sum to more than 1, or
+        if the residual budget is positive while the residual baseline is
+        zero (can only happen with a custom diagnosis_mix that zeroed T3/KIA/
+        MIA up front).
+        """
+        f_t1 = kwargs.get("fraction_t1_bcas")
+        f_t2 = kwargs.get("fraction_t2_bcas")
+        base = self.base_config["diagnosis_mix_df"]
+        if f_t1 is None and f_t2 is None:
+            return base
+
+        pinned: dict = {}
+        if f_t1 is not None:
+            pinned["T1_BCAS"] = float(f_t1)
+        if f_t2 is not None:
+            pinned["T2_BCAS"] = float(f_t2)
+        pinned_sum = sum(pinned.values())
+        if pinned_sum > 1.0 + 1e-9:
+            raise ValueError(
+                f"fraction_t1_bcas + fraction_t2_bcas = {pinned_sum:.4f} > 1.0"
+            )
+
+        bcas_mask = base["triage"].astype(str).isin(
+            ["T1_BCAS", "T2_BCAS", "T3_BCAS", "KIA_BCAS", "MIA_BCAS"]
+        )
+        df = base.copy()
+        bcas_rows = df.loc[bcas_mask].copy()
+        new_freq = {}
+        pinned_set = set(pinned.keys())
+        residual_rows = bcas_rows[~bcas_rows["triage"].isin(pinned_set)]
+        residual_base_sum = float(residual_rows["frequency"].sum())
+        residual_budget = 1.0 - pinned_sum
+
+        if residual_budget > 1e-9 and residual_base_sum == 0.0:
+            raise ValueError(
+                "BCAS residual labels have zero total baseline frequency; cannot "
+                "allocate the residual budget proportionally."
+            )
+
+        for _, row in bcas_rows.iterrows():
+            label = str(row["triage"])
+            if label in pinned:
+                new_freq[label] = pinned[label]
+            elif residual_base_sum > 0:
+                new_freq[label] = float(row["frequency"]) / residual_base_sum * residual_budget
+            else:
+                new_freq[label] = 0.0
+
+        df.loc[bcas_mask, "frequency"] = df.loc[bcas_mask, "triage"].astype(str).map(new_freq)
+        return df
+
     def _apply_casualties(self, data: dict, kwargs: dict, seed: int,
                           battalion_seed: int = None) -> dict:
         spawn_map = self._resolve_spawn_map(kwargs, battalion_seed or seed)
@@ -455,13 +521,14 @@ class RunSetter:
         par_total = next(iter(spawn_map.values()), {}).get(
             "par", self.base_config.get("par_total", 1000)
         )
+        diagnosis_mix_df = self._build_diagnosis_mix_df(kwargs)
         full_df, wave_dicts = generate_casualties_df_from_waves(
             spawn_map=spawn_map,
             par_total=par_total,
             n_days=int(kwargs.get("n_days",                       self.base_config["n_days"])),
             waves_per_day=int(kwargs.get("waves_per_day",         self.base_config["waves_per_day"])),
             wave_duration_min=int(kwargs.get("wave_duration_min", self.base_config["wave_duration_min"])),
-            diagnosis_mix_df=self.base_config["diagnosis_mix_df"],
+            diagnosis_mix_df=diagnosis_mix_df,
             rx_df=self.base_config["rx_df"],
             seed=seed,
         )
