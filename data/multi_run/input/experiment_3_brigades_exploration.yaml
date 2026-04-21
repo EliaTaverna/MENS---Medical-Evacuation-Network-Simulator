@@ -1,0 +1,310 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT — pure exploration on scenario_3_brigades_3_battalions_big_r2e_no_r2b
+# Intended for scenario discovery / feature scoring (random-forest importance,
+# PRIM, CART). LHS-sampled hypercube over every knob — pooling included as
+# a sampled dimension rather than a full-factorial lever, so feature scoring
+# can directly attribute outcome variance to it alongside everything else.
+# ═══════════════════════════════════════════════════════════════════════════════
+# Recommended downstream:
+#
+#   from ema_workbench import load_results
+#   from ema_workbench.analysis import feature_scoring, prim
+#   experiments, outcomes = load_results("ema_results.tar.gz")
+#   fs = feature_scoring.get_feature_scores_all(experiments, outcomes)   # RF
+#   # or: box = prim.Prim(experiments, outcomes["death_rate"], threshold=0.5)
+#
+# Why LHS (not Sobol, not FF):
+#   - Space-filling single-sample: every scenario is a fresh draw. No Saltelli
+#     A/B/AB_i structure, which means feature scoring sees unbiased marginals.
+#   - Batchable (unlike Sobol): run_settings.batch_size > 0 works here, and
+#     workers are recycled between batches so memory stays bounded.
+#   - Cheaper per insight than Sobol — RF feature importance converges well
+#     below what Sobol needs for stable second-order indices.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_3_brigades_3_battalions_big_r2e_no_r2b.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES — every knob (including pooling) as a sampled dimension
+# ═══════════════════════════════════════════════════════════════════════════════
+
+uncertainties:
+
+  # ── Stochastic variability ─────────────────────────────────────────────────
+  # Sampled across scenarios so every LHS point gets a different seed.
+  - name: seed
+    type: integer
+    lower: 1
+    upper: 10000
+
+  # ── Casualty generation ────────────────────────────────────────────────────
+  # baseline 0.05
+  - name: bcas_rate
+    type: real
+    lower: 0.01
+    upper: 0.10
+
+  # baseline 3. Upper 6 keeps waves_per_day × wave_duration_min ≤ 1440 min.
+  - name: waves_per_day
+    type: integer
+    lower: 1
+    upper: 6
+
+  # baseline 30 min. Floor 5 (below that a wave is effectively a spike).
+  - name: wave_duration_min
+    type: integer
+    lower: 5
+    upper: 240
+
+  # Scenario simulation.till = 7200 min = 5 days → upper bound 5.
+  - name: n_days
+    type: integer
+    lower: 1
+    upper: 5
+
+  # BCAS triage mix. Each capped at 0.5; sum ≤ 1.0 (at the boundary T3/KIA/MIA
+  # all go to zero). LHS within each [0, 0.5] keeps the joint-sum distribution
+  # safely under the 1.0 threshold in ~87% of pairs.
+  - name: fraction_t1_bcas
+    type: real
+    lower: 0.0
+    upper: 0.5
+
+  - name: fraction_t2_bcas
+    type: real
+    lower: 0.0
+    upper: 0.5
+
+  # ── Force / doctrine ───────────────────────────────────────────────────────
+  # 9 battalions total in this scenario.
+  - name: n_battalions_in_combat
+    type: integer
+    lower: 1
+    upper: 9
+
+  # ── MTF unit capacities ────────────────────────────────────────────────────
+  # baseline DCR 2, PEC 2, DCS 6
+  - name: dcr_capacity
+    type: integer
+    lower: 1
+    upper: 8
+
+  - name: pec_capacity
+    type: integer
+    lower: 1
+    upper: 8
+
+  - name: dcs_capacity
+    type: integer
+    lower: 1
+    upper: 12
+
+  # ── Ambulance fleet — CCP→R1 leg ───────────────────────────────────────────
+  # baseline 2 per R1
+  - name: n_amb_r1_to_ccp
+    type: integer
+    lower: 1
+    upper: 8
+
+  # baseline 30 km/h
+  - name: amb_speed_ccp_r1
+    type: integer
+    lower: 15
+    upper: 60
+
+  # ── Ambulance fleet — R1→R2 leg ────────────────────────────────────────────
+  # baseline total 30 (18 R1-homed + 12 AXP-homed)
+  - name: n_amb_r1_r2
+    type: integer
+    lower: 5
+    upper: 60
+
+  # baseline 30 km/h
+  - name: amb_speed_r1_r2
+    type: integer
+    lower: 15
+    upper: 60
+
+  # ── Topology distances ─────────────────────────────────────────────────────
+  # baseline CCP ↔ same-BN R1: 3 km
+  - name: r1_ccp_same_km
+    type: real
+    lower: 1
+    upper: 10
+
+  # baseline CCP ↔ neighbour-BN R1: 7 km
+  - name: r1_ccp_neighbor_km
+    type: real
+    lower: 5
+    upper: 25
+
+  # baseline R1 ↔ same-BDE R2-enhanced: 12 km
+  - name: r2_enhanced_r1_same_km
+    type: real
+    lower: 5
+    upper: 40
+
+  # baseline R1 ↔ neighbour-BDE R2-enhanced: 25 km
+  - name: r2_enhanced_r1_neighbor_km
+    type: real
+    lower: 15
+    upper: 60
+
+  # ── Pooling (treated as sampled dimensions, not levers) ────────────────────
+  # 0 = strict (same-unit only), 1 = loose (adds neighbor-unit).
+  - name: facility_eligibility
+    type: integer
+    lower: 0
+    upper: 1
+
+  - name: ambulance_eligibility
+    type: integer
+    lower: 0
+    upper: 1
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS — none. Feature scoring treats every knob uniformly.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+levers: []
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# BCAS only (dnbi_rate = 0). Prescriptions: DCR / PEC / DCS paths all active.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  # ── Overall mortality and survival ────────────────────────────────────────
+  - death_rate
+  - safe_rate
+
+  # ── Mortality by BCAS triage ──────────────────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+
+  # ── Patient and death counts ──────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+  - n_dead_T1_BCAS
+  - n_dead_T2_BCAS
+  - n_dead_T3_BCAS
+
+  # ── Mean wait times (minutes) ─────────────────────────────────────────────
+  - mean_wait_care_T1_BCAS
+  - mean_wait_care_T2_BCAS
+  - mean_wait_care_T3_BCAS
+  - mean_wait_transport_T1_BCAS
+  - mean_wait_transport_T2_BCAS
+  - mean_wait_transport_T3_BCAS
+
+  # ── Ambulance travel ──────────────────────────────────────────────────────
+  - total_transport_time
+
+  # ── Queue phases (DCR + PEC + DCS paths) ──────────────────────────────────
+  # Keep the superset; outcomes that don't materialise for a given
+  # prescriptions file will be filled with 0.0 automatically.
+  - waiting_transport_ccp_t1_bcas_dcr_dcs
+  - waiting_transport_ccp_t1_bcas_dcr
+  - waiting_transport_ccp_t2_bcas_dcr_dcs
+  - waiting_transport_ccp_t2_bcas_dcr
+  - waiting_transport_ccp_t3_bcas_pec_dcs
+  - waiting_transport_ccp_t3_bcas_pec
+  - waiting_transport_role1_t1_bcas_dcr_dcs
+  - waiting_transport_role1_t2_bcas_dcr_dcs
+  - waiting_transport_role1_t3_bcas_pec_dcs
+  - waiting_care_dcr_t1_bcas_dcr_dcs
+  - waiting_care_dcr_t1_bcas_dcr
+  - waiting_care_dcr_t2_bcas_dcr_dcs
+  - waiting_care_dcr_t2_bcas_dcr
+  - waiting_care_pec_t3_bcas_pec_dcs
+  - waiting_care_pec_t3_bcas_pec
+  - waiting_care_dcs_t1_bcas_dcr_dcs
+  - waiting_care_dcs_t2_bcas_dcr_dcs
+  - waiting_care_dcs_t3_bcas_pec_dcs
+  - transit_ccp_role1_t1_bcas_dcr_dcs
+  - transit_ccp_role1_t1_bcas_dcr
+  - transit_ccp_role1_t2_bcas_dcr_dcs
+  - transit_ccp_role1_t2_bcas_dcr
+  - transit_ccp_role1_t3_bcas_pec_dcs
+  - transit_ccp_role1_t3_bcas_pec
+  - transit_role1_role2_t1_bcas_dcr_dcs
+  - transit_role1_role2_t2_bcas_dcr_dcs
+  - transit_role1_role2_t3_bcas_pec_dcs
+  - in_care_dcr_t1_bcas_dcr_dcs
+  - in_care_dcr_t1_bcas_dcr
+  - in_care_dcr_t2_bcas_dcr_dcs
+  - in_care_dcr_t2_bcas_dcr
+  - in_care_pec_t3_bcas_pec_dcs
+  - in_care_pec_t3_bcas_pec
+  - in_care_dcs_t1_bcas_dcr_dcs
+  - in_care_dcs_t2_bcas_dcr_dcs
+  - in_care_dcs_t3_bcas_pec_dcs
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARRAY OUTCOMES (one per R1 × triage tier; 9 R1s × 3 tiers)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+array_outcomes:
+
+  - ts_transport_r1_br1_bt1_1_T1
+  - ts_transport_r1_br1_bt1_1_T2
+  - ts_transport_r1_br1_bt1_1_T3
+  - ts_transport_r1_br1_bt2_1_T1
+  - ts_transport_r1_br1_bt2_1_T2
+  - ts_transport_r1_br1_bt2_1_T3
+  - ts_transport_r1_br1_bt3_1_T1
+  - ts_transport_r1_br1_bt3_1_T2
+  - ts_transport_r1_br1_bt3_1_T3
+  - ts_transport_r1_br2_bt1_1_T1
+  - ts_transport_r1_br2_bt1_1_T2
+  - ts_transport_r1_br2_bt1_1_T3
+  - ts_transport_r1_br2_bt2_1_T1
+  - ts_transport_r1_br2_bt2_1_T2
+  - ts_transport_r1_br2_bt2_1_T3
+  - ts_transport_r1_br2_bt3_1_T1
+  - ts_transport_r1_br2_bt3_1_T2
+  - ts_transport_r1_br2_bt3_1_T3
+  - ts_transport_r1_br3_bt1_1_T1
+  - ts_transport_r1_br3_bt1_1_T2
+  - ts_transport_r1_br3_bt1_1_T3
+  - ts_transport_r1_br3_bt2_1_T1
+  - ts_transport_r1_br3_bt2_1_T2
+  - ts_transport_r1_br3_bt2_1_T3
+  - ts_transport_r1_br3_bt3_1_T1
+  - ts_transport_r1_br3_bt3_1_T2
+  - ts_transport_r1_br3_bt3_1_T3
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS — LHS exploration, one (empty) policy, batched
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+#   n_scenarios controls the LHS sample size. For RF feature importance /
+#   PRIM, 1 000 – 3 000 scenarios is usually plenty for stable rankings on
+#   this many dimensions (21 uncertainties here). Scale up if you see
+#   top-of-ranking churn across re-runs.
+#
+#   batch_size splits the n_scenarios loop into chunks so worker processes
+#   are recycled mid-run, keeping memory bounded. LHS is safe to batch
+#   (see README "Samplers and batching") because each scenario is an
+#   independent draw.
+#
+#   max_parallel is the number of worker processes. Raise for faster
+#   wall-clock at the cost of peak RAM.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 2000
+  n_policies: 1
+  uncertainty_sampler: lhs
+  lever_sampler: lhs
+  batch_size: 200
+  max_parallel: 4
