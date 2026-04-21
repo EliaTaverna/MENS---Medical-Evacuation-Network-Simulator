@@ -1,10 +1,10 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# OAT SA — axis: dcs_capacity
-# Purpose: DCS simultaneous patients at each Role 2-enhanced
+# OAT SA — axis: amb_speed_r1_r2
+# Purpose: R1->R2 ambulance cruise speed, km/h
 # Scenario: 3 brigades × 3 battalions, big R2-enhanced, no R2-basic.
-# Design: full factorial. seed (30 values) × dcs_capacity (5 values) = 150 runs.
+# Design: full factorial. seed (30 values) × amb_speed_r1_r2 (4 values) = 120 runs.
 # Everything not listed here uses the scenario / casualty-config baseline.
-# Baseline for this axis: 6
+# Baseline for this axis: 30
 #
 # NOTE: this axis only produces variance in outcomes if the prescriptions
 # file includes DCS somewhere in the care path (i.e. at least one triage
@@ -27,9 +27,9 @@ uncertainties:
     type: categorical
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
 
-  - name: dcs_capacity
+  - name: amb_speed_r1_r2
     type: categorical
-    values: [2, 4, 6, 8, 12]
+    values: [15, 30, 45, 60]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -128,9 +128,9 @@ array_outcomes:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 run_settings:
-  n_scenarios: 150
+  n_scenarios: 120
   n_policies: 1
   uncertainty_sampler: ff
   lever_sampler: ff
   batch_size: 0
-  max_parallel: 4
+  max_parallel: 39

@@ -22,53 +22,25 @@ from src.helpers.helpers_multi import (
 )
 
 # ── Configure the sequence ───────────────────────────────────────────────────
-# Name of this sequence. Output goes to
-#   {output_folder}/sequence_{SEQUENCE_NAME}/{timestamp}_{scenario_name}/
-# per experiment. Re-running with the same name does not wipe the folder —
-# new timestamped subfolders just coexist with the old ones.
-SEQUENCE_NAME = "sa_oat_3brigades"
-
-# Experiment YAMLs to run, in order. Each runs with its own model build and
-# EMA call, just like runner_multiple.py would — only the output path is
-# redirected under the shared sequence folder.
-#
-# This set is a one-at-a-time sensitivity analysis on
-# scenario_3_brigades_3_battalions_big_r2e_no_r2b: each YAML sweeps exactly
-# one axis via full factorial with 30 seeds per level, all other knobs held
-# at scenario default.
-EXPERIMENT_PATHS: list[str] = [
-    # Casualty generation
-    "data/multi_run/input/experiment_bcas_rate_sa_oat.yaml",
-    "data/multi_run/input/experiment_waves_per_day_sa_oat.yaml",
-    "data/multi_run/input/experiment_wave_duration_min_sa_oat.yaml",
-    "data/multi_run/input/experiment_n_days_sa_oat.yaml",
-    "data/multi_run/input/experiment_fraction_t1_bcas_sa_oat.yaml",
-    "data/multi_run/input/experiment_fraction_t2_bcas_sa_oat.yaml",
-    # Force / doctrine
-    "data/multi_run/input/experiment_n_battalions_in_combat_sa_oat.yaml",
-    # Capacities
-    "data/multi_run/input/experiment_dcr_capacity_sa_oat.yaml",
-    "data/multi_run/input/experiment_pec_capacity_sa_oat.yaml",
-    # Ambulances — CCP->R1 leg
-    "data/multi_run/input/experiment_n_amb_r1_to_ccp_sa_oat.yaml",
-    "data/multi_run/input/experiment_amb_speed_ccp_r1_sa_oat.yaml",
-    # Ambulances — R1->R2 leg (silent with default prescriptions; active
-    # once prescriptions include DCS)
-    "data/multi_run/input/experiment_n_amb_r1_r2_sa_oat.yaml",
-    "data/multi_run/input/experiment_amb_speed_r1_r2_sa_oat.yaml",
-    # R2 capacity (silent with default prescriptions)
-    "data/multi_run/input/experiment_dcs_capacity_sa_oat.yaml",
-    # Distances — CCP<->R1 tiers
-    "data/multi_run/input/experiment_r1_ccp_same_km_sa_oat.yaml",
-    "data/multi_run/input/experiment_r1_ccp_neighbor_km_sa_oat.yaml",
-    # Distances — R1<->R2-enhanced tiers (silent with default prescriptions)
-    "data/multi_run/input/experiment_r2_enhanced_r1_same_km_sa_oat.yaml",
-    "data/multi_run/input/experiment_r2_enhanced_r1_neighbor_km_sa_oat.yaml",
-    # Pooling levers
-    "data/multi_run/input/experiment_facility_eligibility_sa_oat.yaml",
-    "data/multi_run/input/experiment_ambulance_eligibility_sa_oat.yaml",
-]
+# Name of a subfolder under INPUT_BASE that contains the experiment YAMLs to
+# run. All *.yaml files in that subfolder are picked up (sorted by name) and
+# run in order. Output goes to
+#   {output_folder}/sequence_{INPUT_SUBFOLDER}/{timestamp}_{scenario_name}/
+# per experiment. Re-running with the same subfolder does not wipe the output
+# folder — new timestamped subfolders just coexist with the old ones.
+INPUT_BASE = Path("data/multi_run/input")
+INPUT_SUBFOLDER = "sa_oat_3brigades"
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+def _discover_experiments(input_dir: Path) -> list[str]:
+    """Return all ``*.yaml`` files in ``input_dir`` as repo-relative strings,
+    sorted by filename for a deterministic run order."""
+    if not input_dir.is_dir():
+        raise SystemExit(f"Input folder does not exist: {input_dir}")
+    yamls = sorted(p for p in input_dir.iterdir()
+                   if p.is_file() and p.suffix.lower() in (".yaml", ".yml"))
+    return [str(p.as_posix()) for p in yamls]
 
 
 def _run_one(experiment_path: str, sequence_folder: Path) -> tuple[Path, bool, str | None]:
@@ -101,29 +73,33 @@ def _run_one(experiment_path: str, sequence_folder: Path) -> tuple[Path, bool, s
 if __name__ == "__main__":
     ema_logging.log_to_stderr(logging.WARNING)
 
-    if not EXPERIMENT_PATHS:
-        raise SystemExit("EXPERIMENT_PATHS is empty — nothing to run.")
+    input_dir = INPUT_BASE / INPUT_SUBFOLDER
+    experiment_paths = _discover_experiments(input_dir)
+    if not experiment_paths:
+        raise SystemExit(f"No *.yaml files found in {input_dir}.")
 
     # The sequence folder sits under the first experiment's configured
     # output_folder. Individual experiments' output_folder settings are
     # ignored in sequence mode — the whole batch is grouped under one root.
-    first = load_experiment(EXPERIMENT_PATHS[0])
+    # The sequence name is derived from the input subfolder name.
+    first = load_experiment(experiment_paths[0])
     base  = Path(first.get("output_folder", "data/multi_run/output"))
-    sequence_folder = base / f"sequence_{SEQUENCE_NAME}"
+    sequence_folder = base / f"sequence_{INPUT_SUBFOLDER}"
     sequence_folder.mkdir(parents=True, exist_ok=True)
 
+    print(f"Input folder:    {input_dir}")
     print(f"Sequence folder: {sequence_folder}")
-    print(f"Running {len(EXPERIMENT_PATHS)} experiment(s) in sequence.\n")
+    print(f"Running {len(experiment_paths)} experiment(s) in sequence.\n")
 
     results: list[tuple[Path, bool, str | None]] = []
-    for i, path in enumerate(EXPERIMENT_PATHS, 1):
-        print(f"=== [{i}/{len(EXPERIMENT_PATHS)}] {path} ===")
+    for i, path in enumerate(experiment_paths, 1):
+        print(f"=== [{i}/{len(experiment_paths)}] {path} ===")
         results.append(_run_one(path, sequence_folder))
         print()
 
     # ── Summary ───────────────────────────────────────────────────────────────
     print("=" * 60)
-    print(f"Sequence '{SEQUENCE_NAME}' complete.")
+    print(f"Sequence '{INPUT_SUBFOLDER}' complete.")
     n_ok   = sum(1 for _, ok, _ in results if ok)
     n_fail = len(results) - n_ok
     print(f"  {n_ok} succeeded, {n_fail} failed.")

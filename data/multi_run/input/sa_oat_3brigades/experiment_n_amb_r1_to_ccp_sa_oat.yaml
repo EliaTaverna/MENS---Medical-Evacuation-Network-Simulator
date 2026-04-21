@@ -1,12 +1,12 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# OAT SA — axis: waves_per_day
-# Purpose: number of casualty waves per simulated day
+# OAT SA — axis: n_amb_r1_to_ccp
+# Purpose: CCP->R1 ambulances per Role 1 home base
 # Scenario: 3 brigades × 3 battalions, big R2-enhanced, no R2-basic.
-# Design: full factorial. seed (30 values) × waves_per_day (5 values) = 150 runs.
+# Design: full factorial. seed (30 values) × n_amb_r1_to_ccp (5 values) = 150 runs.
 # Everything not listed here uses the scenario / casualty-config baseline
 # (notably facility_eligibility = 0, ambulance_eligibility = 0,
 # bcas_rate = 0.05, waves_per_day = 3, wave_duration_min = 30, n_days = 1).
-# Baseline for this axis: 3
+# Baseline for this axis: 2
 # ═══════════════════════════════════════════════════════════════════════════════
 
 scenario: data/single_run/input/scenarios/scenario_3_brigades_3_battalions_big_r2e_no_r2b.yaml
@@ -23,9 +23,9 @@ uncertainties:
     type: categorical
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
 
-  - name: waves_per_day
+  - name: n_amb_r1_to_ccp
     type: categorical
-    values: [1, 2, 3, 4, 6]
+    values: [1, 2, 4, 6, 8]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -129,4 +129,4 @@ run_settings:
   uncertainty_sampler: ff
   lever_sampler: ff
   batch_size: 0
-  max_parallel: 4
+  max_parallel: 39

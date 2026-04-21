@@ -129,4 +129,4 @@ run_settings:
   uncertainty_sampler: ff
   lever_sampler: ff
   batch_size: 0
-  max_parallel: 4
+  max_parallel: 39

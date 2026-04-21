@@ -1,8 +1,8 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# OAT SA — axis: wave_duration_min
-# Purpose: minutes each wave spans (shorter = sharper spike)
+# OAT SA — axis: amb_speed_ccp_r1
+# Purpose: CCP->R1 ambulance cruise speed, km/h
 # Scenario: 3 brigades × 3 battalions, big R2-enhanced, no R2-basic.
-# Design: full factorial. seed (30 values) × wave_duration_min (6 values) = 180 runs.
+# Design: full factorial. seed (30 values) × amb_speed_ccp_r1 (4 values) = 120 runs.
 # Everything not listed here uses the scenario / casualty-config baseline
 # (notably facility_eligibility = 0, ambulance_eligibility = 0,
 # bcas_rate = 0.05, waves_per_day = 3, wave_duration_min = 30, n_days = 1).
@@ -23,9 +23,9 @@ uncertainties:
     type: categorical
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
 
-  - name: wave_duration_min
+  - name: amb_speed_ccp_r1
     type: categorical
-    values: [5, 15, 30, 60, 120, 240]
+    values: [15, 30, 45, 60]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -124,9 +124,9 @@ array_outcomes:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 run_settings:
-  n_scenarios: 180
+  n_scenarios: 120
   n_policies: 1
   uncertainty_sampler: ff
   lever_sampler: ff
   batch_size: 0
-  max_parallel: 4
+  max_parallel: 39

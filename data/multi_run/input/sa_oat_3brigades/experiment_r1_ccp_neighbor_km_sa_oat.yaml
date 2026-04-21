@@ -1,16 +1,12 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# OAT SA — axis: r2_enhanced_r1_neighbor_km
-# Purpose: R2-enhanced <-> neighbor-brigade R1, km
+# OAT SA — axis: r1_ccp_neighbor_km
+# Purpose: CCP <-> neighbor-battalion R1, km
 # Scenario: 3 brigades × 3 battalions, big R2-enhanced, no R2-basic.
-# Design: full factorial. seed (30 values) × r2_enhanced_r1_neighbor_km (4 values) = 120 runs.
-# Everything not listed here uses the scenario / casualty-config baseline.
-# Baseline for this axis: 25
-#
-# NOTE: this axis only produces variance in outcomes if the prescriptions
-# file includes DCS somewhere in the care path (i.e. at least one triage
-# label routes through Role 2). With the default prescriptions
-# (T1/T2 BCAS → [DCR], T3 BCAS → [PEC]) R1→R2 transport is never invoked,
-# R2 capacity never binds, and R2↔R1 distances are never consulted.
+# Design: full factorial. seed (30 values) × r1_ccp_neighbor_km (4 values) = 120 runs.
+# Everything not listed here uses the scenario / casualty-config baseline
+# (notably facility_eligibility = 0, ambulance_eligibility = 0,
+# bcas_rate = 0.05, waves_per_day = 3, wave_duration_min = 30, n_days = 1).
+# Baseline for this axis: 7
 # ═══════════════════════════════════════════════════════════════════════════════
 
 scenario: data/single_run/input/scenarios/scenario_3_brigades_3_battalions_big_r2e_no_r2b.yaml
@@ -27,9 +23,9 @@ uncertainties:
     type: categorical
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
 
-  - name: r2_enhanced_r1_neighbor_km
+  - name: r1_ccp_neighbor_km
     type: categorical
-    values: [15, 25, 40, 60]
+    values: [5, 7, 15, 25]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -133,4 +129,4 @@ run_settings:
   uncertainty_sampler: ff
   lever_sampler: ff
   batch_size: 0
-  max_parallel: 4
+  max_parallel: 39
