@@ -544,6 +544,8 @@ data/multi_run/input/template/experiment_template.yaml
 
 To create a new experiment, copy the template, rename it, and remove or comment out the parameters you do not need.
 
+Experiment YAMLs can live directly under `data/multi_run/input/` (for single-experiment runs via `runner_multiple.py`) or grouped into a named subfolder (for batch sequence runs via `runner_multiple_sequence.py`, see below). Each subfolder collects the YAMLs for one study — for example `data/multi_run/input/sa_oat_3brigades/` holds the 20 one-at-a-time sensitivity YAMLs that sweep one parameter each.
+
 Minimal structure:
 
 ```yaml
@@ -694,6 +696,54 @@ max_parallel: 1
 ```
 
 or run from a normal terminal.
+
+### Running Sequences of Experiments
+
+For batch studies (e.g. a full OAT sensitivity sweep, or a suite of related
+Sobol runs), use:
+
+```text
+src/launch/runner_multiple_sequence.py
+```
+
+This runner does not take a list of YAML paths — it takes a single input
+subfolder name and runs every `*.yaml` / `*.yml` inside it in sorted order.
+Each experiment gets its own timestamped subfolder under a shared sequence
+output folder, and failures are logged with a `FAILED.txt` sentinel so the
+batch continues through the remaining experiments.
+
+Configure by editing two constants at the top of the script:
+
+```python
+INPUT_BASE = Path("data/multi_run/input")
+INPUT_SUBFOLDER = "sa_oat_3brigades"
+```
+
+Output layout:
+
+```text
+data/multi_run/output/sequence_<INPUT_SUBFOLDER>/
+├── <timestamp_1>_<scenario_name>/
+│   ├── results.csv
+│   ├── timeseries.npz
+│   └── ...
+├── <timestamp_2>_<scenario_name>/
+│   └── ...
+└── ...
+```
+
+Individual experiments' `output_folder` settings are ignored in sequence
+mode — the whole batch is grouped under one root derived from
+`INPUT_SUBFOLDER`.
+
+Run:
+
+```powershell
+python -m src.launch.runner_multiple_sequence
+```
+
+To add a new batch: create a new subfolder under `data/multi_run/input/`,
+drop experiment YAMLs into it, point `INPUT_SUBFOLDER` at it, and launch.
 
 ### Multi-Run Output
 
