@@ -125,7 +125,7 @@ array_outcomes:
 
 run_settings:
   n_scenarios: 120
-  n_policies: 1
+  n_policies: 0
   uncertainty_sampler: ff
   lever_sampler: ff
   batch_size: 0
