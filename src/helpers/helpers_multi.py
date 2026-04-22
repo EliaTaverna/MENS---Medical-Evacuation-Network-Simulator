@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 import yaml
 import pandas as pd
 from pathlib import Path
@@ -13,6 +14,10 @@ from ema_workbench import (
     ScalarOutcome, ArrayOutcome, SequentialEvaluator, perform_experiments,
 )
 from ema_workbench.em_framework.evaluators import Samplers
+from ema_workbench.em_framework.samplers import (
+    sample_uncertainties, sample_levers, FullFactorialSampler,
+)
+from ema_workbench.em_framework.salib_samplers import SobolSampler
 from ema_workbench.util.utilities import save_results
 
 _SAMPLER_MAP = {
@@ -419,6 +424,12 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
     unc_sampler   = _SAMPLER_MAP.get(str(run_settings.get("uncertainty_sampler", "lhs")).lower(), Samplers.LHS)
     lever_sampler = _SAMPLER_MAP.get(str(run_settings.get("lever_sampler",       "lhs")).lower(), Samplers.LHS)
 
+    # Sobol + batch_size > 0: route to the chunked path that preserves the
+    # single Saltelli design but evaluates it in ordered, pool-restarting
+    # chunks.  Plain batching would re-sample and break S_i / S_T estimators.
+    if unc_sampler is Samplers.SOBOL and batch_size > 0:
+        return run_ema_sobol_chunked(model, experiment, output_dir)
+
     # EMA treats policies=0 as "no levers → 1 dummy policy"; reflect that in display
     n_policies_display = max(n_policies, 1)
 
@@ -484,6 +495,174 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
 
     merged_experiments = pd.concat(all_experiments, ignore_index=True)
     return merged_experiments, all_outcomes
+
+
+# ============================================================
+# SOBOL — chunked evaluation of a single Saltelli design
+# ============================================================
+
+def run_ema_sobol_chunked(model: Model, experiment: dict, output_dir: Path) -> tuple:
+    """Evaluate one Saltelli design in ordered chunks with pool restarts.
+
+    The full ``N*(2k+2)`` Sobol design is sampled ONCE up front; chunks slice
+    the resulting scenario list by row index.  A fresh evaluator (and fresh
+    worker pool) is opened per chunk, which lets the OS reclaim worker RSS
+    between chunks.  Each chunk's outputs are flushed to disk and cleared from
+    RAM, bounding main-process memory to ~one chunk during the sweep.
+
+    After all chunks complete, chunk files are read back in order and merged
+    into a single ``(experiments_df, outcomes)`` tuple — the same shape
+    ``save_experiment_results`` expects — so downstream saving and offline
+    analysis are unchanged.
+
+    Critically, the Sobol sampler is invoked once, so row ``j`` in block **A**,
+    block **B**, and each ``A_B^(i)`` refers to the same underlying Sobol
+    point.  Per-chunk resampling would break that pairing (see the README
+    "Samplers and batching" section).
+
+    Parameters
+    ----------
+    model : ema_workbench.Model
+        EMA model built by ``build_ema_model``.
+    experiment : dict
+        Experiment configuration.  Honoured ``run_settings`` keys:
+
+        - ``n_scenarios`` (int): Saltelli ``N``; total rows per policy are
+          ``N*(2k+2)`` if ``sobol_second_order`` is true else ``N*(k+2)``.
+        - ``n_policies`` (int): passed to the lever sampler (full-factorial
+          resolution per lever).  0 → single dummy policy.
+        - ``max_parallel`` (int): workers per chunk; 1 uses ``SequentialEvaluator``.
+        - ``batch_size`` (int): chunk size **in scenarios** (not total runs).
+          Each chunk evaluates ``batch_size × n_policies_realised`` runs.
+        - ``sobol_second_order`` (bool, default True): passed to SALib's
+          Saltelli sampler.  Must match what the analysis script uses.
+        - ``lever_sampler`` (str, default ``"ff"``): only ``ff`` / ``lhs`` are
+          wired up here; anything else falls back to full-factorial.
+    output_dir : Path
+        Directory where intermediate ``batch_*`` chunk files are written.
+        Cleaned up after the final reassembled save.
+
+    Returns
+    -------
+    tuple[pd.DataFrame, dict]
+        Same shape as ``run_ema``: ``(experiments_df, outcomes)`` with row
+        order preserved across chunks.  Per-policy Saltelli ordering is
+        intact — ``experiments_df[experiments_df["policy"] == p]`` yields
+        rows in the exact Sobol row order SALib expects.
+    """
+    rs             = experiment.get("run_settings", {})
+    N              = int(rs.get("n_scenarios", 10))
+    n_policies     = int(rs.get("n_policies", 0))
+    max_parallel   = int(rs.get("max_parallel", 1))
+    chunk_size     = int(rs.get("batch_size", 512))
+    second_order   = bool(rs.get("sobol_second_order", True))
+    lever_sampler_name = str(rs.get("lever_sampler", "ff")).lower()
+
+    # ── 1. Sample the full Saltelli design ONCE. ─────────────────────────────
+    scenarios_full = list(sample_uncertainties(
+        model, N, sampler=SobolSampler(second_order=second_order)
+    ))
+    total_scenarios = len(scenarios_full)
+    k = len(model.uncertainties)
+    expected = N * (2 * k + 2) if second_order else N * (k + 2)
+    if total_scenarios != expected:
+        print(f"  ! Saltelli design size {total_scenarios} != expected {expected} "
+              f"(k={k}, second_order={second_order}) — proceeding with sampled size.")
+
+    # ── 2. Materialise policies ONCE. ────────────────────────────────────────
+    # FF on integer levers is deterministic, so sampling it once vs. per-chunk
+    # is semantically equivalent; doing it once keeps the policy list
+    # identical across chunks and avoids any surprise from future sampler
+    # changes.
+    if model.levers and n_policies > 0:
+        lever_sampler_cls = FullFactorialSampler() if lever_sampler_name == "ff" else FullFactorialSampler()
+        policies_full = list(sample_levers(model, n_policies, sampler=lever_sampler_cls))
+        n_policies_realised = len(policies_full)
+    else:
+        policies_full = 0  # EMA substitutes a single dummy null-policy
+        n_policies_realised = 1
+
+    n_chunks      = (total_scenarios + chunk_size - 1) // chunk_size
+    total_runs    = total_scenarios * n_policies_realised
+
+    if max_parallel > 1:
+        from ema_workbench import MultiprocessingEvaluator
+        evaluator_cls    = MultiprocessingEvaluator
+        evaluator_kwargs = {"n_processes": max_parallel}
+    else:
+        evaluator_cls    = SequentialEvaluator
+        evaluator_kwargs = {}
+
+    print(f"Sobol chunked: {total_scenarios} Saltelli rows × {n_policies_realised} policies "
+          f"= {total_runs} runs, split into {n_chunks} chunks of ≤{chunk_size} scenarios "
+          f"(max_parallel={max_parallel}, second_order={second_order}).")
+
+    # ── 3. Evaluate chunks in order, flushing each to disk. ──────────────────
+    for chunk_id in range(n_chunks):
+        start = chunk_id * chunk_size
+        end   = min(start + chunk_size, total_scenarios)
+        chunk = scenarios_full[start:end]
+        print(f"\n--- Chunk {chunk_id + 1}/{n_chunks} "
+              f"(scenarios [{start}:{end}) × {n_policies_realised} policies "
+              f"= {(end - start) * n_policies_realised} runs) ---")
+
+        with evaluator_cls(model, **evaluator_kwargs) as evaluator:
+            exp_df, outcomes = perform_experiments(
+                model, scenarios=chunk, policies=policies_full, evaluator=evaluator,
+            )
+
+        if output_dir is not None:
+            save_batch_results(exp_df, outcomes, output_dir, chunk_id)
+
+        # Drop every chunk-scoped ref we hold in the main process so the Python
+        # allocator can reuse the arena for the next chunk.  `evaluator` is
+        # explicitly del'd because `with ... as evaluator` leaves the name
+        # bound in this scope after the block exits — the dead Pool / queue /
+        # log-reader thread would otherwise linger until the next rebind.
+        del exp_df, outcomes, chunk, evaluator
+        gc.collect()
+
+    # ── 4. Reassemble chunks in order for the final save. ────────────────────
+    scalar_outcome_names = list(experiment.get("outcomes", []))
+    return _reassemble_sobol_chunks(output_dir, n_chunks, scalar_outcome_names)
+
+
+def _reassemble_sobol_chunks(output_dir: Path, n_chunks: int,
+                              scalar_outcome_names: list) -> tuple:
+    """Read ordered chunk files back and reconstruct (experiments_df, outcomes).
+
+    Chunk files were written by ``save_batch_results``:
+      - ``batch_{id:04d}.csv``: experiments + scalar outcomes merged.
+      - ``batch_{id:04d}_timeseries.npz``: array outcomes (optional).
+
+    To return the raw ``(experiments_df, outcomes)`` format, we split the
+    scalar outcome columns back out of the merged CSV using the outcome
+    names from the experiment YAML.  Row order across chunks is preserved
+    by iterating ``chunk_id`` in ascending order.
+    """
+    all_merged_dfs = []
+    array_parts    = {}  # name -> list[np.ndarray]
+
+    for chunk_id in range(n_chunks):
+        csv_path = output_dir / f"batch_{chunk_id:04d}.csv"
+        all_merged_dfs.append(pd.read_csv(csv_path))
+
+        npz_path = output_dir / f"batch_{chunk_id:04d}_timeseries.npz"
+        if npz_path.exists():
+            with np.load(npz_path) as arc:
+                for k in arc.files:
+                    array_parts.setdefault(k, []).append(arc[k])
+
+    merged_df = pd.concat(all_merged_dfs, ignore_index=True)
+
+    # Split scalar outcomes back out of the merged CSV.
+    present_scalars = [name for name in scalar_outcome_names if name in merged_df.columns]
+    experiments_df  = merged_df.drop(columns=present_scalars)
+    outcomes        = {name: merged_df[name].to_numpy() for name in present_scalars}
+    for name, parts in array_parts.items():
+        outcomes[name] = np.concatenate(parts, axis=0)
+
+    return experiments_df, outcomes
 
 
 # ============================================================

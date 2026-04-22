@@ -1,14 +1,18 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 # EXPERIMENT — Sobol sensitivity analysis on scenario_3_brigades_3_battalions_big_r2e_no_r2b
 # ═══════════════════════════════════════════════════════════════════════════════
-# Saltelli design: N*(2k+2) runs per policy, where k is the number of
-# uncertainties and N is n_scenarios below. Sobol requires a continuous /
-# integer hypercube — no categoricals — so `seed` is NOT an uncertainty
-# (its variance would otherwise be attributed as S_i(seed) = noise).
+# Saltelli design: N*(k+2) runs per policy with second_order=False
+# (N*(2k+2) if you flip sobol_second_order back on to get S_ij too).
+# k is the number of uncertainties, N is n_scenarios below.  Sobol requires a
+# continuous / integer hypercube — no categoricals — so `seed` is NOT an
+# uncertainty (its variance would otherwise be attributed as S_i(seed) = noise).
 #
-# Here  k = 18 uncertainties, n_scenarios = 256  →  9 728 runs per policy.
+# Here  k = 18 uncertainties, n_scenarios = 256, second_order=False
+#   →  256*(18+2) = 5 120 rows per policy.
 # Levers = 2×2 eligibility (pooling) grid, sampled full-factorial → 4 policies.
-# Total = 38 912 runs. Bump N (power of 2) for tighter S_i / S_ij CIs.
+# Total = 20 480 runs.  Bump N (power of 2) for tighter S_i / S_T CIs.
+# Flipping sobol_second_order back to true gets the S_ij interaction indices
+# at the cost of nearly doubling the design (N*(2k+2) = 9 728 rows per policy).
 #
 # Levers are limited to the eligibility pair because those are the only
 # actual policy decisions in this study (pooling strictness). Everything
@@ -260,18 +264,35 @@ array_outcomes:
 # RUN SETTINGS
 # ═══════════════════════════════════════════════════════════════════════════════
 #
-#   Sobol design size (per policy): N * (2k + 2)
+#   Sobol design size (per policy), second_order=False: N * (k + 2)
 #     N = n_scenarios = 256
 #     k = 18 uncertainties
-#     → 256 * 38 = 9 728 runs per policy
+#     → 256 * 20 = 5 120 rows per policy
 #
 #   Levers: full-factorial 2×2 eligibility grid → n_policies = 4
-#   Total runs: 9 728 * 4 = 38 912
+#   Total runs: 5 120 * 4 = 20 480
 #
 #   For publication-quality S_i / S_ij, bump n_scenarios to 512 or 1024.
-#   batch_size MUST be 0 for Sobol — batching re-invokes the sampler per
-#   batch and produces B independent Saltelli designs instead of one, which
-#   breaks SALib's S_i / S_T computation (see README "Samplers and batching").
+#
+#   batch_size semantics for Sobol (uncertainty_sampler: sobol)
+#   ──────────────────────────────────────────────────────────
+#   ``batch_size > 0`` activates the CHUNKED Sobol path
+#   (``run_ema_sobol_chunked`` in helpers_multi.py):
+#
+#     - The full Saltelli design is sampled ONCE up front.
+#     - ``batch_size`` is the number of SCENARIO ROWS per chunk (not total
+#       runs).  Each chunk evaluates ``batch_size × n_policies_realised`` runs.
+#     - A fresh worker pool is opened per chunk, so the OS reclaims worker
+#       RSS between chunks (bounds salabim/greenlet residuals).
+#     - Each chunk's outputs are flushed to disk and dropped from RAM, so
+#       main-process memory is bounded to roughly one chunk during the sweep.
+#     - Chunks are read back in order at the end, preserving the A / B /
+#       A_B^(i) pairing that S_i / S_T estimators require.
+#
+#   ``batch_size = 0`` falls back to the single-shot path (keeps all outcomes
+#   in RAM the whole run).  Do NOT use the generic non-Sobol batching path
+#   with ``uncertainty_sampler: sobol`` — it would re-invoke the sampler per
+#   batch and produce B independent Saltelli designs.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 run_settings:
@@ -279,5 +300,9 @@ run_settings:
   n_policies: 4
   uncertainty_sampler: sobol
   lever_sampler: ff
-  batch_size: 0
+  # Chunk size in SCENARIO ROWS.  Total rows per policy = 5 120, so 512 gives
+  # 10 chunks of 512.  Each chunk evaluates
+  # batch_size * n_policies_realised = 512 * 4 = 2 048 runs.
+  batch_size: 512
+  sobol_second_order: false
   max_parallel: 4
