@@ -360,30 +360,63 @@ The `OUT_BASE` path in each notebook is already set relative to its own location
 The notebook is driven by its first configuration cell. The important fields are:
 
 ```python
-N_CCP = 3
-N_R1 = 1
-N_AXP = 1
-N_R2 = 1
+# ── Order of battle (hierarchical: brigades × battalions × facilities-per-bn) ──
+N_BRIGADES         = 3
+N_BN_PER_BRIGADE   = 3
+N_CCP_PER_BN       = 9
+N_R1_PER_BN        = 1
+N_R2B_PER_BRIGADE  = 0
+N_R2E_PER_BRIGADE  = 1
+N_AXP_PER_BRIGADE  = 1
+PAR_PER_BATTALION  = 900
 
-# For dataset_generation_notebooks/datasets_builder_elia_testing.ipynb (one level deep):
-OUT_BASE = pathlib.Path("../data/single_run/input")
+# ── Neighbour topology ────────────────────────────────────────────────────────
+# True = battalion and brigade rings wrap (closed frontage).
+# False = linear chain at both levels; the NON_CONTIG_* distance tiers become
+# active for pairs ≥ 2 ring-hops apart.
+TOROIDAL           = True
+
+# ── Distance tiers (km) — 3-tier ring-distance schema ────────────────────────
+# Each pair in the distance matrix is classified by hop count on the battalion
+# ring (within a brigade) or the brigade ring, and gets the matching value.
+# Cross-brigade R1↔R1 is a single flat value (NOT tiered).
+D_CCP_R1_SAME_BN        = 3
+D_CCP_R1_NEIGHBOR_BN    = 7
+D_CCP_R1_NON_CONTIG_BN  = 15
+D_R1_R1_NEIGHBOR_BN     = 10
+D_R1_R1_NON_CONTIG_BN   = 20
+D_R1_R1_INTER_BDE       = 30
+D_R1_AXP_SAME_BDE       = 5
+D_R1_AXP_NEIGHBOR_BDE   = 15
+D_R1_AXP_NON_CONTIG_BDE = 30
+D_R1_R2_SAME_BDE        = 12
+D_R1_R2_NEIGHBOR_BDE    = 25
+D_R1_R2_NON_CONTIG_BDE  = 50
+D_AXP_R2_SAME_BDE       = 8
+D_AXP_R2_NEIGHBOR_BDE   = 20
+D_AXP_R2_NON_CONTIG_BDE = 40
+
+# ── Output path + scenario metadata ──────────────────────────────────────────
+# For dataset_generation_notebooks/datasets_builder_<suffix>.ipynb (one level deep):
+OUT_BASE                = pathlib.Path("../data/single_run/input")
 # For dataset_generation_notebooks/template/datasets_builder.ipynb (two levels deep):
-# OUT_BASE = pathlib.Path("../../data/single_run/input")
-SUFFIX = "elia_testing"
-
-CASUALTY_CONFIG = f"config_{SUFFIX}"
-SCENARIO_NAME = f"scenario_{SUFFIX}"
-SEED = 42
-SIM_TILL_MIN = 60 * 24 * 3
-DISPATCH_POLICY = "greedy"
+# OUT_BASE              = pathlib.Path("../../data/single_run/input")
+SUFFIX                  = "elia_testing"
+CASUALTY_CONFIG         = f"config_{SUFFIX}"
+SCENARIO_NAME           = f"scenario_{SUFFIX}"
+SEED                    = 42
+SIM_TILL_MIN            = 60 * 24 * 3
+DISPATCH_POLICY         = "greedy"
 DATA_COLLECTOR_INTERVAL = 10.0
 ```
 
+The `_NON_CONTIG_*` tiers only fill cells when at least one ring has ≥ 4 nodes *or* `TOROIDAL=False`; with the current default (3 brigades × 3 battalions, `TOROIDAL=True`) they're dormant, since a 3-ring places every pair at hop 0 or 1. Leave them at placeholder values until you scale up or flip `TOROIDAL`.
+
 What the notebook does:
 
-1. Builds facility coordinates for CCPs, Role 1s, AXPs, and Role 2s.
-2. Computes the Euclidean distance matrix.
-3. Visualizes the layout for sanity checking.
+1. Builds hierarchical facility IDs for every brigade × battalion × facility-per-battalion.
+2. Fills the distance matrix from the tier constants above: seeds every pair at `inf`, then writes the tier value into each cell using ring-distance hop counts on the battalion and brigade rings. `inf` is exported as an empty cell (NaN) so any dispatch onto a forbidden edge raises at runtime instead of being silently treated as reachable.
+3. Visualises the topology two ways — a force-directed graph for sanity, and a tiered brigade-aligned diagram whose edges are coloured by distance class (legend lists every active tier with its km value).
 4. Builds facility, AXP, ambulance, and C2 tables.
 5. Builds care units using the service-time and capacity parameters in the config cell.
 6. Builds strict and loose facility eligibility matrices.
@@ -621,17 +654,17 @@ full factorial creates `2 * 4 = 8` policy combinations. With `n_scenarios: 1000`
 
 `uncertainty_sampler` and `lever_sampler` accept: `lhs`, `mc`, `uniform_lhs`, `ff` (or `fullfactorial`), and `sobol`.
 
-Batching (`batch_size` in `run_settings`) splits the `n_scenarios` loop into chunks that are sampled and executed independently, re-opening the evaluator between chunks so worker RAM is released. This is fine for memoryless samplers but breaks structured designs:
+`batch_size` in `run_settings` has two different meanings depending on the sampler:
 
-| Sampler | Batchable? |
+| Sampler | `batch_size > 0` behaviour |
 |---|---|
-| `lhs`, `mc`, `uniform_lhs` | Yes |
-| `ff` / `fullfactorial` | Yes (deterministic grid) |
-| `sobol` | **No** |
+| `lhs`, `mc`, `uniform_lhs` | **Plain batching** — re-invoke the sampler per batch, open and close the evaluator between batches. Worker RAM is released between batches. Fine for memoryless samplers. |
+| `ff` / `fullfactorial` | **Plain batching** — deterministic grid, so chunking doesn't change the design. |
+| `sobol` | **Chunked Saltelli** — the single design is generated once up front, then evaluated in `batch_size`-row chunks with a fresh worker pool per chunk. Row order and A / B / A\_B^(i) pairing are preserved. |
 
-For Sobol, the design is a Saltelli matrix of `N * (2k + 2)` rows, where `k` is the number of uncertainties and `N = n_scenarios`. The A, B, and AB_i sub-blocks are constructed together. Batching re-invokes the sampler per batch, so concatenating B batches of size `N'` produces B independent Sobol designs rather than one design of size `B * N'`. SALib's `sobol.analyze` will either error or silently return wrong first- and total-order indices.
+Why Sobol needs special treatment: the Saltelli design is a matrix of `N * (2k + 2)` rows where `k` is the number of uncertainties and `N = n_scenarios`, and the A, B, and AB_i sub-blocks are *paired* — row `j` must refer to the same underlying Sobol point across every block. Plain batching would re-invoke the sampler per batch, producing B independent Saltelli designs rather than one design of size `B * N'`, and `sobol.analyze` would then silently return wrong first- and total-order indices. The chunked path (`run_ema_sobol_chunked` in `helpers_multi.py`) samples the full design once, slices the resulting `Scenario` list by row index, and evaluates each slice with its own `MultiprocessingEvaluator`. This preserves the design while still letting the OS reclaim worker RSS between chunks, which bounds RAM on long Sobol sweeps.
 
-When `uncertainty_sampler: sobol`, set `batch_size: 0` (or any value `>= n_scenarios`) so the whole design runs in one call. If memory is the problem at large `N`, lower `max_parallel` or fix levers and loop over policies manually instead of batching scenarios.
+For Sobol, pick `batch_size` as a number of **scenario rows** (not total runs). Each chunk evaluates `batch_size * n_policies_realised` runs. 512 is a reasonable default; smaller chunks reduce peak RAM at the cost of more pool spin-ups. `batch_size: 0` falls back to the old single-shot path that keeps every outcome in RAM until the sweep finishes — only use it if the full design fits comfortably.
 
 ### Sobol sensitivity analysis
 
@@ -643,7 +676,8 @@ run_settings:
   n_policies: 4            # e.g. 2x2 eligibility grid via ff
   uncertainty_sampler: sobol
   lever_sampler: ff
-  batch_size: 0            # must NOT batch for Sobol
+  batch_size: 512          # chunked evaluation (scenarios per chunk); 0 = single-shot
+  sobol_second_order: true # drop to false for S_i / S_T only (halves the design)
   max_parallel: 4
 ```
 
