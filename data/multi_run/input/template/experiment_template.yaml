@@ -107,12 +107,24 @@ levers:
     type: categorical
     values: [1, 2, 3, 6]
 
-  # ── CCP↔R1 distance levers ───────────────────────────────────────────────
-  # Two levers rewrite every CCP↔R1 distance, partitioned by battalion tier.
-  # Pairs are enumerated from force_structure_df: for each battalion row,
-  # r1_ids × ccp_ids is the "same" tier; neighbor_r1_ids × ccp_ids is the
-  # "neighbor" tier (R1s of neighbor battalions in the same brigade).
+  # ══════════════════════════════════════════════════════════════════════════
+  # DISTANCE LEVERS — 3-tier ring-distance schema
+  # ══════════════════════════════════════════════════════════════════════════
+  # Each tier lever rewrites every matching cell in the distance matrix.
+  # Tier classification (matches the dataset builder notebook):
+  #   battalion ring (within a brigade):  same / neighbor / non_contig
+  #   brigade ring:                        same / neighbor / non_contig
+  #   cross-brigade R1↔R1:                 single flat value ("inter_bde")
+  # A lever, when omitted, leaves the corresponding edges at their scenario
+  # baseline. A tier that has zero matching cells in the current topology
+  # (e.g. *_non_contig_* under TOROIDAL=True with a 3-ring) silently sweeps
+  # with no observable effect.
+  #
+  # Legacy per-R2-type levers r2_basic_r1_* and r2_enhanced_r1_* still work
+  # for backward compatibility (applied BEFORE the unified r1_r2_* levers,
+  # so if both are set the unified value wins).
 
+  # ── CCP↔R1 (battalion-ring tiers; CCPs never cross brigades) ──────────────
   - name: r1_ccp_same_km
     type: real
     lower: 1
@@ -123,20 +135,81 @@ levers:
     lower: 2
     upper: 60
 
-  # ── R1↔R2 distance levers ─────────────────────────────────────────────────
-  # Four independent levers rewrite every R1↔R2 distance in the matrix,
-  # partitioned by R2 subtype (basic vs enhanced) and brigade tier (same vs
-  # neighbor). AXP↔R2 distances are NOT touched — use distance_<a>__<b>
-  # overrides if those need to move too. Each lever, when omitted, leaves
-  # the corresponding edges at their scenario baseline.
-  # "Same brigade" = this R2 lives in the R1's brigade.
-  # "Neighbor brigade" = this R2 lives in a brigade adjacent to the R1's
-  # brigade (per the TOROIDAL wiring in the builder notebook).
-  # Pairs are enumerated from force_structure_df: r1_ids × r2b_ids /
-  # r2e_ids (same tier) and r1_ids × neighbor_r2b_ids / neighbor_r2e_ids
-  # (neighbor tier). Silently a no-op if the scenario has no R2 of that
-  # subtype.
+  - name: r1_ccp_non_contig_km
+    type: real
+    lower: 5
+    upper: 90
 
+  # ── R1↔R1 (battalion-ring within brigade + flat cross-brigade) ────────────
+  - name: r1_r1_neighbor_km
+    type: real
+    lower: 2
+    upper: 60
+
+  - name: r1_r1_non_contig_km
+    type: real
+    lower: 5
+    upper: 90
+
+  # Flat value applied to every inter-brigade R1 pair.  Active when loose
+  # ambulance_eligibility lets R1-homed R1→R2 ambulances cross brigades.
+  - name: r1_r1_inter_bde_km
+    type: real
+    lower: 10
+    upper: 150
+
+  # ── R1↔AXP (brigade-ring tiers) ───────────────────────────────────────────
+  - name: r1_axp_same_km
+    type: real
+    lower: 1
+    upper: 40
+
+  - name: r1_axp_neighbor_km
+    type: real
+    lower: 5
+    upper: 90
+
+  - name: r1_axp_non_contig_km
+    type: real
+    lower: 10
+    upper: 150
+
+  # ── R1↔R2 (brigade-ring tiers; R2b and R2e treated uniformly) ─────────────
+  - name: r1_r2_same_km
+    type: real
+    lower: 2
+    upper: 60
+
+  - name: r1_r2_neighbor_km
+    type: real
+    lower: 5
+    upper: 100
+
+  - name: r1_r2_non_contig_km
+    type: real
+    lower: 10
+    upper: 200
+
+  # ── AXP↔R2 (brigade-ring tiers; R2b and R2e treated uniformly) ────────────
+  - name: axp_r2_same_km
+    type: real
+    lower: 1
+    upper: 40
+
+  - name: axp_r2_neighbor_km
+    type: real
+    lower: 5
+    upper: 90
+
+  - name: axp_r2_non_contig_km
+    type: real
+    lower: 10
+    upper: 150
+
+  # ── Legacy per-R2-type levers (kept for backward compat) ──────────────────
+  # Prefer the unified r1_r2_* levers above for new experiments.  These four
+  # are still honoured — they run first and are overridden by any unified
+  # value set alongside them.
   - name: r2_basic_r1_same_km
     type: real
     lower: 2

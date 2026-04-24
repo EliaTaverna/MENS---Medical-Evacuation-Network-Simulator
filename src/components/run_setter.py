@@ -56,8 +56,17 @@ class RunSetter:
         master_seed = self._resolve_seed(kwargs)
         seeds       = self._derive_seeds(master_seed)
         data     = dict(self.base_data)
+        # Distance overrides run in layers, each applied only if its kwargs are
+        # present.  Ring-tier methods set same/neighbor/non_contig cells; the
+        # legacy R2-split method below is kept so old YAMLs (r2_basic_*,
+        # r2_enhanced_*) still work.  The generic per-pair `distance_a__b`
+        # override runs last, so it always wins over topology-level values.
         data     = self._apply_ccp_r1_distances(data, kwargs)
-        data     = self._apply_r2_r1_distances(data, kwargs)
+        data     = self._apply_r1_r1_distances(data, kwargs)
+        data     = self._apply_r1_axp_distances(data, kwargs)
+        data     = self._apply_r2_r1_distances(data, kwargs)   # legacy R2-split
+        data     = self._apply_r1_r2_distances(data, kwargs)   # unified R2 tiers
+        data     = self._apply_axp_r2_distances(data, kwargs)
         data     = self._apply_distance_overrides(data, kwargs)
         data     = self._apply_dcs_capacity(data, kwargs)
         data     = self._apply_pec_capacity(data, kwargs)
@@ -104,27 +113,62 @@ class RunSetter:
 
     # ── Network modifications ─────────────────────────────────────────────────
 
+    # ── Tier classification helpers (shared by all ring-tier apply methods) ──
+
+    @staticmethod
+    def _set_pairs(dm, a_ids, b_ids, value):
+        """Symmetrically write ``value`` into ``dm[a, b] = dm[b, a]`` for every
+        (a, b) ∈ a_ids × b_ids that both exist in ``dm.index``.  A no-op when
+        ``value`` is None or either list is empty.
+        """
+        if value is None or not a_ids or not b_ids:
+            return
+        v = float(value)
+        for a in a_ids:
+            if a not in dm.index:
+                continue
+            for b in b_ids:
+                if b not in dm.index:
+                    continue
+                dm.loc[a, b] = v
+                dm.loc[b, a] = v
+
+    @classmethod
+    def _group_by_brigade(cls, force_df, *cols: str) -> dict:
+        """Return ``{brigade_lowercase: [ids from the listed columns, deduped]}``.
+
+        Used to derive non-contig sets: e.g. "same-brigade R1s not in own and
+        not in neighbor" needs the full per-brigade R1 roster.
+        """
+        result: dict = {}
+        for _, row in force_df.iterrows():
+            bde = str(row.get("brigade", "")).lower()
+            if not bde:
+                continue
+            for col in cols:
+                for fid in cls._parse_facility_list(row.get(col)):
+                    result.setdefault(bde, []).append(fid)
+        return {b: list(dict.fromkeys(ids)) for b, ids in result.items()}
+
     def _apply_ccp_r1_distances(self, data: dict, kwargs: dict) -> dict:
-        """Override CCP↔R1 distances via two levers (same-bn / neighbor-bn).
+        """Override CCP↔R1 distances via three levers (same/neighbor/non_contig battalion).
 
         Levers (all optional, km):
-        - ``r1_ccp_same_km``:     CCP ↔ R1 of the same battalion
-        - ``r1_ccp_neighbor_km``: CCP ↔ R1 of a neighbor battalion (same brigade)
+        - ``r1_ccp_same_km``:       CCP ↔ R1 of the same battalion
+        - ``r1_ccp_neighbor_km``:   CCP ↔ R1 of a neighbor battalion (same brigade)
+        - ``r1_ccp_non_contig_km``: CCP ↔ R1 of a non-contig battalion (same
+                                    brigade, not own, not neighbor)
 
-        Each lever, when provided, rewrites every matching distance-matrix entry
-        in both directions (``dm[r1, ccp] = dm[ccp, r1] = value``). Pairs are
-        enumerated from ``force_structure_df``: for each battalion row, own
-        ``ccp_ids`` are paired with own ``r1_ids`` (the "same" tier) and with
-        ``neighbor_r1_ids`` (the "neighbor" tier, i.e. R1s of neighbor
-        battalions in the same brigade).
-
-        Applied before ``_apply_r2_r1_distances`` and
-        ``_apply_distance_overrides`` in ``prepare()``; explicit per-pair
-        overrides still win over these topology-level values.
+        Each lever, when provided, rewrites every matching distance-matrix
+        entry symmetrically.  Tiers are derived from ``force_structure_df``:
+        own ``r1_ids`` (same), ``neighbor_r1_ids`` (neighbor), and the
+        remainder of the brigade's R1 roster (non-contig).  CCPs never cross
+        brigades, so cross-brigade pairs stay NaN.
         """
-        same_km = kwargs.get("r1_ccp_same_km")
-        nbr_km  = kwargs.get("r1_ccp_neighbor_km")
-        if same_km is None and nbr_km is None:
+        same_km       = kwargs.get("r1_ccp_same_km")
+        nbr_km        = kwargs.get("r1_ccp_neighbor_km")
+        non_contig_km = kwargs.get("r1_ccp_non_contig_km")
+        if same_km is None and nbr_km is None and non_contig_km is None:
             return data
 
         force_df = self.base_config.get("force_structure_df")
@@ -132,26 +176,179 @@ class RunSetter:
             return data
 
         dm = data["distance_matrix"].copy()
-
-        def _set_pairs(r1s, ccps, value):
-            if value is None or not r1s or not ccps:
-                return
-            v = float(value)
-            for r1 in r1s:
-                if r1 not in dm.index:
-                    continue
-                for ccp in ccps:
-                    if ccp not in dm.index:
-                        continue
-                    dm.loc[r1, ccp] = v
-                    dm.loc[ccp, r1] = v
+        r1s_by_bde = self._group_by_brigade(force_df, "r1_ids")
 
         for _, row in force_df.iterrows():
+            bde         = str(row.get("brigade", "")).lower()
             ccp_ids     = self._parse_facility_list(row.get("ccp_ids"))
             r1_ids      = self._parse_facility_list(row.get("r1_ids"))
             nbr_r1_ids  = self._parse_facility_list(row.get("neighbor_r1_ids"))
-            _set_pairs(r1_ids,     ccp_ids, same_km)
-            _set_pairs(nbr_r1_ids, ccp_ids, nbr_km)
+            same_bde_r1s = r1s_by_bde.get(bde, [])
+            non_contig_r1_ids = [r for r in same_bde_r1s
+                                 if r not in r1_ids and r not in nbr_r1_ids]
+            self._set_pairs(dm, r1_ids,             ccp_ids, same_km)
+            self._set_pairs(dm, nbr_r1_ids,         ccp_ids, nbr_km)
+            self._set_pairs(dm, non_contig_r1_ids,  ccp_ids, non_contig_km)
+
+        data["distance_matrix"] = dm
+        return data
+
+    def _apply_r1_r1_distances(self, data: dict, kwargs: dict) -> dict:
+        """Override R1↔R1 distances for within-brigade tiers and cross-brigade (flat).
+
+        Levers (all optional, km):
+        - ``r1_r1_neighbor_km``:   R1 ↔ R1 of a neighbor battalion (same brigade)
+        - ``r1_r1_non_contig_km``: R1 ↔ R1 of a non-contig battalion (same brigade)
+        - ``r1_r1_inter_bde_km``:  R1 ↔ R1 across brigades (single flat value,
+                                   applied to every inter-brigade R1 pair)
+
+        Mirrors the notebook's 3-tier schema: within-brigade uses ring-distance
+        (neighbor vs non_contig), cross-brigade is one flat value regardless of
+        brigade-ring distance.
+        """
+        neighbor_km   = kwargs.get("r1_r1_neighbor_km")
+        non_contig_km = kwargs.get("r1_r1_non_contig_km")
+        inter_bde_km  = kwargs.get("r1_r1_inter_bde_km")
+        if all(v is None for v in (neighbor_km, non_contig_km, inter_bde_km)):
+            return data
+
+        force_df = self.base_config.get("force_structure_df")
+        if force_df is None:
+            return data
+
+        dm = data["distance_matrix"].copy()
+        r1s_by_bde = self._group_by_brigade(force_df, "r1_ids")
+
+        for _, row in force_df.iterrows():
+            bde        = str(row.get("brigade", "")).lower()
+            own_r1s    = self._parse_facility_list(row.get("r1_ids"))
+            nbr_r1s    = self._parse_facility_list(row.get("neighbor_r1_ids"))
+            same_bde_r1s = r1s_by_bde.get(bde, [])
+            non_contig_r1s = [r for r in same_bde_r1s
+                              if r not in own_r1s and r not in nbr_r1s]
+            inter_bde_r1s  = [r for b, rs in r1s_by_bde.items()
+                              if b != bde for r in rs]
+            self._set_pairs(dm, own_r1s, nbr_r1s,        neighbor_km)
+            self._set_pairs(dm, own_r1s, non_contig_r1s, non_contig_km)
+            self._set_pairs(dm, own_r1s, inter_bde_r1s,  inter_bde_km)
+
+        data["distance_matrix"] = dm
+        return data
+
+    def _apply_r1_axp_distances(self, data: dict, kwargs: dict) -> dict:
+        """Override R1↔AXP distances by brigade-ring tier.
+
+        Levers (all optional, km):
+        - ``r1_axp_same_km``:       R1 ↔ AXP of the same brigade
+        - ``r1_axp_neighbor_km``:   R1 ↔ AXP of a neighbor brigade
+        - ``r1_axp_non_contig_km``: R1 ↔ AXP of a non-contig brigade (not own,
+                                    not in ``neighbor_axp_ids``)
+        """
+        same_km       = kwargs.get("r1_axp_same_km")
+        neighbor_km   = kwargs.get("r1_axp_neighbor_km")
+        non_contig_km = kwargs.get("r1_axp_non_contig_km")
+        if all(v is None for v in (same_km, neighbor_km, non_contig_km)):
+            return data
+
+        force_df = self.base_config.get("force_structure_df")
+        if force_df is None:
+            return data
+
+        dm = data["distance_matrix"].copy()
+        axps_by_bde = self._group_by_brigade(force_df, "axp_ids")
+
+        for _, row in force_df.iterrows():
+            bde           = str(row.get("brigade", "")).lower()
+            own_r1s       = self._parse_facility_list(row.get("r1_ids"))
+            own_axps      = self._parse_facility_list(row.get("axp_ids"))
+            nbr_axps      = self._parse_facility_list(row.get("neighbor_axp_ids"))
+            other_bde_axps = [a for b, axs in axps_by_bde.items()
+                              if b != bde for a in axs]
+            non_contig_axps = [a for a in other_bde_axps if a not in nbr_axps]
+            self._set_pairs(dm, own_r1s, own_axps,        same_km)
+            self._set_pairs(dm, own_r1s, nbr_axps,        neighbor_km)
+            self._set_pairs(dm, own_r1s, non_contig_axps, non_contig_km)
+
+        data["distance_matrix"] = dm
+        return data
+
+    def _apply_r1_r2_distances(self, data: dict, kwargs: dict) -> dict:
+        """Override R1↔R2 distances by brigade-ring tier (R2b + R2e treated uniformly).
+
+        Levers (all optional, km):
+        - ``r1_r2_same_km``:       R1 ↔ R2 of the same brigade
+        - ``r1_r2_neighbor_km``:   R1 ↔ R2 of a neighbor brigade
+        - ``r1_r2_non_contig_km``: R1 ↔ R2 of a non-contig brigade
+
+        Legacy per-R2-type knobs (``r2_basic_r1_*`` / ``r2_enhanced_r1_*``)
+        are still handled by ``_apply_r2_r1_distances``, which runs *before*
+        this method — so any unified value provided here overrides the
+        legacy split for the matching brigade tier.
+        """
+        same_km       = kwargs.get("r1_r2_same_km")
+        neighbor_km   = kwargs.get("r1_r2_neighbor_km")
+        non_contig_km = kwargs.get("r1_r2_non_contig_km")
+        if all(v is None for v in (same_km, neighbor_km, non_contig_km)):
+            return data
+
+        force_df = self.base_config.get("force_structure_df")
+        if force_df is None:
+            return data
+
+        dm = data["distance_matrix"].copy()
+        r2s_by_bde = self._group_by_brigade(force_df, "r2b_ids", "r2e_ids")
+
+        for _, row in force_df.iterrows():
+            bde      = str(row.get("brigade", "")).lower()
+            own_r1s  = self._parse_facility_list(row.get("r1_ids"))
+            own_r2s  = (self._parse_facility_list(row.get("r2b_ids"))
+                        + self._parse_facility_list(row.get("r2e_ids")))
+            nbr_r2s  = (self._parse_facility_list(row.get("neighbor_r2b_ids"))
+                        + self._parse_facility_list(row.get("neighbor_r2e_ids")))
+            other_bde_r2s = [r for b, rs in r2s_by_bde.items()
+                             if b != bde for r in rs]
+            non_contig_r2s = [r for r in other_bde_r2s if r not in nbr_r2s]
+            self._set_pairs(dm, own_r1s, own_r2s,        same_km)
+            self._set_pairs(dm, own_r1s, nbr_r2s,        neighbor_km)
+            self._set_pairs(dm, own_r1s, non_contig_r2s, non_contig_km)
+
+        data["distance_matrix"] = dm
+        return data
+
+    def _apply_axp_r2_distances(self, data: dict, kwargs: dict) -> dict:
+        """Override AXP↔R2 distances by brigade-ring tier (R2b + R2e uniformly).
+
+        Levers (all optional, km):
+        - ``axp_r2_same_km``:       AXP ↔ R2 of the same brigade
+        - ``axp_r2_neighbor_km``:   AXP ↔ R2 of a neighbor brigade
+        - ``axp_r2_non_contig_km``: AXP ↔ R2 of a non-contig brigade
+        """
+        same_km       = kwargs.get("axp_r2_same_km")
+        neighbor_km   = kwargs.get("axp_r2_neighbor_km")
+        non_contig_km = kwargs.get("axp_r2_non_contig_km")
+        if all(v is None for v in (same_km, neighbor_km, non_contig_km)):
+            return data
+
+        force_df = self.base_config.get("force_structure_df")
+        if force_df is None:
+            return data
+
+        dm = data["distance_matrix"].copy()
+        r2s_by_bde = self._group_by_brigade(force_df, "r2b_ids", "r2e_ids")
+
+        for _, row in force_df.iterrows():
+            bde      = str(row.get("brigade", "")).lower()
+            own_axps = self._parse_facility_list(row.get("axp_ids"))
+            own_r2s  = (self._parse_facility_list(row.get("r2b_ids"))
+                        + self._parse_facility_list(row.get("r2e_ids")))
+            nbr_r2s  = (self._parse_facility_list(row.get("neighbor_r2b_ids"))
+                        + self._parse_facility_list(row.get("neighbor_r2e_ids")))
+            other_bde_r2s = [r for b, rs in r2s_by_bde.items()
+                             if b != bde for r in rs]
+            non_contig_r2s = [r for r in other_bde_r2s if r not in nbr_r2s]
+            self._set_pairs(dm, own_axps, own_r2s,        same_km)
+            self._set_pairs(dm, own_axps, nbr_r2s,        neighbor_km)
+            self._set_pairs(dm, own_axps, non_contig_r2s, non_contig_km)
 
         data["distance_matrix"] = dm
         return data
