@@ -1,6 +1,7 @@
 """Ambulance component for patient transport."""
 
 from __future__ import annotations
+import random
 import salabim as sim
 from typing import TYPE_CHECKING, List
 
@@ -21,12 +22,16 @@ class Ambulance(sim.Component):
         t3_capacity: int,
         start_loc_id: str,
         c2_id: str,
+        load_unload_time_min: float = 0.0,
+        load_unload_time_max: float = 0.0,
     ):
         self.amb_id = amb_id
         self.t1_t2_capacity = int(t1_t2_capacity)
         self.t3_capacity    = int(t3_capacity)
         self.start_loc_id = start_loc_id
         self.c2_id = c2_id
+        self.load_unload_time_min = float(load_unload_time_min)
+        self.load_unload_time_max = float(load_unload_time_max)
         self.c2 = None
         self.location = None  # AXP or Facility object, set by connector
         self.onboard: List[Patient] = []
@@ -67,6 +72,10 @@ class Ambulance(sim.Component):
                 self.location = step.facility
                 step.facility.ambulance_arrives(self)
                 self.passivate()  # facility wakes me after load/unload
+
+                if self.load_unload_time_max > 0:
+                    lo, hi = self.load_unload_time_min, self.load_unload_time_max
+                    self.hold(random.uniform(lo, hi) + random.uniform(lo, hi))
 
             # 4) Plan complete: stay where you are (last location)
             self.current_step = None

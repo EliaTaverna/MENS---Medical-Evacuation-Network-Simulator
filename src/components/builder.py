@@ -93,6 +93,8 @@ class ModelBuilder:
                 t3_capacity=int(r.t3_capacity),
                 start_loc_id=r.start_loc_id,
                 c2_id=r.c2_id,
+                load_unload_time_min=float(getattr(r, "load_unload_time_min", 0)),
+                load_unload_time_max=float(getattr(r, "load_unload_time_max", 0)),
             )
             self.env.amb_by_id[r.amb_id] = amb
 
