@@ -1,8 +1,5 @@
 """Dispatch solvers for the C2 assignment step.
 
-Registry pattern: add a new solver function here and register it in
-c2.py::_DISPATCH_SOLVERS to make it available as a dispatch_policy value.
-
 Each solver must have the signature:
 
     def solve_<name>(
@@ -19,6 +16,7 @@ The returned DataFrame must contain 'assigned_facility_id' and
 
 from __future__ import annotations
 
+import random
 import pandas as pd
 from typing import List, Optional, TYPE_CHECKING
 
@@ -40,184 +38,132 @@ def _triage_priority(triage: str) -> int:
     return 99
 
 
-def _nearest_id(origin: str, candidates: list, travel_time_matrix,
-                env=None, needed_unit: Optional[str] = None) -> Optional[str]:
-    """Return the candidate id nearest to origin; break ties by queue length."""
-    if not candidates:
-        return None
-    if travel_time_matrix is None or origin not in travel_time_matrix.index:
-        return candidates[0]
-
-    time_map = {}
-    for cid in candidates:
-        if cid in travel_time_matrix.columns:
-            time_map[cid] = float(travel_time_matrix.loc[origin, cid])
-        else:
-            time_map[cid] = float("inf")
-
-    min_t = min(time_map.values())
-    nearest = [cid for cid, t in time_map.items() if t == min_t]
-
-    if len(nearest) == 1:
-        return nearest[0]
-
-    if env is not None and needed_unit is not None:
-        def _queue_len(cid):
-            fac = getattr(env, "facility_by_id", {}).get(cid)
-            if fac is None:
-                return 0
-            return len(fac.entry_lines.get(needed_unit, []))
-        nearest.sort(key=_queue_len)
-
-    return nearest[0]
+def _travel_min(loc_a: str, loc_b: str, travel_time_matrix) -> float:
+    if travel_time_matrix is None:
+        return 0.0
+    if loc_a not in travel_time_matrix.index or loc_b not in travel_time_matrix.columns:
+        return 0.0
+    return float(travel_time_matrix.loc[loc_a, loc_b])
 
 
-def _least_congested_id(origin: str, candidates: list, travel_time_matrix,
-                        env=None, needed_unit: Optional[str] = None) -> Optional[str]:
-    """Return the eligible facility with the shortest expected wait for needed_unit.
-
-    Primary key : expected_wait_if_join_now() on the relevant Unit.
-    Tiebreaker  : travel time from origin.
-    Falls back to _nearest_id when env / needed_unit are unavailable.
-    """
-    if not candidates:
-        return None
-
+def _expected_wait(dest: str, needed_unit: Optional[str], env) -> float:
     if env is None or needed_unit is None:
-        return _nearest_id(origin, candidates, travel_time_matrix, env=env, needed_unit=needed_unit)
+        return 0.0
+    fac = getattr(env, "facility_by_id", {}).get(dest)
+    if fac is None:
+        return 0.0
+    unit = getattr(fac, "units", {}).get(needed_unit)
+    if unit is None:
+        return 0.0
+    return unit.expected_wait_if_join_now()
 
-    facility_by_id = getattr(env, "facility_by_id", {})
 
-    def _expected_wait(cid):
-        fac = facility_by_id.get(cid)
-        if fac is None:
-            return float("inf")
-        unit = getattr(fac, "units", {}).get(needed_unit)
-        if unit is None:
-            return float("inf")
-        return unit.expected_wait_if_join_now()
+def _pick_nearest_ambulance(candidates: list, origin: str, travel_time_matrix):
+    """Pick the nearest ambulance to origin; random tiebreak among equidistant."""
+    if not candidates:
+        return None
 
-    def _time(cid):
-        if travel_time_matrix is None or origin not in travel_time_matrix.index:
-            return 0.0
-        return float(travel_time_matrix.loc[origin, cid]) if cid in travel_time_matrix.columns else float("inf")
+    def _dist(amb):
+        return _travel_min(amb._loc_id(amb.location), origin, travel_time_matrix)
 
-    return min(candidates, key=lambda cid: (_expected_wait(cid), _time(cid)))
+    min_d = min(_dist(a) for a in candidates)
+    nearest = [a for a in candidates if _dist(a) == min_d]
+    return random.choice(nearest)
+
+
+def _pick_best_destination(origin: str, eligible_facs: list, needed_unit, env, travel_time_matrix):
+    """Pick destination minimizing transport_time + expected_wait."""
+    if not eligible_facs:
+        return None
+    return min(
+        eligible_facs,
+        key=lambda dest: (
+            _travel_min(origin, dest, travel_time_matrix)
+            + _expected_wait(dest, needed_unit, env)
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
-# Greedy solver
+# Triage-based solver
 # ---------------------------------------------------------------------------
 
-def solve_greedy(
+def solve_triage(
     env: "sim.Environment",
     requests_df: pd.DataFrame,
     idle_ambulances: List["Ambulance"],
     travel_time_matrix: Optional[pd.DataFrame],
+    trigger_type: str = "t1",
     **_kwargs,
 ) -> pd.DataFrame:
     """
-    Greedy dispatcher: FIFO + triage priority, joint (ambulance, destination) selection.
+    Triage-aware dispatcher.
 
-    For each pending request batch:
-      1. Pick the anchor: longest-waiting request (tie-break: T1 > T2 > T3).
-      2. Jointly select (amb, dest) minimising:
-             pickup_time(amb → origin)
-           + transport_time(origin → dest)
-           + expected_wait_if_join_now(dest)
-      3. Bundle all co-located requests eligible for the chosen ambulance (up to capacity),
-         all sent to the same destination.
-      4. Repeat until no idle ambulances or no pending requests remain.
+    The C2 has already selected a single facility's worth of requests.
+    This solver:
+      1. Picks the best destination (min transport_time + expected_wait).
+      2. Picks the nearest idle ambulance (random tiebreak).
+      3. Loads the ambulance respecting triage priority and capacity:
+         - T1/T2 slots filled first (T1 > T2 by t_issued)
+         - T3 slots filled with T3s
+      4. Only one ambulance is dispatched per call.
 
     Returns requests_df with assigned_facility_id / assigned_amb_id filled.
     """
     df = requests_df.copy()
     df["assigned_facility_id"] = None
-    df["assigned_amb_id"]      = None
+    df["assigned_amb_id"] = None
 
     if df.empty or not idle_ambulances:
         return df
 
-    caps_t1t2 = {a.amb_id: int(getattr(a, "t1_t2_capacity", 1)) for a in idle_ambulances}
-    caps_t3   = {a.amb_id: int(getattr(a, "t3_capacity",    1)) for a in idle_ambulances}
-    idle_pool = list(idle_ambulances)
-    assigned  = pd.Series(False, index=df.index)
+    origin = df["issuing_facility_id"].iloc[0]
+    needed_unit = df["needed_unit"].iloc[0] if "needed_unit" in df.columns else None
 
-    df["_t_issued"]    = pd.to_numeric(df["t_issued"], errors="coerce").fillna(0)
+    # --- pick destination ---
+    eligible_facs = df["eligible_facilities"].iloc[0] if "eligible_facilities" in df.columns else []
+    if not eligible_facs:
+        eligible_facs_all = df["eligible_facilities"].dropna()
+        for facs in eligible_facs_all:
+            if facs:
+                eligible_facs = facs
+                break
+    if not eligible_facs:
+        return df
+
+    best_dest = _pick_best_destination(origin, eligible_facs, needed_unit, env, travel_time_matrix)
+    if best_dest is None:
+        return df
+
+    # --- pick ambulance ---
+    eligible_amb_ids = set()
+    for _, row in df.iterrows():
+        ea = row.get("eligible_ambulances") or []
+        eligible_amb_ids.update(ea)
+
+    candidates = [a for a in idle_ambulances if a.amb_id in eligible_amb_ids]
+    if not candidates:
+        return df
+
+    best_amb = _pick_nearest_ambulance(candidates, origin, travel_time_matrix)
+    if best_amb is None:
+        return df
+
+    # --- load ambulance by triage priority ---
+    t1t2_cap = int(getattr(best_amb, "t1_t2_capacity", 1))
+    t3_cap = int(getattr(best_amb, "t3_capacity", 1))
+
     df["_triage_prio"] = df["triage"].apply(_triage_priority)
-    df = df.sort_values(["_t_issued", "_triage_prio"], ascending=[True, True])
+    df["_t_issued"] = pd.to_numeric(df["t_issued"], errors="coerce").fillna(0)
+    df = df.sort_values(["_triage_prio", "_t_issued"], ascending=[True, True])
 
-    def _travel_min(loc_a: str, loc_b: str) -> float:
-        if travel_time_matrix is None:
-            return 0.0
-        if loc_a not in travel_time_matrix.index or loc_b not in travel_time_matrix.columns:
-            return 0.0
-        return float(travel_time_matrix.loc[loc_a, loc_b])
+    t1t2_rows = df[df["triage"].str.startswith(("T1", "T2"))].head(t1t2_cap)
+    t3_rows = df[df["triage"].str.startswith("T3")].head(t3_cap)
+    loaded = pd.concat([t1t2_rows, t3_rows])
 
-    def _expected_wait(dest: str, needed_unit: Optional[str]) -> float:
-        if env is None or needed_unit is None:
-            return 0.0
-        fac = getattr(env, "facility_by_id", {}).get(dest)
-        if fac is None:
-            return 0.0
-        unit = getattr(fac, "units", {}).get(needed_unit)
-        if unit is None:
-            return 0.0
-        return unit.expected_wait_if_join_now()
+    for idx in loaded.index:
+        df.loc[idx, "assigned_facility_id"] = best_dest
+        df.loc[idx, "assigned_amb_id"] = best_amb.amb_id
 
-    while idle_pool:
-        pending = df[~assigned]
-        if pending.empty:
-            break
-
-        anchor        = pending.iloc[0]
-        origin        = anchor["issuing_facility_id"]
-        eligible_facs = anchor.get("eligible_facilities") or []
-        eligible_ambs = set(anchor.get("eligible_ambulances") or [])
-        needed_unit   = anchor.get("needed_unit")
-
-        if not eligible_facs or not eligible_ambs:
-            assigned[anchor.name] = True
-            continue
-
-        candidates = [a for a in idle_pool if a.amb_id in eligible_ambs]
-        if not candidates:
-            assigned[anchor.name] = True
-            continue
-
-        best_dest = min(
-            eligible_facs,
-            key=lambda dest: _travel_min(origin, dest) + _expected_wait(dest, needed_unit),
-        )
-        best_amb = min(
-            candidates,
-            key=lambda amb: _travel_min(amb._loc_id(amb.location), origin),
-        )
-
-        if best_amb is None or best_dest is None:
-            assigned[anchor.name] = True
-            continue
-
-        cap_t1t2    = caps_t1t2.get(best_amb.amb_id, 1)
-        cap_t3      = caps_t3.get(best_amb.amb_id, 1)
-        same_origin_pool = pending[
-            (pending["issuing_facility_id"] == origin)
-            & pending["eligible_ambulances"].apply(lambda ea: best_amb.amb_id in (ea or []))
-        ]
-        t1t2_batch  = same_origin_pool[
-            same_origin_pool["triage"].str.startswith(("T1", "T2"))
-        ].head(cap_t1t2)
-        t3_batch    = same_origin_pool[
-            same_origin_pool["triage"].str.startswith("T3")
-        ].head(cap_t3)
-        same_origin = pd.concat([t1t2_batch, t3_batch])
-
-        for idx in same_origin.index:
-            df.loc[idx, "assigned_facility_id"] = best_dest
-            df.loc[idx, "assigned_amb_id"]      = best_amb.amb_id
-            assigned[idx] = True
-
-        idle_pool.remove(best_amb)
-
-    df.drop(columns=["_t_issued", "_triage_prio"], inplace=True, errors="ignore")
+    df.drop(columns=["_triage_prio", "_t_issued"], inplace=True, errors="ignore")
     return df
