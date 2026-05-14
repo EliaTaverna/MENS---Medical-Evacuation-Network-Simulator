@@ -257,7 +257,7 @@ def test_ilp_empty_df():
         "req_id", "casualty_id", "triage", "issuing_facility_id",
         "eligible_facilities", "eligible_ambulances", "t_issued", "needed_unit",
     ])
-    out = solve_ilp(env, df, idle_ambulances=[], distance_matrix=None)
+    out = solve_ilp(env, df, idle_ambulances=[], travel_time_matrix=None)
     assert "assigned_facility_id" in out.columns
     assert "assigned_amb_id" in out.columns
     assert out.empty
@@ -270,7 +270,7 @@ def test_ilp_single_request_assigned():
     env = _make_ilp_env(amb_map={"AMB1": amb}, fac_map={"F2": fac})
     dm = _dist(["F1", "F2", "AXP1"], {("F1", "F2"): 10, ("AXP1", "F1"): 0})
     df = _requests_df({})   # one row with all defaults
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=dm)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=dm)
     assert out.loc[0, "assigned_amb_id"] == "AMB1"
     assert out.loc[0, "assigned_facility_id"] == "F2"
 
@@ -280,7 +280,7 @@ def test_ilp_no_eligible_facilities():
     amb = MockAmb("AMB1", 1, "AXP1")
     env = _make_ilp_env(amb_map={"AMB1": amb})
     df = _requests_df({"eligible_facilities": []})
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=None)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=None)
     assert out.loc[0, "assigned_facility_id"] is None
 
 
@@ -289,7 +289,7 @@ def test_ilp_no_eligible_ambulances():
     amb = MockAmb("AMB1", 1, "AXP1")
     env = _make_ilp_env(amb_map={"AMB1": amb})
     df = _requests_df({"eligible_ambulances": []})
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=None)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=None)
     assert out.loc[0, "assigned_amb_id"] is None
 
 
@@ -310,7 +310,7 @@ def test_ilp_triage_priority_t1_beats_t3():
         {"req_id": "R1", "casualty_id": "P1", "triage": "T1"},
         {"req_id": "R2", "casualty_id": "P2", "triage": "T3"},
     )
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=dm)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=dm)
     assigned = out[out["assigned_amb_id"].notna()]
     assert len(assigned) == 1
     assert assigned.iloc[0]["triage"] == "T1"
@@ -330,7 +330,7 @@ def test_ilp_triage_priority_t2_beats_t3():
         {"req_id": "R1", "casualty_id": "P1", "triage": "T2"},
         {"req_id": "R2", "casualty_id": "P2", "triage": "T3"},
     )
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=dm)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=dm)
     assigned = out[out["assigned_amb_id"].notna()]
     assert len(assigned) == 1
     assert assigned.iloc[0]["triage"] == "T2"
@@ -357,7 +357,7 @@ def test_ilp_sojourn_tiebreaker():
         # t_issued=50 → sojourn = 0
         {"req_id": "R2", "casualty_id": "P2", "triage": "T2", "t_issued": 50.0},
     )
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=dm, beta=1.0)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=dm, beta=1.0)
     assigned = out[out["assigned_amb_id"].notna()]
     assert len(assigned) == 1
     # sojourn=50 patient has score 2 + 1*50 = 52; sojourn=0 has score 2 + 0 = 2
@@ -385,7 +385,7 @@ def test_ilp_triage_dominates_sojourn_when_gap_large():
         {"req_id": "R1", "casualty_id": "P1", "triage": "T1", "t_issued": 9000.0},  # sojourn=0
         {"req_id": "R2", "casualty_id": "P2", "triage": "T3", "t_issued": 0.0},     # sojourn=9000
     )
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=dm, beta=0.01)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=dm, beta=0.01)
     assigned = out[out["assigned_amb_id"].notna()]
     assert assigned.iloc[0]["triage"] == "T1"
 
@@ -410,7 +410,7 @@ def test_ilp_sojourn_crosses_breakeven_t3_wins():
         {"req_id": "R1", "casualty_id": "P1", "triage": "T1", "t_issued": 10001.0},  # sojourn=0
         {"req_id": "R2", "casualty_id": "P2", "triage": "T3", "t_issued": 0.0},      # sojourn=10001
     )
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=dm, beta=0.01)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=dm, beta=0.01)
     assigned = out[out["assigned_amb_id"].notna()]
     assert assigned.iloc[0]["triage"] == "T3"
 
@@ -433,7 +433,7 @@ def test_ilp_gamma_selects_closer_ambulance():
          ("AXP1", "F2"): 11, ("AXP2", "F2"): 30},
     )
     df = _requests_df({"eligible_ambulances": ["AMB1", "AMB2"]})
-    out = solve_ilp(env, df, idle_ambulances=[amb1, amb2], distance_matrix=dm, gamma=1.0)
+    out = solve_ilp(env, df, idle_ambulances=[amb1, amb2], travel_time_matrix=dm, gamma=1.0)
     assert out.loc[0, "assigned_amb_id"] == "AMB1"
 
 
@@ -450,7 +450,7 @@ def test_ilp_capacity_one_limits_assignment():
         {"req_id": "R1", "casualty_id": "P1"},
         {"req_id": "R2", "casualty_id": "P2"},
     )
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=dm)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=dm)
     n_assigned = out["assigned_amb_id"].notna().sum()
     assert n_assigned == 1
 
@@ -468,7 +468,7 @@ def test_ilp_capacity_two_assigns_both():
         {"req_id": "R1", "casualty_id": "P1"},
         {"req_id": "R2", "casualty_id": "P2"},
     )
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=dm)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=dm)
     assert out["assigned_amb_id"].notna().sum() == 2
     assert (out["assigned_amb_id"] == "AMB1").all()
 
@@ -494,7 +494,7 @@ def test_ilp_same_destination_constraint():
         {"req_id": "R1", "casualty_id": "P1", "eligible_facilities": ["F2", "F3"]},
         {"req_id": "R2", "casualty_id": "P2", "eligible_facilities": ["F2", "F3"]},
     )
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=dm, gamma=1.0)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=dm, gamma=1.0)
     assigned = out[out["assigned_facility_id"].notna()]
     assert len(assigned) == 2
     # same-destination: both go to the same (cheaper) facility
@@ -520,7 +520,7 @@ def test_ilp_two_ambulances_two_requests_both_assigned():
         {"req_id": "R1", "casualty_id": "P1", "eligible_ambulances": ["AMB1", "AMB2"]},
         {"req_id": "R2", "casualty_id": "P2", "eligible_ambulances": ["AMB1", "AMB2"]},
     )
-    out = solve_ilp(env, df, idle_ambulances=[amb1, amb2], distance_matrix=dm)
+    out = solve_ilp(env, df, idle_ambulances=[amb1, amb2], travel_time_matrix=dm)
     assert out["assigned_amb_id"].notna().sum() == 2
     # each ambulance assigned at most once (capacity 1)
     assert out["assigned_amb_id"].nunique() == 2
@@ -545,7 +545,7 @@ def test_ilp_delta_selects_lower_ewt_facility():
         "eligible_facilities": ["F2", "F3"],
         "needed_unit": "surgery",
     })
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=dm, delta=1.0)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=dm, delta=1.0)
     assert out.loc[0, "assigned_facility_id"] == "F2"
 
 
@@ -567,7 +567,7 @@ def test_ilp_unknown_triage_defaults_to_weight_one():
         {"req_id": "R1", "casualty_id": "P1", "triage": "T1"},
         {"req_id": "R2", "casualty_id": "P2", "triage": "T4"},
     )
-    out = solve_ilp(env, df, idle_ambulances=[amb], distance_matrix=dm)
+    out = solve_ilp(env, df, idle_ambulances=[amb], travel_time_matrix=dm)
     assigned = out[out["assigned_amb_id"].notna()]
     assert assigned.iloc[0]["triage"] == "T1"
 
@@ -698,7 +698,7 @@ def _make_integration_scenario(n_ambulances: int = 1, amb_capacity: int = 1):
     for axp in axp_ids:
         dist_data[(axp, "F1")] = 0.0
         dist_data[(axp, "F2")] = 10.0
-    distance_matrix = _dist(locs, dist_data)
+    travel_time_matrix = _dist(locs, dist_data)
 
     axp_df = pd.DataFrame([
         {"axp_id": axp, "assigned_facility_ids": ["F1"]}
@@ -724,7 +724,7 @@ def _make_integration_scenario(n_ambulances: int = 1, amb_capacity: int = 1):
 
     ambulance_df = pd.DataFrame([
         {"amb_id": f"AMB{i+1}", "capacity": amb_capacity,
-         "speed_kmh": 60.0, "start_loc_id": axp_ids[i], "c2_id": "C2"}
+         "start_loc_id": axp_ids[i], "c2_id": "C2"}
         for i in range(n_ambulances)
     ])
 
@@ -742,7 +742,7 @@ def _make_integration_scenario(n_ambulances: int = 1, amb_capacity: int = 1):
     }])
 
     return {
-        "distance_matrix": distance_matrix,
+        "travel_time_matrix": travel_time_matrix,
         "axp_df": axp_df,
         "facility_df": facility_df,
         "units_df": units_df,
@@ -793,7 +793,7 @@ def _run_integration(data, casualties_df, triage_weights, levers=None, till=200)
 
     with SimulationObserver(env) as observer:
         ModelBuilder(env).build_all(
-            data["distance_matrix"], data["axp_df"], data["facility_df"],
+            data["travel_time_matrix"], data["axp_df"], data["facility_df"],
             data["units_df"], data["ambulance_df"], data["c2_df"],
             fac_eligibility_datasets=data.get("fac_eligibility_datasets"),
             amb_eligibility_datasets=data.get("amb_eligibility_datasets"),

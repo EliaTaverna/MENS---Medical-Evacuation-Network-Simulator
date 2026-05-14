@@ -2,7 +2,7 @@ name: scenario_500
 seed: 42
 description: Auto-generated topology-driven scenario
 components:
-  distance_matrix: components/distances/distance_matrix_500.xlsx
+  travel_time_matrix: components/distances/distance_matrix_500.xlsx
   axp: components/AXPs/axp_500.xlsx
   facilities: components/facilities/facilities_500.xlsx
   units: components/units/units_500.xlsx

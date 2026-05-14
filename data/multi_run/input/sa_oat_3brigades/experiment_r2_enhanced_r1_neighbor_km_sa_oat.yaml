@@ -1,8 +1,8 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# OAT SA — axis: r2_enhanced_r1_neighbor_km
-# Purpose: R2-enhanced <-> neighbor-brigade R1, km
+# OAT SA — axis: r2_enhanced_r1_neighbor_min
+# Purpose: R2-enhanced <-> neighbor-brigade R1, travel time in minutes
 # Scenario: 3 brigades × 3 battalions, big R2-enhanced, no R2-basic.
-# Design: full factorial. seed (30 values) × r2_enhanced_r1_neighbor_km (4 values) = 120 runs.
+# Design: full factorial. seed (30 values) × r2_enhanced_r1_neighbor_min (4 values) = 120 runs.
 # Everything not listed here uses the scenario / casualty-config baseline.
 # Baseline for this axis: 25
 #
@@ -10,7 +10,7 @@
 # file includes DCS somewhere in the care path (i.e. at least one triage
 # label routes through Role 2). With the default prescriptions
 # (T1/T2 BCAS → [DCR], T3 BCAS → [PEC]) R1→R2 transport is never invoked,
-# R2 capacity never binds, and R2↔R1 distances are never consulted.
+# R2 capacity never binds, and R2↔R1 travel times are never consulted.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 scenario: data/single_run/input/scenarios/scenario_3_brigades_3_battalions_big_r2e_no_r2b.yaml
@@ -27,7 +27,7 @@ uncertainties:
     type: categorical
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
 
-  - name: r2_enhanced_r1_neighbor_km
+  - name: r2_enhanced_r1_neighbor_min
     type: categorical
     values: [15, 25, 40, 60]
 

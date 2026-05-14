@@ -52,15 +52,15 @@ TRIAGE_COLORS = {
 # HELPER FUNCTIONS
 # ============================================================
 
-def compute_positions_from_distance_matrix(distance_matrix: pd.DataFrame) -> dict:
+def compute_positions_from_travel_time_matrix(travel_time_matrix: pd.DataFrame) -> dict:
     """
     Use MDS to infer 2D positions from the distance matrix.
 
     Returns:
         dict mapping location_id -> (x, y)
     """
-    locations = list(distance_matrix.index)
-    dist_array = distance_matrix.values.astype(float)
+    locations = list(travel_time_matrix.index)
+    dist_array = travel_time_matrix.values.astype(float)
 
     # Replace any inf/nan with large values
     dist_array = np.nan_to_num(dist_array, nan=1000.0, posinf=1000.0, neginf=0.0)
@@ -77,7 +77,7 @@ def compute_positions_from_distance_matrix(distance_matrix: pd.DataFrame) -> dic
 
 
 def compute_positions_hierarchical(
-    distance_matrix: pd.DataFrame,
+    travel_time_matrix: pd.DataFrame,
     facility_df: pd.DataFrame,
     coord_df: pd.DataFrame = None,
 ) -> dict:
@@ -88,7 +88,7 @@ def compute_positions_hierarchical(
     including AXPs), use it directly.  Otherwise fall back to facility_df x_km/y_km,
     and finally to MDS on the distance matrix.
     """
-    locations = list(distance_matrix.index)
+    locations = list(travel_time_matrix.index)
 
     # --- fast path: full coordinate reference available (covers AXPs too) ---
     if coord_df is not None and "facility_id" in coord_df.columns:
@@ -105,7 +105,7 @@ def compute_positions_hierarchical(
         return {loc: coord_map.get(loc, (0.0, 0.0)) for loc in locations}
 
     # --- fallback: MDS ---
-    dist_array = distance_matrix.values.astype(float)
+    dist_array = travel_time_matrix.values.astype(float)
     dist_array = np.nan_to_num(dist_array, nan=1000.0, posinf=1000.0, neginf=0.0)
     dist_array = (dist_array + dist_array.T) / 2
     np.fill_diagonal(dist_array, 0)
@@ -232,7 +232,7 @@ class FacilityStateLogger(sim.Component):
 # ============================================================
 
 def plot_network_static(
-    distance_matrix: pd.DataFrame,
+    travel_time_matrix: pd.DataFrame,
     facility_df: pd.DataFrame,
     ambulance_df: pd.DataFrame = None,
     coord_df: pd.DataFrame = None,
@@ -240,35 +240,35 @@ def plot_network_static(
     figsize: tuple = (22, 12),
 ):
     """Create a static plot of the MEDEVAC network."""
-    positions = compute_positions_hierarchical(distance_matrix, facility_df, coord_df=coord_df)
+    positions = compute_positions_hierarchical(travel_time_matrix, facility_df, coord_df=coord_df)
 
     fig, ax = plt.subplots(figsize=figsize)
 
-    # Draw edges (connections). Label one representative per unique km value
-    # so the plot shows every distance class exactly once, instead of piling
+    # Draw edges (connections). Label one representative per unique time value
+    # so the plot shows every travel-time class exactly once, instead of piling
     # overlapping labels on top of each other at edge midpoints.
-    locations = list(distance_matrix.index)
-    labeled_km = set()
+    locations = list(travel_time_matrix.index)
+    labeled_vals = set()
     for i, loc1 in enumerate(locations):
         for j, loc2 in enumerate(locations):
             if i >= j:
                 continue
-            dist = distance_matrix.loc[loc1, loc2]
+            tt = travel_time_matrix.loc[loc1, loc2]
             try:
-                d_val = float(dist)
+                t_val = float(tt)
             except (TypeError, ValueError):
                 continue
-            if not np.isfinite(d_val) or d_val <= 0:
+            if not np.isfinite(t_val) or t_val <= 0:
                 continue
             x1, y1 = positions[loc1]
             x2, y2 = positions[loc2]
             ax.plot([x1, x2], [y1, y2], 'k-', alpha=0.35, linewidth=0.6, zorder=1)
-            key = round(d_val, 6)
-            if key not in labeled_km:
-                labeled_km.add(key)
+            key = round(t_val, 6)
+            if key not in labeled_vals:
+                labeled_vals.add(key)
                 mx, my = (x1 + x2) / 2, (y1 + y2) / 2
                 ax.annotate(
-                    f"{d_val:g} km",
+                    f"{t_val:g} min",
                     (mx, my),
                     fontsize=8,
                     ha="center",
@@ -321,7 +321,7 @@ def plot_network_static(
 # ============================================================
 
 def create_transport_video(
-    distance_matrix: pd.DataFrame,
+    travel_time_matrix: pd.DataFrame,
     facility_df: pd.DataFrame,
     transport_events: pd.DataFrame,
     ambulance_df: pd.DataFrame,
@@ -339,7 +339,7 @@ def create_transport_video(
     Create an MP4 video showing ambulances moving with patient dots.
 
     Parameters:
-        distance_matrix: DataFrame with distances between locations
+        travel_time_matrix: DataFrame with distances between locations
         facility_df: DataFrame with facility information
         transport_events: DataFrame with transport events
         ambulance_df: DataFrame with ambulance info
@@ -352,18 +352,18 @@ def create_transport_video(
         duration: Video duration in minutes from start_time (None = until last event)
         start_time: Simulation time (minutes) at which the video begins (default 0)
     """
-    positions = compute_positions_hierarchical(distance_matrix, facility_df, coord_df=coord_df)
+    positions = compute_positions_hierarchical(travel_time_matrix, facility_df, coord_df=coord_df)
     amb_colors = generate_ambulance_colors(ambulance_df['amb_id'].tolist())
 
     fig, ax = plt.subplots(figsize=figsize)
     ax.set_facecolor('#f5f5f5')
 
     # Draw edges (connections)
-    locations = list(distance_matrix.index)
+    locations = list(travel_time_matrix.index)
     for i, loc1 in enumerate(locations):
         for j, loc2 in enumerate(locations):
             if i < j:
-                dist = distance_matrix.loc[loc1, loc2]
+                dist = travel_time_matrix.loc[loc1, loc2]
                 if dist < 30:
                     x1, y1 = positions[loc1]
                     x2, y2 = positions[loc2]
@@ -459,8 +459,7 @@ def create_transport_video(
                 to_loc = event['to_loc']
                 patient_triages = event.get('patient_triages', [])
 
-                dist = distance_matrix.loc[from_loc, to_loc]
-                travel_time = (dist / 30.0) * 60.0
+                travel_time = float(travel_time_matrix.loc[from_loc, to_loc])
 
                 amb_state[amb_id] = {
                     'in_transit': True,

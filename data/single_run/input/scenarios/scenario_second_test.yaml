@@ -2,7 +2,7 @@ name: scenario_second_test
 seed: 42
 description: Auto-generated topology-driven scenario
 components:
-  distance_matrix: components/distances/distance_matrix_second_test.xlsx
+  travel_time_matrix: components/distances/distance_matrix_second_test.xlsx
   coordinates: components/distances/coordinates_second_test.xlsx
   axp: components/AXPs/axp_second_test.xlsx
   facilities: components/facilities/facilities_second_test.xlsx

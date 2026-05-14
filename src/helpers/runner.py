@@ -21,7 +21,7 @@ def run_simulation(data: dict, settings: dict, run_folder: Path) -> dict:
 
     Args:
         data: Component DataFrames and configuration loaded for this run.
-            Expected keys: ``distance_matrix``, ``axp_df``, ``facility_df``,
+            Expected keys: ``travel_time_matrix``, ``axp_df``, ``facility_df``,
             ``units_df``, ``ambulance_df``, ``c2_df``, ``casualties_df``.
             Optional keys: ``triage_weights``, ``fac_eligibility_datasets``,
             ``amb_eligibility_datasets``.
@@ -59,7 +59,7 @@ def run_simulation(data: dict, settings: dict, run_folder: Path) -> dict:
     ]
 
     ModelBuilder(env).build_all(
-        data["distance_matrix"], data["axp_df"], data["facility_df"],
+        data["travel_time_matrix"], data["axp_df"], data["facility_df"],
         data["units_df"], data["ambulance_df"], data["c2_df"],
         fac_eligibility_datasets=data.get("fac_eligibility_datasets"),
         amb_eligibility_datasets=data.get("amb_eligibility_datasets"),

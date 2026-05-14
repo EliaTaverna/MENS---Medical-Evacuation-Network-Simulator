@@ -197,13 +197,13 @@ def dispatch_ambulances(c2: "TransportC2", plans_craft: dict[str, list["PlanStep
     Equip ambulances with a plan and dispatch them (activate).
 
     Before dispatch, every leg in the plan (amb.location → step[0],
-    step[i] → step[i+1]) is checked against env.distance_matrix. A non-finite
-    distance means C2 picked a forbidden edge — that is a config/eligibility
+    step[i] → step[i+1]) is checked against env.travel_time_matrix. A non-finite
+    value means C2 picked a forbidden edge — that is a config/eligibility
     bug, so we raise rather than let the ambulance silently vanish into a
     sentinel-sized trip.
     """
     env = c2.env
-    dm = getattr(env, "distance_matrix", None)
+    dm = getattr(env, "travel_time_matrix", None)
 
     for amb_id, plan in (plans_craft or {}).items():
         amb = env.amb_by_id.get(amb_id)
@@ -223,7 +223,7 @@ def dispatch_ambulances(c2: "TransportC2", plans_craft: dict[str, list["PlanStep
                 if a not in dm.index or b not in dm.columns:
                     raise ValueError(
                         f"C2 {c2.c2_id} assigned ambulance {amb_id} a leg "
-                        f"{a!r} -> {b!r} missing from the distance matrix."
+                        f"{a!r} -> {b!r} missing from the travel time matrix."
                     )
                 d = dm.loc[a, b]
                 # Accept any numeric scalar — numpy.int64 / numpy.float64
@@ -236,8 +236,8 @@ def dispatch_ambulances(c2: "TransportC2", plans_craft: dict[str, list["PlanStep
                 if not math.isfinite(d_val):
                     raise ValueError(
                         f"C2 {c2.c2_id} assigned ambulance {amb_id} a forbidden "
-                        f"leg {a!r} -> {b!r} (distance={d!r}). Check facility/"
-                        f"ambulance eligibility matrices against the distance matrix."
+                        f"leg {a!r} -> {b!r} (travel_time={d!r}). Check facility/"
+                        f"ambulance eligibility matrices against the travel time matrix."
                     )
 
         # attach plan

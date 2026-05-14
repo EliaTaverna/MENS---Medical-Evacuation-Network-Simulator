@@ -56,25 +56,23 @@ class RunSetter:
         master_seed = self._resolve_seed(kwargs)
         seeds       = self._derive_seeds(master_seed)
         data     = dict(self.base_data)
-        # Distance overrides run in layers, each applied only if its kwargs are
-        # present.  Ring-tier methods set same/neighbor/non_contig cells; the
-        # legacy R2-split method below is kept so old YAMLs (r2_basic_*,
-        # r2_enhanced_*) still work.  The generic per-pair `distance_a__b`
+        # Travel-time overrides run in layers, each applied only if its kwargs
+        # are present.  Ring-tier methods set same/neighbor/non_contig cells;
+        # the legacy R2-split method below is kept so old YAMLs (r2_basic_*,
+        # r2_enhanced_*) still work.  The generic per-pair `tt_a__b`
         # override runs last, so it always wins over topology-level values.
-        data     = self._apply_ccp_r1_distances(data, kwargs)
-        data     = self._apply_r1_r1_distances(data, kwargs)
-        data     = self._apply_r1_axp_distances(data, kwargs)
-        data     = self._apply_r2_r1_distances(data, kwargs)   # legacy R2-split
-        data     = self._apply_r1_r2_distances(data, kwargs)   # unified R2 tiers
-        data     = self._apply_axp_r2_distances(data, kwargs)
-        data     = self._apply_distance_overrides(data, kwargs)
+        data     = self._apply_ccp_r1_times(data, kwargs)
+        data     = self._apply_r1_r1_times(data, kwargs)
+        data     = self._apply_r1_axp_times(data, kwargs)
+        data     = self._apply_r2_r1_times(data, kwargs)   # legacy R2-split
+        data     = self._apply_r1_r2_times(data, kwargs)   # unified R2 tiers
+        data     = self._apply_axp_r2_times(data, kwargs)
+        data     = self._apply_tt_overrides(data, kwargs)
         data     = self._apply_dcs_capacity(data, kwargs)
         data     = self._apply_pec_capacity(data, kwargs)
         data     = self._apply_dcr_capacity(data, kwargs)
         data     = self._apply_set_ambulances_r1_to_ccp(data, kwargs, seeds["ambulances"])
         data     = self._apply_set_ambulances_r1_r2(data, kwargs, seeds["ambulances"])
-        data     = self._apply_amb_speed_ccp_r1(data, kwargs)
-        data     = self._apply_amb_speed_r1_r2(data, kwargs)
         data     = self._apply_casualties(data, kwargs, seeds["casualties"],
                                           battalion_seed=seeds["battalions"])
         levers   = self._apply_levers(kwargs, master_seed)
@@ -150,32 +148,26 @@ class RunSetter:
                     result.setdefault(bde, []).append(fid)
         return {b: list(dict.fromkeys(ids)) for b, ids in result.items()}
 
-    def _apply_ccp_r1_distances(self, data: dict, kwargs: dict) -> dict:
-        """Override CCP↔R1 distances via three levers (same/neighbor/non_contig battalion).
+    def _apply_ccp_r1_times(self, data: dict, kwargs: dict) -> dict:
+        """Override CCP↔R1 travel times via three levers (same/neighbor/non_contig battalion).
 
-        Levers (all optional, km):
-        - ``r1_ccp_same_km``:       CCP ↔ R1 of the same battalion
-        - ``r1_ccp_neighbor_km``:   CCP ↔ R1 of a neighbor battalion (same brigade)
-        - ``r1_ccp_non_contig_km``: CCP ↔ R1 of a non-contig battalion (same
+        Levers (all optional, minutes):
+        - ``r1_ccp_same_min``:       CCP ↔ R1 of the same battalion
+        - ``r1_ccp_neighbor_min``:   CCP ↔ R1 of a neighbor battalion (same brigade)
+        - ``r1_ccp_non_contig_min``: CCP ↔ R1 of a non-contig battalion (same
                                     brigade, not own, not neighbor)
-
-        Each lever, when provided, rewrites every matching distance-matrix
-        entry symmetrically.  Tiers are derived from ``force_structure_df``:
-        own ``r1_ids`` (same), ``neighbor_r1_ids`` (neighbor), and the
-        remainder of the brigade's R1 roster (non-contig).  CCPs never cross
-        brigades, so cross-brigade pairs stay NaN.
         """
-        same_km       = kwargs.get("r1_ccp_same_km")
-        nbr_km        = kwargs.get("r1_ccp_neighbor_km")
-        non_contig_km = kwargs.get("r1_ccp_non_contig_km")
-        if same_km is None and nbr_km is None and non_contig_km is None:
+        same_min       = kwargs.get("r1_ccp_same_min")
+        nbr_min        = kwargs.get("r1_ccp_neighbor_min")
+        non_contig_min = kwargs.get("r1_ccp_non_contig_min")
+        if same_min is None and nbr_min is None and non_contig_min is None:
             return data
 
         force_df = self.base_config.get("force_structure_df")
         if force_df is None:
             return data
 
-        dm = data["distance_matrix"].copy()
+        dm = data["travel_time_matrix"].copy()
         r1s_by_bde = self._group_by_brigade(force_df, "r1_ids")
 
         for _, row in force_df.iterrows():
@@ -186,37 +178,32 @@ class RunSetter:
             same_bde_r1s = r1s_by_bde.get(bde, [])
             non_contig_r1_ids = [r for r in same_bde_r1s
                                  if r not in r1_ids and r not in nbr_r1_ids]
-            self._set_pairs(dm, r1_ids,             ccp_ids, same_km)
-            self._set_pairs(dm, nbr_r1_ids,         ccp_ids, nbr_km)
-            self._set_pairs(dm, non_contig_r1_ids,  ccp_ids, non_contig_km)
+            self._set_pairs(dm, r1_ids,             ccp_ids, same_min)
+            self._set_pairs(dm, nbr_r1_ids,         ccp_ids, nbr_min)
+            self._set_pairs(dm, non_contig_r1_ids,  ccp_ids, non_contig_min)
 
-        data["distance_matrix"] = dm
+        data["travel_time_matrix"] = dm
         return data
 
-    def _apply_r1_r1_distances(self, data: dict, kwargs: dict) -> dict:
-        """Override R1↔R1 distances for within-brigade tiers and cross-brigade (flat).
+    def _apply_r1_r1_times(self, data: dict, kwargs: dict) -> dict:
+        """Override R1↔R1 travel times for within-brigade tiers and cross-brigade (flat).
 
-        Levers (all optional, km):
-        - ``r1_r1_neighbor_km``:   R1 ↔ R1 of a neighbor battalion (same brigade)
-        - ``r1_r1_non_contig_km``: R1 ↔ R1 of a non-contig battalion (same brigade)
-        - ``r1_r1_inter_bde_km``:  R1 ↔ R1 across brigades (single flat value,
-                                   applied to every inter-brigade R1 pair)
-
-        Mirrors the notebook's 3-tier schema: within-brigade uses ring-distance
-        (neighbor vs non_contig), cross-brigade is one flat value regardless of
-        brigade-ring distance.
+        Levers (all optional, minutes):
+        - ``r1_r1_neighbor_min``:   R1 ↔ R1 of a neighbor battalion (same brigade)
+        - ``r1_r1_non_contig_min``: R1 ↔ R1 of a non-contig battalion (same brigade)
+        - ``r1_r1_inter_bde_min``:  R1 ↔ R1 across brigades (single flat value)
         """
-        neighbor_km   = kwargs.get("r1_r1_neighbor_km")
-        non_contig_km = kwargs.get("r1_r1_non_contig_km")
-        inter_bde_km  = kwargs.get("r1_r1_inter_bde_km")
-        if all(v is None for v in (neighbor_km, non_contig_km, inter_bde_km)):
+        neighbor_min   = kwargs.get("r1_r1_neighbor_min")
+        non_contig_min = kwargs.get("r1_r1_non_contig_min")
+        inter_bde_min  = kwargs.get("r1_r1_inter_bde_min")
+        if all(v is None for v in (neighbor_min, non_contig_min, inter_bde_min)):
             return data
 
         force_df = self.base_config.get("force_structure_df")
         if force_df is None:
             return data
 
-        dm = data["distance_matrix"].copy()
+        dm = data["travel_time_matrix"].copy()
         r1s_by_bde = self._group_by_brigade(force_df, "r1_ids")
 
         for _, row in force_df.iterrows():
@@ -228,33 +215,32 @@ class RunSetter:
                               if r not in own_r1s and r not in nbr_r1s]
             inter_bde_r1s  = [r for b, rs in r1s_by_bde.items()
                               if b != bde for r in rs]
-            self._set_pairs(dm, own_r1s, nbr_r1s,        neighbor_km)
-            self._set_pairs(dm, own_r1s, non_contig_r1s, non_contig_km)
-            self._set_pairs(dm, own_r1s, inter_bde_r1s,  inter_bde_km)
+            self._set_pairs(dm, own_r1s, nbr_r1s,        neighbor_min)
+            self._set_pairs(dm, own_r1s, non_contig_r1s, non_contig_min)
+            self._set_pairs(dm, own_r1s, inter_bde_r1s,  inter_bde_min)
 
-        data["distance_matrix"] = dm
+        data["travel_time_matrix"] = dm
         return data
 
-    def _apply_r1_axp_distances(self, data: dict, kwargs: dict) -> dict:
-        """Override R1↔AXP distances by brigade-ring tier.
+    def _apply_r1_axp_times(self, data: dict, kwargs: dict) -> dict:
+        """Override R1↔AXP travel times by brigade-ring tier.
 
-        Levers (all optional, km):
-        - ``r1_axp_same_km``:       R1 ↔ AXP of the same brigade
-        - ``r1_axp_neighbor_km``:   R1 ↔ AXP of a neighbor brigade
-        - ``r1_axp_non_contig_km``: R1 ↔ AXP of a non-contig brigade (not own,
-                                    not in ``neighbor_axp_ids``)
+        Levers (all optional, minutes):
+        - ``r1_axp_same_min``:       R1 ↔ AXP of the same brigade
+        - ``r1_axp_neighbor_min``:   R1 ↔ AXP of a neighbor brigade
+        - ``r1_axp_non_contig_min``: R1 ↔ AXP of a non-contig brigade
         """
-        same_km       = kwargs.get("r1_axp_same_km")
-        neighbor_km   = kwargs.get("r1_axp_neighbor_km")
-        non_contig_km = kwargs.get("r1_axp_non_contig_km")
-        if all(v is None for v in (same_km, neighbor_km, non_contig_km)):
+        same_min       = kwargs.get("r1_axp_same_min")
+        neighbor_min   = kwargs.get("r1_axp_neighbor_min")
+        non_contig_min = kwargs.get("r1_axp_non_contig_min")
+        if all(v is None for v in (same_min, neighbor_min, non_contig_min)):
             return data
 
         force_df = self.base_config.get("force_structure_df")
         if force_df is None:
             return data
 
-        dm = data["distance_matrix"].copy()
+        dm = data["travel_time_matrix"].copy()
         axps_by_bde = self._group_by_brigade(force_df, "axp_ids")
 
         for _, row in force_df.iterrows():
@@ -265,37 +251,32 @@ class RunSetter:
             other_bde_axps = [a for b, axs in axps_by_bde.items()
                               if b != bde for a in axs]
             non_contig_axps = [a for a in other_bde_axps if a not in nbr_axps]
-            self._set_pairs(dm, own_r1s, own_axps,        same_km)
-            self._set_pairs(dm, own_r1s, nbr_axps,        neighbor_km)
-            self._set_pairs(dm, own_r1s, non_contig_axps, non_contig_km)
+            self._set_pairs(dm, own_r1s, own_axps,        same_min)
+            self._set_pairs(dm, own_r1s, nbr_axps,        neighbor_min)
+            self._set_pairs(dm, own_r1s, non_contig_axps, non_contig_min)
 
-        data["distance_matrix"] = dm
+        data["travel_time_matrix"] = dm
         return data
 
-    def _apply_r1_r2_distances(self, data: dict, kwargs: dict) -> dict:
-        """Override R1↔R2 distances by brigade-ring tier (R2b + R2e treated uniformly).
+    def _apply_r1_r2_times(self, data: dict, kwargs: dict) -> dict:
+        """Override R1↔R2 travel times by brigade-ring tier (R2b + R2e treated uniformly).
 
-        Levers (all optional, km):
-        - ``r1_r2_same_km``:       R1 ↔ R2 of the same brigade
-        - ``r1_r2_neighbor_km``:   R1 ↔ R2 of a neighbor brigade
-        - ``r1_r2_non_contig_km``: R1 ↔ R2 of a non-contig brigade
-
-        Legacy per-R2-type knobs (``r2_basic_r1_*`` / ``r2_enhanced_r1_*``)
-        are still handled by ``_apply_r2_r1_distances``, which runs *before*
-        this method — so any unified value provided here overrides the
-        legacy split for the matching brigade tier.
+        Levers (all optional, minutes):
+        - ``r1_r2_same_min``:       R1 ↔ R2 of the same brigade
+        - ``r1_r2_neighbor_min``:   R1 ↔ R2 of a neighbor brigade
+        - ``r1_r2_non_contig_min``: R1 ↔ R2 of a non-contig brigade
         """
-        same_km       = kwargs.get("r1_r2_same_km")
-        neighbor_km   = kwargs.get("r1_r2_neighbor_km")
-        non_contig_km = kwargs.get("r1_r2_non_contig_km")
-        if all(v is None for v in (same_km, neighbor_km, non_contig_km)):
+        same_min       = kwargs.get("r1_r2_same_min")
+        neighbor_min   = kwargs.get("r1_r2_neighbor_min")
+        non_contig_min = kwargs.get("r1_r2_non_contig_min")
+        if all(v is None for v in (same_min, neighbor_min, non_contig_min)):
             return data
 
         force_df = self.base_config.get("force_structure_df")
         if force_df is None:
             return data
 
-        dm = data["distance_matrix"].copy()
+        dm = data["travel_time_matrix"].copy()
         r2s_by_bde = self._group_by_brigade(force_df, "r2b_ids", "r2e_ids")
 
         for _, row in force_df.iterrows():
@@ -308,32 +289,32 @@ class RunSetter:
             other_bde_r2s = [r for b, rs in r2s_by_bde.items()
                              if b != bde for r in rs]
             non_contig_r2s = [r for r in other_bde_r2s if r not in nbr_r2s]
-            self._set_pairs(dm, own_r1s, own_r2s,        same_km)
-            self._set_pairs(dm, own_r1s, nbr_r2s,        neighbor_km)
-            self._set_pairs(dm, own_r1s, non_contig_r2s, non_contig_km)
+            self._set_pairs(dm, own_r1s, own_r2s,        same_min)
+            self._set_pairs(dm, own_r1s, nbr_r2s,        neighbor_min)
+            self._set_pairs(dm, own_r1s, non_contig_r2s, non_contig_min)
 
-        data["distance_matrix"] = dm
+        data["travel_time_matrix"] = dm
         return data
 
-    def _apply_axp_r2_distances(self, data: dict, kwargs: dict) -> dict:
-        """Override AXP↔R2 distances by brigade-ring tier (R2b + R2e uniformly).
+    def _apply_axp_r2_times(self, data: dict, kwargs: dict) -> dict:
+        """Override AXP↔R2 travel times by brigade-ring tier (R2b + R2e uniformly).
 
-        Levers (all optional, km):
-        - ``axp_r2_same_km``:       AXP ↔ R2 of the same brigade
-        - ``axp_r2_neighbor_km``:   AXP ↔ R2 of a neighbor brigade
-        - ``axp_r2_non_contig_km``: AXP ↔ R2 of a non-contig brigade
+        Levers (all optional, minutes):
+        - ``axp_r2_same_min``:       AXP ↔ R2 of the same brigade
+        - ``axp_r2_neighbor_min``:   AXP ↔ R2 of a neighbor brigade
+        - ``axp_r2_non_contig_min``: AXP ↔ R2 of a non-contig brigade
         """
-        same_km       = kwargs.get("axp_r2_same_km")
-        neighbor_km   = kwargs.get("axp_r2_neighbor_km")
-        non_contig_km = kwargs.get("axp_r2_non_contig_km")
-        if all(v is None for v in (same_km, neighbor_km, non_contig_km)):
+        same_min       = kwargs.get("axp_r2_same_min")
+        neighbor_min   = kwargs.get("axp_r2_neighbor_min")
+        non_contig_min = kwargs.get("axp_r2_non_contig_min")
+        if all(v is None for v in (same_min, neighbor_min, non_contig_min)):
             return data
 
         force_df = self.base_config.get("force_structure_df")
         if force_df is None:
             return data
 
-        dm = data["distance_matrix"].copy()
+        dm = data["travel_time_matrix"].copy()
         r2s_by_bde = self._group_by_brigade(force_df, "r2b_ids", "r2e_ids")
 
         for _, row in force_df.iterrows():
@@ -346,37 +327,26 @@ class RunSetter:
             other_bde_r2s = [r for b, rs in r2s_by_bde.items()
                              if b != bde for r in rs]
             non_contig_r2s = [r for r in other_bde_r2s if r not in nbr_r2s]
-            self._set_pairs(dm, own_axps, own_r2s,        same_km)
-            self._set_pairs(dm, own_axps, nbr_r2s,        neighbor_km)
-            self._set_pairs(dm, own_axps, non_contig_r2s, non_contig_km)
+            self._set_pairs(dm, own_axps, own_r2s,        same_min)
+            self._set_pairs(dm, own_axps, nbr_r2s,        neighbor_min)
+            self._set_pairs(dm, own_axps, non_contig_r2s, non_contig_min)
 
-        data["distance_matrix"] = dm
+        data["travel_time_matrix"] = dm
         return data
 
-    def _apply_r2_r1_distances(self, data: dict, kwargs: dict) -> dict:
-        """Override R1↔R2 distances via four levers (basic/enhanced × same/neighbor).
+    def _apply_r2_r1_times(self, data: dict, kwargs: dict) -> dict:
+        """Override R1↔R2 travel times via four levers (basic/enhanced × same/neighbor).
 
-        Levers (all optional, km):
-        - ``r2_basic_r1_same_km``:     R2-basic ↔ same-brigade R1
-        - ``r2_basic_r1_neighbor_km``: R2-basic ↔ neighbor-brigade R1
-        - ``r2_enhanced_r1_same_km``:  R2-enhanced ↔ same-brigade R1
-        - ``r2_enhanced_r1_neighbor_km``: R2-enhanced ↔ neighbor-brigade R1
-
-        Each lever, when provided, rewrites every matching distance-matrix entry
-        in both directions (``dm[r1, r2] = dm[r2, r1] = value``). Pairs are
-        enumerated from ``force_structure_df``: for each battalion row, own
-        ``r1_ids`` are paired with own-brigade ``r2b_ids`` / ``r2e_ids`` (the
-        "same" tier) and with ``neighbor_r2b_ids`` / ``neighbor_r2e_ids`` (the
-        "neighbor" tier). AXP↔R2 entries are not touched — use
-        ``distance_<a>__<b>`` overrides if you need those too.
-
-        Applied after ``_apply_ccp_r1_distances`` and before
-        ``_apply_distance_overrides`` so explicit per-pair overrides always win.
+        Levers (all optional, minutes):
+        - ``r2_basic_r1_same_min``:     R2-basic ↔ same-brigade R1
+        - ``r2_basic_r1_neighbor_min``: R2-basic ↔ neighbor-brigade R1
+        - ``r2_enhanced_r1_same_min``:  R2-enhanced ↔ same-brigade R1
+        - ``r2_enhanced_r1_neighbor_min``: R2-enhanced ↔ neighbor-brigade R1
         """
-        same_basic    = kwargs.get("r2_basic_r1_same_km")
-        nbr_basic     = kwargs.get("r2_basic_r1_neighbor_km")
-        same_enhanced = kwargs.get("r2_enhanced_r1_same_km")
-        nbr_enhanced  = kwargs.get("r2_enhanced_r1_neighbor_km")
+        same_basic    = kwargs.get("r2_basic_r1_same_min")
+        nbr_basic     = kwargs.get("r2_basic_r1_neighbor_min")
+        same_enhanced = kwargs.get("r2_enhanced_r1_same_min")
+        nbr_enhanced  = kwargs.get("r2_enhanced_r1_neighbor_min")
         if all(v is None for v in (same_basic, nbr_basic, same_enhanced, nbr_enhanced)):
             return data
 
@@ -384,7 +354,7 @@ class RunSetter:
         if force_df is None:
             return data
 
-        dm = data["distance_matrix"].copy()
+        dm = data["travel_time_matrix"].copy()
 
         def _set_pairs(r1s, r2s, value):
             if value is None or not r1s or not r2s:
@@ -410,28 +380,27 @@ class RunSetter:
             _set_pairs(r1_ids, r2e_ids,     same_enhanced)
             _set_pairs(r1_ids, nbr_r2e_ids, nbr_enhanced)
 
-        data["distance_matrix"] = dm
+        data["travel_time_matrix"] = dm
         return data
 
-    def _apply_distance_overrides(self, data: dict, kwargs: dict) -> dict:
-        """Override arbitrary pairwise distances from `distance_<id1>__<id2>` levers.
+    def _apply_tt_overrides(self, data: dict, kwargs: dict) -> dict:
+        """Override arbitrary pairwise travel times from `tt_<id1>__<id2>` levers.
 
-        Any kwarg whose key starts with ``distance_`` and whose tail splits
+        Any kwarg whose key starts with ``tt_`` and whose tail splits
         on ``__`` into exactly two non-empty tokens is treated as an explicit
         override for that facility pair. Both ``dm[id1, id2]`` and
-        ``dm[id2, id1]`` are set to the lever value (km).
+        ``dm[id2, id1]`` are set to the lever value (minutes).
 
         Separator is a double underscore because facility IDs themselves
         contain single underscores (e.g. ``r1_br1_bt1_1``). Unknown IDs raise
         — a typo in the lever name should fail loudly, not be ignored.
-        Applied after ``_apply_ccp_r1_distances`` and ``_apply_r2_r1_distances``
-        so explicit overrides always win over the programmatic shifts.
+        Applied last so explicit overrides always win over the programmatic shifts.
         """
         overrides = []
         for key, val in kwargs.items():
-            if not key.startswith("distance_") or val is None:
+            if not key.startswith("tt_") or val is None:
                 continue
-            tail = key[len("distance_"):]
+            tail = key[len("tt_"):]
             parts = tail.split("__")
             if len(parts) != 2 or not parts[0] or not parts[1]:
                 continue
@@ -440,16 +409,16 @@ class RunSetter:
         if not overrides:
             return data
 
-        dm = data["distance_matrix"].copy()
+        dm = data["travel_time_matrix"].copy()
         for key, id1, id2, val in overrides:
             if id1 not in dm.index or id2 not in dm.index:
                 raise ValueError(
                     f"Lever {key!r}: facility id {id1!r} or {id2!r} not in "
-                    f"distance matrix."
+                    f"travel time matrix."
                 )
             dm.loc[id1, id2] = val
             dm.loc[id2, id1] = val
-        data["distance_matrix"] = dm
+        data["travel_time_matrix"] = dm
         return data
 
     def _apply_dcs_capacity(self, data: dict, kwargs: dict) -> dict:
@@ -461,35 +430,6 @@ class RunSetter:
         units_df = data["units_df"].copy()
         units_df.loc[units_df["service_type"] == "DCS", "capacity"] = int(cap)
         data["units_df"] = units_df
-        return data
-
-    def _apply_amb_speed_ccp_r1(self, data: dict, kwargs: dict) -> dict:
-        """Set the speed of all CCP→R1 ambulances (dispatched by C2_CCP_R1).
-
-        Partitioning key is ``c2_id``, not ``start_loc_id`` prefix: the prefix
-        scheme was ambiguous once the 3-fleet layout introduced R1-homed
-        ambulances on both legs, and was reversed even in legacy scenarios.
-        """
-        speed = kwargs.get("amb_speed_ccp_r1")
-        if speed is None:
-            return data
-
-        amb_df = data["ambulance_df"].copy()
-        mask = amb_df["c2_id"].str.lower() == "c2_ccp_r1"
-        amb_df.loc[mask, "speed_kmh"] = float(speed)
-        data["ambulance_df"] = amb_df
-        return data
-
-    def _apply_amb_speed_r1_r2(self, data: dict, kwargs: dict) -> dict:
-        """Set the speed of all R1→R2 ambulances (dispatched by C2_R1_R2)."""
-        speed = kwargs.get("amb_speed_r1_r2")
-        if speed is None:
-            return data
-
-        amb_df = data["ambulance_df"].copy()
-        mask = amb_df["c2_id"].str.lower() == "c2_r1_r2"
-        amb_df.loc[mask, "speed_kmh"] = float(speed)
-        data["ambulance_df"] = amb_df
         return data
 
     def _apply_pec_capacity(self, data: dict, kwargs: dict) -> dict:
@@ -515,13 +455,7 @@ class RunSetter:
         return data
 
     def _apply_set_ambulances_r1_to_ccp(self, data: dict, kwargs: dict, seed: int) -> dict:
-        """Set the number of CCP→R1 ambulances (dispatched by C2_CCP_R1) PER R1.
-
-        Semantics: ``n`` is interpreted as the count at each Role-1 home base.
-        The resulting total fleet is ``n * number_of_R1s`` that host this leg.
-        Each home base is resized independently so counts are deterministic
-        (e.g. n=4 with 2 R1s → 4 at r1_a, 4 at r1_b; not a random 3/5 split).
-        """
+        """Set the number of CCP→R1 ambulances (dispatched by C2_CCP_R1) PER R1."""
         n = kwargs.get("n_amb_r1_to_ccp")
         if n is None:
             return data
@@ -549,25 +483,7 @@ class RunSetter:
 
     def _set_ambulances(self, data: dict, n: int, c2_id: str, seed: int,
                         start_loc_id: str = None) -> dict:
-        """Set the number of ambulances on a leg (optionally at a single home) to exactly n.
-
-        The leg is identified by the dispatching C2 (``c2_id`` column in
-        ``ambulance_df``), not by ``start_loc_id`` prefix. This works for both
-        the legacy 2-fleet layout (CCP→R1 at R1, R1→R2 at AXP) and the new
-        3-fleet layout (Fleet 1 CCP→R1 at R1, Fleet 2 R1→R2 at R1,
-        Fleet 3 R1→R2 at AXP).
-
-        If ``start_loc_id`` is given, the target ``n`` is applied only within
-        that home base (useful for per-R1 sizing); otherwise it's applied to
-        the whole C2 group.
-
-        If n > current count: duplicates random ambulances from the leg, assigning
-        new unique IDs, and registers them with the owning C2 and all ambulance
-        eligibility datasets (inheriting the source ambulance's eligibility row).
-        If n < current count: removes randomly selected ambulances from the leg,
-        the C2 roster, and the eligibility datasets.
-        If n == current count: no-op.
-        """
+        """Set the number of ambulances on a leg (optionally at a single home) to exactly n."""
         rng      = random.Random(seed)
         amb_df   = data["ambulance_df"]
         c2_df    = data["c2_df"]
@@ -619,12 +535,10 @@ class RunSetter:
                 source_row["amb_id"] = new_id
                 amb_df = pd.concat([amb_df, pd.DataFrame([source_row])], ignore_index=True)
 
-                # register with the same C2 as the source ambulance
                 new_c2_df["ambulance_ids"] = new_c2_df["ambulance_ids"].apply(
                     lambda ids, sid=source_id, nid=new_id: ids + [nid] if sid in ids else ids
                 )
 
-                # inherit eligibility rows from source
                 for k, df in new_elig.items():
                     if source_id in df.index:
                         new_row = df.loc[[source_id]].copy()
@@ -640,25 +554,7 @@ class RunSetter:
     # ── Casualty generation ───────────────────────────────────────────────────
 
     def _build_diagnosis_mix_df(self, kwargs: dict):
-        """Return the diagnosis_mix_df, possibly with overridden BCAS shares.
-
-        Levers (both optional, fractions in [0, 0.5]):
-        - ``fraction_t1_bcas``: fixes T1_BCAS share of the BCAS block
-        - ``fraction_t2_bcas``: fixes T2_BCAS share of the BCAS block
-
-        The BCAS block is the subset ``{T1_BCAS, T2_BCAS, T3_BCAS, KIA_BCAS,
-        MIA_BCAS}`` — these five frequencies always sum to 1.0 after the
-        downstream renormalisation per-spawn-point. Each lever, when provided,
-        pins its label's share inside the block. The remaining BCAS labels
-        (T3, KIA, MIA, plus T1 or T2 when only one lever is set) are rescaled
-        proportionally to their baseline shares to fill the residual budget
-        ``1 - sum(pinned)``. DNBI rows are never touched.
-
-        Raises ``ValueError`` if the pinned fractions sum to more than 1, or
-        if the residual budget is positive while the residual baseline is
-        zero (can only happen with a custom diagnosis_mix that zeroed T3/KIA/
-        MIA up front).
-        """
+        """Return the diagnosis_mix_df, possibly with overridden BCAS shares."""
         f_t1 = kwargs.get("fraction_t1_bcas")
         f_t2 = kwargs.get("fraction_t2_bcas")
         base = self.base_config["diagnosis_mix_df"]
@@ -737,12 +633,7 @@ class RunSetter:
         return data
 
     def _resolve_spawn_map(self, kwargs: dict, seed: int) -> dict:
-        """Return spawn_map for this run.
-
-        If n_battalions_in_combat is specified and force_structure_df is available,
-        randomly selects that many battalions and builds the spawn_map from their CCPs.
-        Otherwise falls back to the base spawn_map (already filtered to involved battalions).
-        """
+        """Return spawn_map for this run."""
         n_bat = kwargs.get("n_battalions_in_combat")
         force_df = self.base_config.get("force_structure_df")
         if n_bat is not None and force_df is not None:
@@ -751,11 +642,7 @@ class RunSetter:
         return {fid: dict(cfg) for fid, cfg in self.base_config["spawn_map"].items()}
 
     def _select_battalions(self, force_df, n: int, seed: int) -> dict:
-        """Randomly select n battalions from the full pool and build their spawn_map.
-
-        The 'involved' flag in the force structure is only for the default baseline run.
-        EMA picks battalions freely — any battalion in force_df is eligible.
-        """
+        """Randomly select n battalions from the full pool and build their spawn_map."""
         indices = random.Random(seed).sample(range(len(force_df)), min(n, len(force_df)))
         selected = force_df.iloc[indices]
         par = int(selected["par"].sum())
@@ -777,11 +664,7 @@ class RunSetter:
 
     @staticmethod
     def _parse_facility_list(value) -> list:
-        """Parse a comma-joined facility-ID cell into a list of lowercase IDs.
-
-        Handles list (from YAML), non-empty string (from Excel), and
-        NaN / None / empty (treated as no IDs).
-        """
+        """Parse a comma-joined facility-ID cell into a list of lowercase IDs."""
         if value is None:
             return []
         if isinstance(value, float) and value != value:  # NaN
@@ -796,11 +679,7 @@ class RunSetter:
     # ── Levers ────────────────────────────────────────────────────────────────
 
     def _apply_levers(self, kwargs: dict, seed: int) -> dict:
-        """Build the levers dict, overriding any scenario defaults with kwargs values.
-
-        Extend here for new policy levers — any key present in the scenario's
-        levers section is automatically picked up.
-        """
+        """Build the levers dict, overriding any scenario defaults with kwargs values."""
         levers = dict(self.scenario.get("levers", {}))
         for key, val in kwargs.items():
             if key in levers:
@@ -814,8 +693,8 @@ class RunSetter:
                         kwargs: dict) -> dict:
         dc_interval = self.scenario.get("simulation", {}).get("data_collector_interval", 0.0)
         return {
-            "seed":                     master_seed,  # logged to results.csv for reproducibility
-            "sim_seed":                 sim_seed,     # actual salabim RNG seed (derived)
+            "seed":                     master_seed,
+            "sim_seed":                 sim_seed,
             "till":                     float(kwargs.get("till", self.till)),
             "trace":                    False,
             "make_video":               False,

@@ -108,9 +108,9 @@ levers:
     values: [1, 2, 3, 6]
 
   # ══════════════════════════════════════════════════════════════════════════
-  # DISTANCE LEVERS — 3-tier ring-distance schema
+  # TRAVEL-TIME LEVERS — 3-tier ring schema (minutes)
   # ══════════════════════════════════════════════════════════════════════════
-  # Each tier lever rewrites every matching cell in the distance matrix.
+  # Each tier lever rewrites every matching cell in the travel-time matrix.
   # Tier classification (matches the dataset builder notebook):
   #   battalion ring (within a brigade):  same / neighbor / non_contig
   #   brigade ring:                        same / neighbor / non_contig
@@ -125,83 +125,83 @@ levers:
   # so if both are set the unified value wins).
 
   # ── CCP↔R1 (battalion-ring tiers; CCPs never cross brigades) ──────────────
-  - name: r1_ccp_same_km
+  - name: r1_ccp_same_min
     type: real
     lower: 1
     upper: 30
 
-  - name: r1_ccp_neighbor_km
+  - name: r1_ccp_neighbor_min
     type: real
     lower: 2
     upper: 60
 
-  - name: r1_ccp_non_contig_km
+  - name: r1_ccp_non_contig_min
     type: real
     lower: 5
     upper: 90
 
   # ── R1↔R1 (battalion-ring within brigade + flat cross-brigade) ────────────
-  - name: r1_r1_neighbor_km
+  - name: r1_r1_neighbor_min
     type: real
     lower: 2
     upper: 60
 
-  - name: r1_r1_non_contig_km
+  - name: r1_r1_non_contig_min
     type: real
     lower: 5
     upper: 90
 
   # Flat value applied to every inter-brigade R1 pair.  Active when loose
   # ambulance_eligibility lets R1-homed R1→R2 ambulances cross brigades.
-  - name: r1_r1_inter_bde_km
+  - name: r1_r1_inter_bde_min
     type: real
     lower: 10
     upper: 150
 
   # ── R1↔AXP (brigade-ring tiers) ───────────────────────────────────────────
-  - name: r1_axp_same_km
+  - name: r1_axp_same_min
     type: real
     lower: 1
     upper: 40
 
-  - name: r1_axp_neighbor_km
+  - name: r1_axp_neighbor_min
     type: real
     lower: 5
     upper: 90
 
-  - name: r1_axp_non_contig_km
+  - name: r1_axp_non_contig_min
     type: real
     lower: 10
     upper: 150
 
   # ── R1↔R2 (brigade-ring tiers; R2b and R2e treated uniformly) ─────────────
-  - name: r1_r2_same_km
+  - name: r1_r2_same_min
     type: real
     lower: 2
     upper: 60
 
-  - name: r1_r2_neighbor_km
+  - name: r1_r2_neighbor_min
     type: real
     lower: 5
     upper: 100
 
-  - name: r1_r2_non_contig_km
+  - name: r1_r2_non_contig_min
     type: real
     lower: 10
     upper: 200
 
   # ── AXP↔R2 (brigade-ring tiers; R2b and R2e treated uniformly) ────────────
-  - name: axp_r2_same_km
+  - name: axp_r2_same_min
     type: real
     lower: 1
     upper: 40
 
-  - name: axp_r2_neighbor_km
+  - name: axp_r2_neighbor_min
     type: real
     lower: 5
     upper: 90
 
-  - name: axp_r2_non_contig_km
+  - name: axp_r2_non_contig_min
     type: real
     lower: 10
     upper: 150
@@ -210,22 +210,22 @@ levers:
   # Prefer the unified r1_r2_* levers above for new experiments.  These four
   # are still honoured — they run first and are overridden by any unified
   # value set alongside them.
-  - name: r2_basic_r1_same_km
+  - name: r2_basic_r1_same_min
     type: real
     lower: 2
     upper: 60
 
-  - name: r2_basic_r1_neighbor_km
+  - name: r2_basic_r1_neighbor_min
     type: real
     lower: 5
     upper: 100
 
-  - name: r2_enhanced_r1_same_km
+  - name: r2_enhanced_r1_same_min
     type: real
     lower: 2
     upper: 60
 
-  - name: r2_enhanced_r1_neighbor_km
+  - name: r2_enhanced_r1_neighbor_min
     type: real
     lower: 5
     upper: 100
@@ -275,33 +275,31 @@ levers:
     lower: 1
     upper: 36
 
-  # Overrides the speed_kmh of every CCP -> R1 ambulance.
-  # Applied after the fleet count lever, so duplicated ambulances also inherit
-  # the new speed.
-  - name: amb_speed_ccp_r1
-    type: real
-    lower: 20
-    upper: 80
+  # OBSOLETE — amb_speed_ccp_r1 and amb_speed_r1_r2 have been removed.
+  # The distance matrix has been replaced with a travel-time matrix (minutes),
+  # so ambulance speed is no longer a separate parameter.
+  # - name: amb_speed_ccp_r1
+  #   type: real
+  #   lower: 20
+  #   upper: 80
+  # - name: amb_speed_r1_r2
+  #   type: real
+  #   lower: 20
+  #   upper: 80
 
-  # Overrides the speed_kmh of every R1 -> R2 ambulance.
-  - name: amb_speed_r1_r2
-    type: real
-    lower: 20
-    upper: 80
-
-  # ── Per-pair distance overrides ────────────────────────────────────────────
-  # Override an arbitrary single entry in the distance matrix (km).
-  # Lever name pattern:   distance_<facility_id_1>__<facility_id_2>
+  # ── Per-pair travel-time overrides ──────────────────────────────────────────
+  # Override an arbitrary single entry in the travel-time matrix (minutes).
+  # Lever name pattern:   tt_<facility_id_1>__<facility_id_2>
   # The separator is a DOUBLE underscore because facility IDs themselves use
-  # single underscores (e.g. r1_bn_1_1). Both dm[a,b] and dm[b,a] are set to
+  # single underscores (e.g. r1_bn_1_1). Both tt[a,b] and tt[b,a] are set to
   # the lever value. Applied AFTER r2_retreat and r1_access, so an explicit
   # override always wins. Unknown IDs raise at run time.
   # Add one block per pair you want to sweep. Examples (uncomment to use):
-  # - name: distance_r1_1__r2b_1
+  # - name: tt_r1_1__r2b_1
   #   type: real
   #   lower: 2
   #   upper: 60
-  # - name: distance_ccp_1__r1_1
+  # - name: tt_ccp_1__r1_1
   #   type: real
   #   lower: 1
   #   upper: 30

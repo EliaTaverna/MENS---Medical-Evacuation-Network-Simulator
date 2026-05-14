@@ -7,17 +7,17 @@
 # continuous / integer hypercube — no categoricals — so `seed` is NOT an
 # uncertainty (its variance would otherwise be attributed as S_i(seed) = noise).
 #
-# Here  k = 29 uncertainties, n_scenarios = 256, second_order=False
-#   →  256*(29+2) = 7 936 rows per policy.
+# Here  k = 27 uncertainties, n_scenarios = 256, second_order=False
+#   →  256*(27+2) = 7 424 rows per policy.
 # Levers = 2×2 eligibility (pooling) grid, sampled full-factorial → 4 policies.
-# Total = 31 744 runs.  Bump N (power of 2) for tighter S_i / S_T CIs.
+# Total = 29 696 runs.  Bump N (power of 2) for tighter S_i / S_T CIs.
 # Flipping sobol_second_order back to true gets the S_ij interaction indices
-# at the cost of nearly doubling the design (N*(2k+2) = 15 360 rows per policy).
+# at the cost of nearly doubling the design (N*(2k+2) = 14 336 rows per policy).
 #
 # Levers are limited to the eligibility pair because those are the only
 # actual policy decisions in this study (pooling strictness). Everything
-# else — capacities, fleet sizes, ambulance speeds, distances — is treated
-# as an uncertainty whose sensitivity we want to quantify.
+# else — capacities, fleet sizes, travel times — is treated as an
+# uncertainty whose sensitivity we want to quantify.
 #
 # Dormant tiers under the current topology (3 brigades, 3 battalions, TOROIDAL
 # toggled in the dataset builder): any *_non_contig_* knob fires only when
@@ -26,7 +26,7 @@
 # vary them without observable effect.  They're swept anyway so results stay
 # comparable if you later flip TOROIDAL or scale to N≥4.
 #
-# Note: dcs_capacity, n_amb_r1_r2, amb_speed_r1_r2, r1_r2_*, axp_r2_* are
+# Note: dcs_capacity, n_amb_r1_r2, r1_r2_*, axp_r2_* are
 # *currently* silent with the default prescriptions file (T1/T2 BCAS →
 # [DCR], T3 BCAS → [PEC] — nothing routes to Role 2). They're included
 # here in anticipation of prescriptions being updated to include DCS.
@@ -106,68 +106,68 @@ uncertainties:
     lower: 1
     upper: 8
 
-  # baseline 30 km/h. Military ambulances realistically 15-60 km/h.
-  - name: amb_speed_ccp_r1
-    type: integer
-    lower: 15
-    upper: 60
+  # OBSOLETE — amb_speed removed; travel-time matrix now encodes minutes directly.
+  # - name: amb_speed_ccp_r1
+  #   type: integer
+  #   lower: 15
+  #   upper: 60
 
-  # ── CCP↔R1 distances (battalion-ring tiers) ────────────────────────────────
-  # baseline CCP ↔ same-BN R1: 3 km
-  - name: r1_ccp_same_km
+  # ── CCP↔R1 travel times (battalion-ring tiers) ─────────────────────────────
+  # baseline CCP ↔ same-BN R1: 3 min
+  - name: r1_ccp_same_min
     type: real
     lower: 1
     upper: 10
 
-  # baseline CCP ↔ neighbour-BN R1: 7 km. Kept strictly above same-BN range.
-  - name: r1_ccp_neighbor_km
+  # baseline CCP ↔ neighbour-BN R1: 7 min. Kept strictly above same-BN range.
+  - name: r1_ccp_neighbor_min
     type: real
     lower: 5
     upper: 25
 
-  # baseline CCP ↔ non-contig-BN R1: 15 km. Active only when TOROIDAL=False
+  # baseline CCP ↔ non-contig-BN R1: 15 min. Active only when TOROIDAL=False
   # puts some same-brigade pairs ≥2 battalion-hops apart (e.g. bt1↔bt3 in a
   # linear chain of 3). Kept strictly above neighbour-BN range.
-  - name: r1_ccp_non_contig_km
+  - name: r1_ccp_non_contig_min
     type: real
     lower: 12
     upper: 40
 
-  # ── R1↔R1 distances (battalion-ring within brigade + flat cross-brigade) ───
-  # baseline neighbour-BN R1↔R1: 10 km
-  - name: r1_r1_neighbor_km
+  # ── R1↔R1 travel times (battalion-ring within brigade + flat cross-brigade) ─
+  # baseline neighbour-BN R1↔R1: 10 min
+  - name: r1_r1_neighbor_min
     type: real
     lower: 5
     upper: 25
 
-  # baseline non-contig-BN R1↔R1: 20 km (dormant under toroidal 3-ring)
-  - name: r1_r1_non_contig_km
+  # baseline non-contig-BN R1↔R1: 20 min (dormant under toroidal 3-ring)
+  - name: r1_r1_non_contig_min
     type: real
     lower: 15
     upper: 40
 
-  # baseline cross-brigade R1↔R1: 30 km. Flat value applied to every
+  # baseline cross-brigade R1↔R1: 30 min. Flat value applied to every
   # inter-brigade R1 pair (R1-homed R1→R2 pickup leg under loose eligibility).
-  - name: r1_r1_inter_bde_km
+  - name: r1_r1_inter_bde_min
     type: real
     lower: 20
     upper: 60
 
-  # ── R1↔AXP distances (brigade-ring tiers) ──────────────────────────────────
-  # baseline same-BDE R1↔AXP: 5 km
-  - name: r1_axp_same_km
+  # ── R1↔AXP travel times (brigade-ring tiers) ───────────────────────────────
+  # baseline same-BDE R1↔AXP: 5 min
+  - name: r1_axp_same_min
     type: real
     lower: 2
     upper: 15
 
-  # baseline neighbour-BDE R1↔AXP: 15 km
-  - name: r1_axp_neighbor_km
+  # baseline neighbour-BDE R1↔AXP: 15 min
+  - name: r1_axp_neighbor_min
     type: real
     lower: 10
     upper: 35
 
-  # baseline non-contig-BDE R1↔AXP: 30 km (dormant under toroidal 3-ring)
-  - name: r1_axp_non_contig_km
+  # baseline non-contig-BDE R1↔AXP: 30 min (dormant under toroidal 3-ring)
+  - name: r1_axp_non_contig_min
     type: real
     lower: 25
     upper: 60
@@ -185,46 +185,46 @@ uncertainties:
     lower: 5
     upper: 60
 
-  # baseline R1→R2 ambulance speed: 30 km/h
-  - name: amb_speed_r1_r2
-    type: integer
-    lower: 15
-    upper: 60
+  # OBSOLETE — amb_speed removed; travel-time matrix now encodes minutes directly.
+  # - name: amb_speed_r1_r2
+  #   type: integer
+  #   lower: 15
+  #   upper: 60
 
-  # ── R1↔R2 distances (brigade-ring tiers; R2b + R2e uniform) ────────────────
-  # baseline same-BDE R1↔R2: 12 km
-  - name: r1_r2_same_km
+  # ── R1↔R2 travel times (brigade-ring tiers; R2b + R2e uniform) ─────────────
+  # baseline same-BDE R1↔R2: 12 min
+  - name: r1_r2_same_min
     type: real
     lower: 5
     upper: 30
 
-  # baseline neighbour-BDE R1↔R2: 25 km
-  - name: r1_r2_neighbor_km
+  # baseline neighbour-BDE R1↔R2: 25 min
+  - name: r1_r2_neighbor_min
     type: real
     lower: 15
     upper: 60
 
-  # baseline non-contig-BDE R1↔R2: 50 km (dormant under toroidal 3-ring)
-  - name: r1_r2_non_contig_km
+  # baseline non-contig-BDE R1↔R2: 50 min (dormant under toroidal 3-ring)
+  - name: r1_r2_non_contig_min
     type: real
     lower: 40
     upper: 90
 
-  # ── AXP↔R2 distances (brigade-ring tiers; R2b + R2e uniform) ───────────────
-  # baseline same-BDE AXP↔R2: 8 km
-  - name: axp_r2_same_km
+  # ── AXP↔R2 travel times (brigade-ring tiers; R2b + R2e uniform) ────────────
+  # baseline same-BDE AXP↔R2: 8 min
+  - name: axp_r2_same_min
     type: real
     lower: 3
     upper: 20
 
-  # baseline neighbour-BDE AXP↔R2: 20 km
-  - name: axp_r2_neighbor_km
+  # baseline neighbour-BDE AXP↔R2: 20 min
+  - name: axp_r2_neighbor_min
     type: real
     lower: 12
     upper: 45
 
-  # baseline non-contig-BDE AXP↔R2: 40 km (dormant under toroidal 3-ring)
-  - name: axp_r2_non_contig_km
+  # baseline non-contig-BDE AXP↔R2: 40 min (dormant under toroidal 3-ring)
+  - name: axp_r2_non_contig_min
     type: real
     lower: 30
     upper: 80
@@ -342,11 +342,11 @@ array_outcomes:
 #
 #   Sobol design size (per policy), second_order=False: N * (k + 2)
 #     N = n_scenarios = 256
-#     k = 29 uncertainties
-#     → 256 * 31 = 7 936 rows per policy
+#     k = 27 uncertainties
+#     → 256 * 29 = 7 424 rows per policy
 #
 #   Levers: full-factorial 2×2 eligibility grid → n_policies = 4
-#   Total runs: 7 936 * 4 = 31 744
+#   Total runs: 7 424 * 4 = 29 696
 #
 #   For publication-quality S_i / S_ij, bump n_scenarios to 512 or 1024.
 #
@@ -376,8 +376,8 @@ run_settings:
   n_policies: 4
   uncertainty_sampler: sobol
   lever_sampler: ff
-  # Chunk size in SCENARIO ROWS.  Total rows per policy = 7 936, so 512 gives
-  # 16 chunks (15 of 512 + 1 of 256).  Each chunk evaluates
+  # Chunk size in SCENARIO ROWS.  Total rows per policy = 7 424, so 512 gives
+  # 15 chunks (14 of 512 + 1 of 256).  Each chunk evaluates
   # batch_size * n_policies_realised = 512 * 4 = 2 048 runs.
   batch_size: 512
   sobol_second_order: false

@@ -147,7 +147,7 @@ class TransportC2(sim.Component):
                 env=self.env,
                 requests_df=elig_df,
                 idle_ambulances=self.idle_ambulances,
-                distance_matrix=self.env.distance_matrix,
+                travel_time_matrix=self.env.travel_time_matrix,
             )
 
             plans_craft = craft_plans(c2=self, assigned_ambulances_df=assigned_df)

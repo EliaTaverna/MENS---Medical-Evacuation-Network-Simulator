@@ -4,9 +4,9 @@
 # Sobol design: Saltelli sampler → N*(2k+2) runs per policy, where k is the
 # number of uncertainties and N is `n_scenarios` below.
 #
-# Here k = 10 uncertainties, n_scenarios = 256 → 5632 runs per policy.
+# Here k = 9 uncertainties, n_scenarios = 256 → 5120 runs per policy.
 # Levers = 2x2 eligibility grid, sampled full-factorial → 4 policies.
-# Total = 5632 * 4 = 22,528 runs. Scale n_scenarios up (power of 2) for
+# Total = 5120 * 4 = 20,480 runs. Scale n_scenarios up (power of 2) for
 # tighter S_i / S_ij confidence intervals.
 #
 # IMPORTANT vs experiment_second_test.yaml:
@@ -70,21 +70,21 @@ uncertainties:
     lower: 1
     upper: 10
 
-  # baseline 30 km/h. Military ambulances realistically 10–60 km/h
-  - name: amb_speed_ccp_r1
-    type: integer
-    lower: 10
-    upper: 60
+  # OBSOLETE — amb_speed removed; travel-time matrix now encodes minutes directly.
+  # - name: amb_speed_ccp_r1
+  #   type: integer
+  #   lower: 10
+  #   upper: 60
 
-  # ── Distances ───────────────────────────────────────────────────────────────
-  # baseline CCP ↔ same-BN R1: 3 km
-  - name: r1_closest_km
+  # ── Travel times (minutes) ──────────────────────────────────────────────────
+  # baseline CCP ↔ same-BN R1: 3 min
+  - name: r1_closest_min
     type: integer
     lower: 1
     upper: 10
 
-  # baseline CCP ↔ neighbour-BN R1: 7 km. Kept strictly > r1_closest_km range.
-  - name: r1_second_km
+  # baseline CCP ↔ neighbour-BN R1: 7 min. Kept strictly > r1_closest_min range.
+  - name: r1_second_min
     type: integer
     lower: 5
     upper: 25
@@ -177,11 +177,11 @@ array_outcomes:
 #
 #   Sobol design size (per policy): N * (2k + 2)
 #     N = n_scenarios = 256
-#     k = 10 uncertainties
-#     → 256 * 22 = 5632 runs per policy
+#     k = 9 uncertainties
+#     → 256 * 20 = 5120 runs per policy
 #
 #   Levers: full factorial of 2×2 eligibility grid → n_policies = 4
-#   Total runs: 5632 * 4 = 22,528
+#   Total runs: 5120 * 4 = 20,480
 #
 #   For publication-quality S_i / S_ij, bump n_scenarios to 512 or 1024.
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -1,4 +1,10 @@
 # ═══════════════════════════════════════════════════════════════════════════════
+# OBSOLETE — amb_speed has been removed from the model. The distance matrix
+# has been replaced with a travel-time matrix (minutes), so ambulance speed
+# is no longer a separate parameter. Keep this file for reference only.
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# ═══════════════════════════════════════════════════════════════════════════════
 # OAT SA — axis: amb_speed_r1_r2
 # Purpose: R1->R2 ambulance cruise speed, km/h
 # Scenario: 3 brigades × 3 battalions, big R2-enhanced, no R2-basic.

@@ -40,7 +40,7 @@ seed: 42
 description: Auto-generated scenario
 
 components:
-  distance_matrix: components/distances/distance_matrix_elia_testing.xlsx
+  travel_time_matrix: components/distances/distance_matrix_elia_testing.xlsx
   coordinates: components/distances/coordinates_elia_testing.xlsx
   axp: components/AXPs/axp_elia_testing.xlsx
   facilities: components/facilities/facilities_elia_testing.xlsx
@@ -127,9 +127,9 @@ The same IDs are used everywhere downstream: distance matrix row/column labels, 
 
 Component files are Excel files in `data/single_run/input/components/`.
 
-`distance_matrix.xlsx`
+`travel_time_matrix.xlsx`
 
-Square matrix of travel distances in km. Row and column labels are facility IDs following the scheme above (`ccp_br1_bt1_1`, `r1_br1_bt1_1`, `r2b_br1_1`, `r2e_br1_1`, `axp_br1_1`, …). The matrix must include every location that an ambulance can depart from or arrive at. Unreachable pairs are written as empty cells (NaN); at run time the C2 dispatcher raises if it ever assigns an ambulance along such a leg.
+Square matrix of travel times in minutes. Row and column labels are facility IDs following the scheme above (`ccp_br1_bt1_1`, `r1_br1_bt1_1`, `r2b_br1_1`, `r2e_br1_1`, `axp_br1_1`, …). The matrix must include every location that an ambulance can depart from or arrive at. Unreachable pairs are written as empty cells (NaN); at run time the C2 dispatcher raises if it ever assigns an ambulance along such a leg.
 
 `coordinates.xlsx`
 
@@ -172,7 +172,7 @@ axp_id, assigned_facility_ids
 One row per ambulance. Expected columns include:
 
 ```text
-amb_id, start_loc_id, capacity, speed_kmh
+amb_id, start_loc_id, t1_t2_capacity, t3_capacity
 ```
 
 `c2.xlsx`
@@ -427,7 +427,7 @@ What the notebook does:
 Outputs written by the notebook:
 
 ```text
-components/distances/distance_matrix_<suffix>.xlsx
+components/distances/travel_time_matrix_<suffix>.xlsx
 components/distances/coordinates_<suffix>.xlsx
 components/facilities/facilities_<suffix>.xlsx
 components/units/units_<suffix>.xlsx

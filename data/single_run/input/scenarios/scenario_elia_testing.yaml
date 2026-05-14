@@ -2,7 +2,7 @@ name: scenario_elia_testing
 seed: 42
 description: Auto-generated scenario
 components:
-  distance_matrix: components/distances/distance_matrix_elia_testing.xlsx
+  travel_time_matrix: components/distances/distance_matrix_elia_testing.xlsx
   coordinates: components/distances/coordinates_elia_testing.xlsx
   axp: components/AXPs/axp_elia_testing.xlsx
   facilities: components/facilities/facilities_elia_testing.xlsx

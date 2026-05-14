@@ -16,12 +16,12 @@ class ModelBuilder:
     def __init__(self, env):
         self.env = env
 
-    def build_roads(self, distance_matrix: pd.DataFrame):
+    def build_roads(self, travel_time_matrix: pd.DataFrame):
         """
-        distance_matrix: DataFrame with locations (facilities/AXPs) as both index and columns.
-        Values are distances in km. Use inf or NaN for no direct connection.
+        travel_time_matrix: DataFrame with locations (facilities/AXPs) as both index and columns.
+        Values are travel times in minutes. Use inf or NaN for no direct connection.
         """
-        self.env.distance_matrix = distance_matrix.copy()
+        self.env.travel_time_matrix = travel_time_matrix.copy()
 
     def build_axps(self, axp_df: pd.DataFrame):
         self.env.axp_by_id = {}
@@ -91,15 +91,14 @@ class ModelBuilder:
                 amb_id=r.amb_id,
                 t1_t2_capacity=int(r.t1_t2_capacity),
                 t3_capacity=int(r.t3_capacity),
-                speed_kmh=float(r.speed_kmh),
                 start_loc_id=r.start_loc_id,
                 c2_id=r.c2_id,
             )
             self.env.amb_by_id[r.amb_id] = amb
 
-    def build_all(self, distance_matrix, axp_df, facility_df, units_df, ambulance_df, c2_df,
+    def build_all(self, travel_time_matrix, axp_df, facility_df, units_df, ambulance_df, c2_df,
                   fac_eligibility_datasets=None, amb_eligibility_datasets=None):
-        self.build_roads(distance_matrix)
+        self.build_roads(travel_time_matrix)
         self.build_axps(axp_df)
         self.build_eligibility_datasets(fac_eligibility_datasets or {}, amb_eligibility_datasets or {})
         self.build_c2s(c2_df)

@@ -2,7 +2,7 @@ name: scenario_400
 seed: 42
 description: Auto-generated scenario
 components:
-  distance_matrix: components/distances/distance_matrix_400.xlsx
+  travel_time_matrix: components/distances/distance_matrix_400.xlsx
   coordinates: components/distances/coordinates_400.xlsx
   axp: components/AXPs/axp_400.xlsx
   facilities: components/facilities/facilities_400.xlsx

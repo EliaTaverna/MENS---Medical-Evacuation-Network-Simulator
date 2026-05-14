@@ -108,11 +108,11 @@ uncertainties:
     lower: 1
     upper: 8
 
-  # baseline 30 km/h
-  - name: amb_speed_ccp_r1
-    type: integer
-    lower: 15
-    upper: 60
+  # OBSOLETE — amb_speed removed; travel-time matrix now encodes minutes directly.
+  # - name: amb_speed_ccp_r1
+  #   type: integer
+  #   lower: 15
+  #   upper: 60
 
   # ── Ambulance fleet — R1→R2 leg ────────────────────────────────────────────
   # baseline total 30 (18 R1-homed + 12 AXP-homed)
@@ -121,33 +121,33 @@ uncertainties:
     lower: 5
     upper: 60
 
-  # baseline 30 km/h
-  - name: amb_speed_r1_r2
-    type: integer
-    lower: 15
-    upper: 60
+  # OBSOLETE — amb_speed removed; travel-time matrix now encodes minutes directly.
+  # - name: amb_speed_r1_r2
+  #   type: integer
+  #   lower: 15
+  #   upper: 60
 
-  # ── Topology distances ─────────────────────────────────────────────────────
-  # baseline CCP ↔ same-BN R1: 3 km
-  - name: r1_ccp_same_km
+  # ── Topology travel times (minutes) ─────────────────────────────────────────
+  # baseline CCP ↔ same-BN R1: 3 min
+  - name: r1_ccp_same_min
     type: real
     lower: 1
     upper: 10
 
-  # baseline CCP ↔ neighbour-BN R1: 7 km
-  - name: r1_ccp_neighbor_km
+  # baseline CCP ↔ neighbour-BN R1: 7 min
+  - name: r1_ccp_neighbor_min
     type: real
     lower: 5
     upper: 25
 
-  # baseline R1 ↔ same-BDE R2-enhanced: 12 km
-  - name: r2_enhanced_r1_same_km
+  # baseline R1 ↔ same-BDE R2-enhanced: 12 min
+  - name: r2_enhanced_r1_same_min
     type: real
     lower: 5
     upper: 40
 
-  # baseline R1 ↔ neighbour-BDE R2-enhanced: 25 km
-  - name: r2_enhanced_r1_neighbor_km
+  # baseline R1 ↔ neighbour-BDE R2-enhanced: 25 min
+  - name: r2_enhanced_r1_neighbor_min
     type: real
     lower: 15
     upper: 60

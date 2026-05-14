@@ -17,7 +17,7 @@ def load_data_from_xlsx(data_folder: str = "data/single_run/input", load_casualt
     Expected structure:
         data_folder/
             components/
-                distances/distance_matrix.xlsx
+                distances/travel_time_matrix.xlsx
                 AXPs/axp.xlsx
                 facilities/facilities.xlsx
                 units/units.xlsx
@@ -39,7 +39,7 @@ def load_data_from_xlsx(data_folder: str = "data/single_run/input", load_casualt
     policy_folder = os.path.join(data_folder, "policy_matrixes")
 
     # Distance matrix
-    distance_matrix = pd.read_excel(os.path.join(components_folder, "distances", "distance_matrix.xlsx"), index_col=0)
+    travel_time_matrix = pd.read_excel(os.path.join(components_folder, "distances", "travel_time_matrix.xlsx"), index_col=0)
 
     # AXP data - convert comma-separated string to list
     axp_df = pd.read_excel(os.path.join(components_folder, "AXPs", "axp.xlsx"))
@@ -86,7 +86,7 @@ def load_data_from_xlsx(data_folder: str = "data/single_run/input", load_casualt
     )
 
     result = {
-        "distance_matrix": distance_matrix,
+        "travel_time_matrix": travel_time_matrix,
         "axp_df": axp_df,
         "facility_df": facility_df,
         "units_df": units_df,
@@ -257,7 +257,7 @@ def collect_results(env, data: dict, settings: dict, run_folder: Path) -> dict:
         "all_patients": env.all_patients,
         "sim_duration": settings["till"],
         "run_folder": run_folder,
-        "distance_matrix": data["distance_matrix"],
+        "travel_time_matrix": data["travel_time_matrix"],
         "outputs": settings.get("outputs", _DEFAULT_OUTPUTS),
         "c2_dispatch_logs": c2_dispatch_logs,
         "data_collector_records": env.data_collector_records,
@@ -410,7 +410,7 @@ def save_network_image(data: dict, results: dict) -> None:
     from src.helpers.visualization import plot_network_static
 
     fig, _, _ = plot_network_static(
-        distance_matrix=data["distance_matrix"],
+        travel_time_matrix=data["travel_time_matrix"],
         facility_df=data["facility_df"],
         ambulance_df=data.get("ambulance_df"),
         coord_df=data.get("coord_df"),
@@ -436,7 +436,7 @@ def make_video(data: dict, results: dict, settings: dict) -> None:
     video_path = results["run_folder"] / "simulation.mp4"
     print("\nCreating video...")
     create_transport_video(
-        distance_matrix=data["distance_matrix"],
+        travel_time_matrix=data["travel_time_matrix"],
         facility_df=data["facility_df"],
         transport_events=transport_df,
         ambulance_df=data["ambulance_df"],
@@ -467,7 +467,7 @@ def print_summary(results: dict, data: dict = None):
             uid = str(r["unit_id"])
             unit_capacity[uid] = int(r["capacity"])
             unit_facility[uid] = str(r["facility_id"])
-    distance_matrix = results.get("distance_matrix")
+    travel_time_matrix = results.get("travel_time_matrix")
 
     amb_start_locations = {}
     if data is not None and "ambulance_df" in data:

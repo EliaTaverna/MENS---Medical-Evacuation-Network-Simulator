@@ -94,10 +94,10 @@ def load_data_from_scenario(scenario: dict) -> dict:
     components = scenario["components"]
     policy = scenario["policy_matrixes"]
 
-    # Distance matrix — normalise IDs to lowercase
-    distance_matrix = pd.read_excel(resolve(components["distance_matrix"]), index_col=0)
-    distance_matrix.index   = distance_matrix.index.str.lower()
-    distance_matrix.columns = distance_matrix.columns.str.lower()
+    # Travel time matrix — normalise IDs to lowercase
+    travel_time_matrix = pd.read_excel(resolve(components["travel_time_matrix"]), index_col=0)
+    travel_time_matrix.index   = travel_time_matrix.index.str.lower()
+    travel_time_matrix.columns = travel_time_matrix.columns.str.lower()
 
     # AXP data — normalise IDs to lowercase
     axp_df = pd.read_excel(resolve(components["axp"]))
@@ -159,7 +159,7 @@ def load_data_from_scenario(scenario: dict) -> dict:
         coord_df["facility_id"] = coord_df["facility_id"].str.lower()
 
     return {
-        "distance_matrix": distance_matrix,
+        "travel_time_matrix": travel_time_matrix,
         "axp_df": axp_df,
         "facility_df": facility_df,
         "units_df": units_df,

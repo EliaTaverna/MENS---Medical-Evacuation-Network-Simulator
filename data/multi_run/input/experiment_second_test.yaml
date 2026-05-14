@@ -8,12 +8,12 @@
 # Prescriptions: T1/T2 BCAS → [DCR];  T3 BCAS → [PEC].  No DCS.  No DNBI.
 #
 # Skipped levers (don't apply to this scenario):
-#   - r2_retreat_km, dcs_capacity          (no Role 2)
-#   - n_amb_r1_r2  / amb_speed_r1_r2       (4 R1→R2 amb's exist but never
+#   - r2_retreat_min, dcs_capacity          (no Role 2)
+#   - n_amb_r1_r2                          (4 R1→R2 amb's exist but never
 #                                           dispatch — sweeping them is a no-op)
 #
 # Applicable ambulance levers (after the c2_id fix in run_setter.py):
-#   - n_amb_ccp_r1 / amb_speed_ccp_r1      (partition by c2_id == "c2_ccp_r1";
+#   - n_amb_ccp_r1                         (partition by c2_id == "c2_ccp_r1";
 #                                           matches Fleet 1 — the 4 CCP→R1
 #                                           ambulances homed at the 2 R1s)
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -90,20 +90,20 @@ levers:
     lower: 1
     upper: 10
 
-  # Baseline ambulance speed in amb_second_test.xlsx: 30 km/h
-  - name: amb_speed_ccp_r1
-    type: integer
-    lower: 1
-    upper: 50
+  # OBSOLETE — amb_speed removed; travel-time matrix now encodes minutes directly.
+  # - name: amb_speed_ccp_r1
+  #   type: integer
+  #   lower: 1
+  #   upper: 50
 
-  # Baseline CCP↔same-bn-R1 in distance_matrix_second_test: 3 km
-  - name: r1_closest_km
+  # Baseline CCP↔same-bn-R1 in travel-time matrix: 3 min
+  - name: r1_closest_min
     type: integer
     lower: 1
     upper: 10
 
-  # Baseline CCP↔neighbour-bn-R1: 7 km
-  - name: r1_second_km
+  # Baseline CCP↔neighbour-bn-R1: 7 min
+  - name: r1_second_min
     type: integer
     lower: 10
     upper: 20

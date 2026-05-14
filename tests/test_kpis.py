@@ -30,8 +30,7 @@ from src.runners.runner_single import print_summary
 def create_minimal_dataframes(
     n_facilities=2,
     n_ambulances=1,
-    ambulance_speed=60,  # km/h
-    distance=10,  # km between facilities
+    travel_time=10,  # minutes between facilities
     unit_service_time=(10, 10),  # (min, max) for uniform distribution
     unit_capacity=1,
 ):
@@ -41,9 +40,9 @@ def create_minimal_dataframes(
     Facility F1 (CCP) -> Facility F2 (Role1)
     F1 has no units, F2 has unit "surgery"
     """
-    # Distance matrix - include AXP1 at same location as F1
-    distance_matrix = pd.DataFrame(
-        [[0, distance, 0], [distance, 0, distance], [0, distance, 0]],
+    # Travel time matrix - include AXP1 at same location as F1
+    travel_time_matrix = pd.DataFrame(
+        [[0, travel_time, 0], [travel_time, 0, travel_time], [0, travel_time, 0]],
         index=["F1", "F2", "AXP1"],
         columns=["F1", "F2", "AXP1"],
     )
@@ -87,7 +86,6 @@ def create_minimal_dataframes(
     ambulance_df = pd.DataFrame([{
         "amb_id": "AMB1",
         "capacity": 1,
-        "speed_kmh": ambulance_speed,
         "start_loc_id": "AXP1",
         "c2_id": "C2",
     }])
@@ -114,7 +112,7 @@ def create_minimal_dataframes(
     }])
 
     return {
-        "distance_matrix": distance_matrix,
+        "travel_time_matrix": travel_time_matrix,
         "axp_df": axp_df,
         "facility_df": facility_df,
         "units_df": units_df,
@@ -334,7 +332,7 @@ def run_test_simulation(data, casualties_df, till=100, trace=False):
         # Build model
         builder = ModelBuilder(env)
         builder.build_all(
-            data["distance_matrix"],
+            data["travel_time_matrix"],
             data["axp_df"],
             data["facility_df"],
             data["units_df"],
@@ -389,7 +387,7 @@ def run_test_simulation(data, casualties_df, till=100, trace=False):
         "unit_busy_periods": env.unit_busy_periods,
         "all_patients": env.all_patients,
         "sim_duration": till,
-        "distance_matrix": data["distance_matrix"],
+        "travel_time_matrix": data["travel_time_matrix"],
     }
 
 
@@ -399,20 +397,19 @@ def run_test_simulation(data, casualties_df, till=100, trace=False):
 
 def test_transport_time():
     """
-    Test: Ambulance travels 10 km at 60 km/h = 10 minutes travel time.
+    Test: Ambulance travel time = 10 minutes (read directly from matrix).
 
     Scenario:
     - 1 patient at F1, needs "surgery" at F2
-    - Distance = 10 km, speed = 60 km/h
-    - Expected travel time: 10 minutes each way = 20 minutes total
+    - Travel time F1→F2 = 10 minutes
+    - Expected travel time: 10 minutes
     """
     print("\n" + "="*70)
     print("TEST: Transport Time Calculation")
     print("="*70)
 
     data = create_minimal_dataframes(
-        distance=10,  # 10 km
-        ambulance_speed=60,  # 60 km/h -> 10 min travel time
+        travel_time=10,  # 10 min travel time
         unit_service_time=(10, 10),
     )
 
@@ -429,12 +426,7 @@ def test_transport_time():
 
     results = run_test_simulation(data, casualties_df, till=100)
 
-    # Calculate expected: AXP1 -> F1 (10 km) + F1 -> F2 (10 km) = 20 min total
-    # But wait - AXP is at F1, so distance AXP1 to F1 might be 0
-    # Let me check the distance matrix - it only has F1 and F2
-    # So ambulance starts at AXP1 which is assigned to F1
-    # Travel: AXP1 -> F1 (pickup) -> F2 (dropoff)
-    # Since AXP1 is at F1, the travel is just F1 -> F2 = 10 km = 10 min
+    # AXP1 is co-located with F1 (0 min), so travel is just F1 → F2 = 10 min
 
     transport_df = results["transport_df"]
     if not transport_df.empty:
@@ -452,7 +444,7 @@ def test_transport_time():
                 dep = matching.iloc[-1]
                 total_travel += arr["time"] - dep["time"]
 
-        expected_travel = 10.0  # F1 -> F2 = 10 km / 60 km/h * 60 min/h = 10 min
+        expected_travel = 10.0  # F1 -> F2 = 10 min from travel time matrix
         print(f"Expected transport time: {expected_travel} minutes")
         print(f"Computed transport time: {total_travel} minutes")
 
@@ -483,7 +475,7 @@ def test_care_wait_time():
 
     # Create scenario where patients spawn directly at F2 (which has the unit)
     # Include AXP1 co-located with F2
-    distance_matrix = pd.DataFrame(
+    travel_time_matrix = pd.DataFrame(
         [[0, 0], [0, 0]],
         index=["F2", "AXP1"],
         columns=["F2", "AXP1"]
@@ -515,7 +507,7 @@ def test_care_wait_time():
     ambulance_df = pd.DataFrame([{
         "amb_id": "AMB1",
         "capacity": 1,
-        "speed_kmh": 60,
+
         "start_loc_id": "AXP1",
         "c2_id": "C2",
     }])
@@ -530,7 +522,7 @@ def test_care_wait_time():
     }])
 
     data = {
-        "distance_matrix": distance_matrix,
+        "travel_time_matrix": travel_time_matrix,
         "axp_df": axp_df,
         "facility_df": facility_df,
         "units_df": units_df,
@@ -595,8 +587,7 @@ def test_transport_wait_time():
     print("="*70)
 
     data = create_minimal_dataframes(
-        distance=10,
-        ambulance_speed=60,
+        travel_time=10,
         unit_service_time=(10, 10),
     )
 
@@ -642,7 +633,7 @@ def test_patient_death():
 
     Scenario:
     - Patient spawns at F1, needs transport to F2
-    - Ambulance starts far away (AXP1 is 60km from F1, takes 60 min to arrive)
+    - Ambulance starts far away (AXP1 is 60 min from F1)
     - T1 patient has 5 min lifetime -> dies waiting for transport
     - T2 patient has 1000 min lifetime -> survives
     """
@@ -651,8 +642,8 @@ def test_patient_death():
     print("="*70)
 
     # Create scenario where ambulance is far from F1
-    # AXP1 is 60km away from F1, at 60 km/h it takes 60 minutes to arrive
-    distance_matrix = pd.DataFrame(
+    # AXP1 is 60 min away from F1
+    travel_time_matrix = pd.DataFrame(
         [[0, 10, 60], [10, 0, 60], [60, 60, 0]],
         index=["F1", "F2", "AXP1"],
         columns=["F1", "F2", "AXP1"],
@@ -693,7 +684,7 @@ def test_patient_death():
     ambulance_df = pd.DataFrame([{
         "amb_id": "AMB1",
         "capacity": 2,
-        "speed_kmh": 60,
+
         "start_loc_id": "AXP1",
         "c2_id": "C2",
     }])
@@ -717,7 +708,7 @@ def test_patient_death():
     }])
 
     data = {
-        "distance_matrix": distance_matrix,
+        "travel_time_matrix": travel_time_matrix,
         "axp_df": axp_df,
         "facility_df": facility_df,
         "units_df": units_df,
@@ -793,7 +784,7 @@ def test_unit_utilization():
     print("="*70)
 
     # Single facility with unit - include AXP1 co-located with F2
-    distance_matrix = pd.DataFrame(
+    travel_time_matrix = pd.DataFrame(
         [[0, 0], [0, 0]],
         index=["F2", "AXP1"],
         columns=["F2", "AXP1"]
@@ -825,7 +816,7 @@ def test_unit_utilization():
     ambulance_df = pd.DataFrame([{
         "amb_id": "AMB1",
         "capacity": 1,
-        "speed_kmh": 60,
+
         "start_loc_id": "AXP1",
         "c2_id": "C2",
     }])
@@ -840,7 +831,7 @@ def test_unit_utilization():
     }])
 
     data = {
-        "distance_matrix": distance_matrix,
+        "travel_time_matrix": travel_time_matrix,
         "axp_df": axp_df,
         "facility_df": facility_df,
         "units_df": units_df,
@@ -906,7 +897,7 @@ def test_wait_time_percentiles():
     print("="*70)
 
     # Create scenario with predictable wait times - include AXP1 co-located with F2
-    distance_matrix = pd.DataFrame(
+    travel_time_matrix = pd.DataFrame(
         [[0, 0], [0, 0]],
         index=["F2", "AXP1"],
         columns=["F2", "AXP1"]
@@ -938,7 +929,7 @@ def test_wait_time_percentiles():
     ambulance_df = pd.DataFrame([{
         "amb_id": "AMB1",
         "capacity": 1,
-        "speed_kmh": 60,
+
         "start_loc_id": "AXP1",
         "c2_id": "C2",
     }])
@@ -953,7 +944,7 @@ def test_wait_time_percentiles():
     }])
 
     data = {
-        "distance_matrix": distance_matrix,
+        "travel_time_matrix": travel_time_matrix,
         "axp_df": axp_df,
         "facility_df": facility_df,
         "units_df": units_df,
@@ -1018,7 +1009,7 @@ def test_multiple_triage_categories():
     print("="*70)
 
     # Include AXP1 co-located with F2
-    distance_matrix = pd.DataFrame(
+    travel_time_matrix = pd.DataFrame(
         [[0, 0], [0, 0]],
         index=["F2", "AXP1"],
         columns=["F2", "AXP1"]
@@ -1050,7 +1041,7 @@ def test_multiple_triage_categories():
     ambulance_df = pd.DataFrame([{
         "amb_id": "AMB1",
         "capacity": 1,
-        "speed_kmh": 60,
+
         "start_loc_id": "AXP1",
         "c2_id": "C2",
     }])
@@ -1065,7 +1056,7 @@ def test_multiple_triage_categories():
     }])
 
     data = {
-        "distance_matrix": distance_matrix,
+        "travel_time_matrix": travel_time_matrix,
         "axp_df": axp_df,
         "facility_df": facility_df,
         "units_df": units_df,

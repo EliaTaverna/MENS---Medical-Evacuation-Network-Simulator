@@ -4,7 +4,7 @@ description: based on convos with stakeholders for capacities and operating spee
   big assumption is that instead of having a r2e and a r2b we have a big r2 combining
   both
 components:
-  distance_matrix: components/distances/distance_matrix_3_brigades_3_battalions_big_r2e_no_r2b.xlsx
+  travel_time_matrix: components/distances/distance_matrix_3_brigades_3_battalions_big_r2e_no_r2b.xlsx
   coordinates: components/distances/coordinates_3_brigades_3_battalions_big_r2e_no_r2b.xlsx
   axp: components/AXPs/axp_3_brigades_3_battalions_big_r2e_no_r2b.xlsx
   facilities: components/facilities/facilities_3_brigades_3_battalions_big_r2e_no_r2b.xlsx
