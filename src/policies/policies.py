@@ -247,14 +247,11 @@ def dispatch_ambulances(c2: "TransportC2", plans_craft: dict[str, list["PlanStep
         c2.idle_ambulances.remove(amb)
 
         # mark requests assigned
-        loaded_patient_ids = {p.patient_id for step in plan for p in step.load_patients}
+        loaded_patient_ids = {str(p.patient_id) for step in plan for p in step.load_patients}
         if loaded_patient_ids:
-            mask = (
-                (c2.pending_transport_requests_df["status"] == "pending")
-                & (c2.pending_transport_requests_df["casualty_id"].astype(str).isin(
-                    {str(x) for x in loaded_patient_ids}))
-            )
-            c2.pending_transport_requests_df.loc[mask, "status"] = "assigned"
+            for r in c2._pending:
+                if r["status"] == "pending" and str(r["casualty_id"]) in loaded_patient_ids:
+                    r["status"] = "assigned"
 
         # dispatch
         amb.activate()

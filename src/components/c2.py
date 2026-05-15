@@ -19,6 +19,7 @@ from src.policies.policies import (
 )
 from src.policies.solvers import solve_triage
 
+_BATCH_INTERVAL = 5       # minutes between dispatch episodes
 _T2_WAIT_THRESHOLD = 240  # minutes (4 hours) before a lone T2 triggers dispatch
 _T3_WAIT_THRESHOLD = 720  # minutes (12 hours) before T3s trigger dispatch
 
@@ -26,29 +27,29 @@ _DISPATCH_SOLVERS = {
     "greedy": solve_triage,
 }
 
+_DF_COLUMNS = [
+    "req_id", "casualty_id", "triage", "issuing_facility_id",
+    "injury_time", "t_issued", "needed_unit", "status",
+]
+
 
 class TransportC2(sim.Component):
     """
     C2 dispatcher for one evacuation leg.
 
-    Wakes on two events:
-      - A facility issues a T1 or qualifying T2 request  (receive_request)
-      - An ambulance reports idle                          (ambulance_idle)
+    Dispatches in two modes:
+      - Immediate: T1 request or qualifying T2 pair wakes C2 instantly.
+      - Batched:   every _BATCH_INTERVAL minutes, evaluate all pending
+        requests against thresholds (T2 > 4 h, T3 > 12 h) and dispatch.
 
-    Immediate dispatch rules (on request arrival):
-      - T1: dispatch nearest idle ambulance immediately.
-      - T2: dispatch only if another T2 is already waiting at the same facility.
-      - T3: ignored (picked up by idle-ambulance polling).
+    Triage priority within each dispatch episode:
+      1. T1 (oldest first)
+      2. T2 pairs (two or more at same facility)
+      3. T2 over threshold
+      4. T3 over threshold
 
-    On ambulance idle (priority order):
-      1. Any T1 waiting         -> dispatch to the facility with the longest-waiting T1
-      2. Any facility with 2+ T2s -> dispatch there
-      3. Hold until next threshold crossing:
-         - T2 waiting > _T2_WAIT_THRESHOLD  -> dispatch, bundle T3s
-         - T3 waiting > _T3_WAIT_THRESHOLD  -> dispatch, bundle other T3s
-
-    No order queue: if no ambulance is available the request is ignored
-    and reconsidered when an ambulance becomes idle.
+    One ambulance dispatched per actionable facility; loop until no more
+    idle ambulances or no more actionable requests.
     """
 
     def setup(
@@ -68,8 +69,7 @@ class TransportC2(sim.Component):
         self.ambulances: List["Ambulance"] = []
         self.idle_ambulances: List["Ambulance"] = []
 
-        self._pending_rows: list[dict] = []
-        self.pending_transport_requests_df = self._init_pending_requests_df()
+        self._pending: list[dict] = []
 
         self.lever_value_facility_eligibility = int(lever_value_facility_eligibility)
         self.lever_value_ambulance_eligibility = int(lever_value_ambulance_eligibility)
@@ -77,17 +77,23 @@ class TransportC2(sim.Component):
         self.dispatch_policy = dispatch_policy
         self._wake_reason = "init"
 
+    @property
+    def pending_transport_requests_df(self):
+        if self._pending:
+            return pd.DataFrame(self._pending, columns=_DF_COLUMNS)
+        return pd.DataFrame(columns=_DF_COLUMNS)
+
     # --------------------------------------------------------
     # inbound events
     # --------------------------------------------------------
 
     def receive_request(self, req: "TransportRequest"):
-        """Append request. Only wake C2 for T1 or a qualifying T2 pair."""
+        """Append request. Only wake C2 immediately for T1 or qualifying T2 pair."""
         issuing_facility_id = getattr(getattr(req, "issuing_facility", None), "loc_id", None) \
                               or getattr(req, "issuing_facility_id", None)
         triage = getattr(req, "triage", None) or ""
 
-        row = {
+        self._pending.append({
             "req_id":              getattr(req, "req_id", None),
             "casualty_id":         getattr(req, "casualty_id", None) or getattr(req.patient, "patient_id", None),
             "triage":              triage,
@@ -95,15 +101,13 @@ class TransportC2(sim.Component):
             "injury_time":         getattr(req, "injury_time", None),
             "t_issued":            getattr(req, "t_issued", None),
             "needed_unit":         getattr(req, "needed_unit", None),
-            "status":              getattr(req, "status", "pending"),
-        }
-
-        self._pending_rows.append(row)
+            "status":              "pending",
+        })
 
         should_wake = False
-        if str(triage).startswith("T1"):
+        if triage[:2] == "T1":
             should_wake = True
-        elif str(triage).startswith("T2"):
+        elif triage[:2] == "T2":
             should_wake = self._has_pending_t2_at(issuing_facility_id)
 
         if should_wake:
@@ -111,28 +115,17 @@ class TransportC2(sim.Component):
             self.activate()
 
     def _has_pending_t2_at(self, facility_id: str) -> bool:
-        """Check if there's already a pending T2 at the given facility."""
-        for r in self._pending_rows[:-1]:
+        for r in self._pending[:-1]:
             if (r["issuing_facility_id"] == facility_id
-                    and str(r.get("triage", "")).startswith("T2")
-                    and r.get("status", "pending") == "pending"):
+                    and r["triage"][:2] == "T2"
+                    and r["status"] == "pending"):
                 return True
-        df = self.pending_transport_requests_df
-        if df.empty:
-            return False
-        match = df[
-            (df["issuing_facility_id"] == facility_id)
-            & (df["triage"].str.startswith("T2"))
-            & (df["status"] == "pending")
-        ]
-        return not match.empty
+        return False
 
     def ambulance_idle(self, amb: "Ambulance"):
-        """Mark ambulance idle and wake C2."""
+        """Register ambulance as idle (dispatch happens at next batch episode)."""
         if amb in self.ambulances and amb not in self.idle_ambulances:
             self.idle_ambulances.append(amb)
-            self._wake_reason = "ambulance_idle"
-            self.activate()
 
     # --------------------------------------------------------
     # main loop
@@ -140,27 +133,22 @@ class TransportC2(sim.Component):
 
     def process(self):
         while True:
-            self._expire_stale_requests()
+            self.hold(_BATCH_INTERVAL)
 
-            pending = self._get_pending_requests()
+            self._dispatch_episode()
 
-            if pending.empty or not self.idle_ambulances:
-                self.passivate()
-                continue
+    def _dispatch_episode(self):
+        """Run one full dispatch episode: expire stale, then dispatch all actionable."""
+        self._expire_stale()
+        self._pending = [r for r in self._pending if r["status"] == "pending"]
 
-            action = self._choose_action(pending)
-
+        while self._pending and self.idle_ambulances:
+            action = self._choose_action(self._pending)
             if action is None:
-                wait = self._time_to_next_threshold(pending)
-                if wait is None:
-                    self.passivate()
-                else:
-                    self.hold(wait)
-                    self._wake_reason = "threshold"
-                continue
+                break
 
-            trigger_type, anchor_facility_id, anchor_indices = action
-            dispatch_df = pending.loc[anchor_indices].copy()
+            trigger_type, anchor_facility_id, anchor_rows = action
+            dispatch_df = pd.DataFrame(anchor_rows)
 
             elig_df = fac_eligibility(
                 env=self.env,
@@ -189,60 +177,53 @@ class TransportC2(sim.Component):
             self._log_dispatch(dispatch_df, snapshot_ambs, plans_craft)
 
             if not plans_craft:
-                self._mark_indices_expired(anchor_indices)
-                self.hold(0)
+                for r in anchor_rows:
+                    r["status"] = "expired"
+
+            self._pending = [r for r in self._pending if r["status"] == "pending"]
 
     # --------------------------------------------------------
     # triage-based decision logic
     # --------------------------------------------------------
 
-    def _choose_action(self, pending: pd.DataFrame):
+    def _choose_action(self, pending: list[dict]):
         """
-        Evaluate pending requests and return the dispatch action to take,
-        or None if nothing meets dispatch criteria.
-
-        Returns: (trigger_type, facility_id, indices) or None
-          trigger_type: "t1", "t2_pair", "t2_threshold", "t3_threshold"
+        Returns: (trigger_type, facility_id, rows_at_facility) or None
         """
         now = self.env.now()
 
-        t1s = pending[pending["triage"].str.startswith("T1")]
-        if not t1s.empty:
-            t1s_sorted = t1s.sort_values("t_issued", ascending=True)
-            anchor = t1s_sorted.iloc[0]
-            fac_id = anchor["issuing_facility_id"]
-            at_fac = pending[pending["issuing_facility_id"] == fac_id].index.tolist()
+        t1s = [r for r in pending if r["triage"][:2] == "T1"]
+        if t1s:
+            t1s.sort(key=lambda r: r["t_issued"] or 0)
+            fac_id = t1s[0]["issuing_facility_id"]
+            at_fac = [r for r in pending if r["issuing_facility_id"] == fac_id]
             return ("t1", fac_id, at_fac)
 
-        t2s = pending[pending["triage"].str.startswith("T2")]
-        if not t2s.empty:
-            fac_counts = t2s.groupby("issuing_facility_id").size()
-            paired = fac_counts[fac_counts >= 2]
-            if not paired.empty:
-                fac_id = paired.index[0]
-                at_fac = pending[pending["issuing_facility_id"] == fac_id].index.tolist()
-                return ("t2_pair", fac_id, at_fac)
+        t2s = [r for r in pending if r["triage"][:2] == "T2"]
+        if t2s:
+            fac_counts: dict[str, int] = {}
+            for r in t2s:
+                fid = r["issuing_facility_id"]
+                fac_counts[fid] = fac_counts.get(fid, 0) + 1
+            for fac_id, cnt in fac_counts.items():
+                if cnt >= 2:
+                    at_fac = [r for r in pending if r["issuing_facility_id"] == fac_id]
+                    return ("t2_pair", fac_id, at_fac)
 
-        if not t2s.empty:
-            t2s_wait = t2s.copy()
-            t2s_wait["_wait"] = now - pd.to_numeric(t2s_wait["t_issued"], errors="coerce").fillna(now)
-            long_t2 = t2s_wait[t2s_wait["_wait"] >= _T2_WAIT_THRESHOLD]
-            if not long_t2.empty:
-                anchor = long_t2.sort_values("t_issued", ascending=True).iloc[0]
-                fac_id = anchor["issuing_facility_id"]
-                at_fac = pending[pending["issuing_facility_id"] == fac_id].index.tolist()
-                return ("t2_threshold", fac_id, at_fac)
+        if t2s:
+            for r in sorted(t2s, key=lambda r: r["t_issued"] or 0):
+                if r["t_issued"] is not None and (now - r["t_issued"]) >= _T2_WAIT_THRESHOLD:
+                    fac_id = r["issuing_facility_id"]
+                    at_fac = [r for r in pending if r["issuing_facility_id"] == fac_id]
+                    return ("t2_threshold", fac_id, at_fac)
 
-        t3s = pending[pending["triage"].str.startswith("T3")]
-        if not t3s.empty:
-            t3s_wait = t3s.copy()
-            t3s_wait["_wait"] = now - pd.to_numeric(t3s_wait["t_issued"], errors="coerce").fillna(now)
-            long_t3 = t3s_wait[t3s_wait["_wait"] >= _T3_WAIT_THRESHOLD]
-            if not long_t3.empty:
-                anchor = long_t3.sort_values("t_issued", ascending=True).iloc[0]
-                fac_id = anchor["issuing_facility_id"]
-                at_fac = pending[pending["issuing_facility_id"] == fac_id].index.tolist()
-                return ("t3_threshold", fac_id, at_fac)
+        t3s = [r for r in pending if r["triage"][:2] == "T3"]
+        if t3s:
+            for r in sorted(t3s, key=lambda r: r["t_issued"] or 0):
+                if r["t_issued"] is not None and (now - r["t_issued"]) >= _T3_WAIT_THRESHOLD:
+                    fac_id = r["issuing_facility_id"]
+                    at_fac = [r for r in pending if r["issuing_facility_id"] == fac_id]
+                    return ("t3_threshold", fac_id, at_fac)
 
         return None
 
@@ -250,84 +231,24 @@ class TransportC2(sim.Component):
     # internal helpers
     # --------------------------------------------------------
 
-    def _expire_stale_requests(self):
+    def _expire_stale(self):
         """Mark pending requests whose patients left the exit_queue."""
-        df = self.pending_transport_requests_df
-        if df.empty:
-            return
-        pending_mask = df["status"] == "pending"
-        if not pending_mask.any():
-            return
-
         exit_req_cache: dict[str, set] = {}
-        for idx in df.index[pending_mask]:
-            fac_id = df.at[idx, "issuing_facility_id"]
+        for r in self._pending:
+            if r["status"] != "pending":
+                continue
+            fac_id = r["issuing_facility_id"]
             if fac_id not in exit_req_cache:
                 fac = self.env.facility_by_id.get(fac_id)
                 if fac is None:
                     exit_req_cache[fac_id] = set()
                 else:
                     exit_req_cache[fac_id] = {
-                        getattr(r, "req_id", None)
-                        for r in getattr(fac, "exit_queue", [])
+                        getattr(rq, "req_id", None)
+                        for rq in getattr(fac, "exit_queue", [])
                     }
-            if df.at[idx, "req_id"] not in exit_req_cache[fac_id]:
-                df.at[idx, "status"] = "expired"
-
-    def _mark_indices_expired(self, indices):
-        """Unconditionally expire these indices (dispatch failed)."""
-        df = self.pending_transport_requests_df
-        for idx in indices:
-            if idx in df.index:
-                df.at[idx, "status"] = "expired"
-
-    def _time_to_next_threshold(self, pending: pd.DataFrame):
-        """Return sim-minutes until the earliest T2/T3 threshold, or None."""
-        now = self.env.now()
-        soonest = None
-
-        t2s = pending[pending["triage"].str.startswith("T2")]
-        if not t2s.empty:
-            earliest_t2 = pd.to_numeric(t2s["t_issued"], errors="coerce").min()
-            if pd.notna(earliest_t2):
-                due = earliest_t2 + _T2_WAIT_THRESHOLD - now
-                if due > 0:
-                    soonest = due
-                else:
-                    return 0
-
-        t3s = pending[pending["triage"].str.startswith("T3")]
-        if not t3s.empty:
-            earliest_t3 = pd.to_numeric(t3s["t_issued"], errors="coerce").min()
-            if pd.notna(earliest_t3):
-                due = earliest_t3 + _T3_WAIT_THRESHOLD - now
-                if due > 0:
-                    soonest = min(soonest, due) if soonest is not None else due
-                else:
-                    return 0
-
-        return soonest
-
-    def _init_pending_requests_df(self) -> pd.DataFrame:
-        return pd.DataFrame(columns=[
-            "req_id", "casualty_id", "triage", "issuing_facility_id",
-            "injury_time", "t_issued", "needed_unit", "status",
-        ])
-
-    def _get_pending_requests(self) -> pd.DataFrame:
-        if self._pending_rows:
-            new = pd.DataFrame(self._pending_rows)
-            self._pending_rows.clear()
-            if self.pending_transport_requests_df.empty:
-                self.pending_transport_requests_df = new
-            else:
-                self.pending_transport_requests_df = pd.concat(
-                    [self.pending_transport_requests_df, new], ignore_index=True,
-                )
-        df = self.pending_transport_requests_df
-        if df.empty:
-            return df
-        return df[df["status"] == "pending"].copy()
+            if r["req_id"] not in exit_req_cache[fac_id]:
+                r["status"] = "expired"
 
     def _log_dispatch(self, requests_df: pd.DataFrame, snapshot_ambs: list, plans_craft: dict):
         """Append one decision row to env.c2_dispatch_logs[self.c2_id]."""
