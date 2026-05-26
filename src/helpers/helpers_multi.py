@@ -536,6 +536,29 @@ def compute_outcomes(results: dict) -> dict:
                 key = f"ts_{metric}_{fac_id}_{triage}"
                 outcomes[key] = grp_sorted[triage].to_numpy(dtype=float)
 
+        # ── Queue imbalance: mean std dev of queue lengths across facilities ──
+        # For each snapshot, compute std dev of total queue length across all
+        # facilities of the same type, then average over time.
+        for metric_name, outcome_key in [("dcr", "mean_std_queue_dcr"),
+                                          ("dcs", "mean_std_queue_dcs")]:
+            metric_df = rec_df[rec_df["metric"] == metric_name]
+            if not metric_df.empty:
+                # Total queue per facility per snapshot = T1 + T2 + T3
+                metric_df = metric_df.copy()
+                metric_df["total"] = metric_df["T1"] + metric_df["T2"] + metric_df["T3"]
+                # Pivot: rows=time, cols=facility_id, values=total queue
+                pivot = metric_df.pivot_table(
+                    index="time", columns="facility_id", values="total", fill_value=0
+                )
+                # Std dev across facilities at each snapshot, then mean over time
+                std_per_snapshot = pivot.std(axis=1, ddof=0)
+                outcomes[outcome_key] = float(std_per_snapshot.mean())
+            else:
+                outcomes[outcome_key] = 0.0
+    else:
+        outcomes["mean_std_queue_dcr"] = 0.0
+        outcomes["mean_std_queue_dcs"] = 0.0
+
     return outcomes
 
 

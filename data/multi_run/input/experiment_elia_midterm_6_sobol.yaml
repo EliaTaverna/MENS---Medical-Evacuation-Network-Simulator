@@ -169,6 +169,10 @@ outcomes:
   - mortality_r2_care_T1
   - mortality_r2_care_T2
 
+  # ── Queue imbalance across facilities (2) ───────────────────────────────────
+  - mean_std_queue_dcr            # mean over time of std dev of DCR queue across R1s
+  - mean_std_queue_dcs            # mean over time of std dev of DCS queue across R2s
+
   # ── Evacuation timeline compliance (1) ─────────────────────────────────────
   - frac_t2_within_timeline       # fraction of T2 meeting R1≤1h AND R2≤2h from CCP
 

@@ -35,6 +35,17 @@ class DataCollector(sim.Component):
                          **counts}
                     )
 
+                    dcr_queue = fac.entry_lines.get("DCR", [])
+                    counts_dcr = {"T1": 0, "T2": 0, "T3": 0}
+                    for p in dcr_queue:
+                        prefix = p.triage[:2]
+                        if prefix in counts_dcr:
+                            counts_dcr[prefix] += 1
+                    self.env.data_collector_records.append(
+                        {"time": t, "facility_id": fac.loc_id, "metric": "dcr",
+                         **counts_dcr}
+                    )
+
                 elif fac.facility_type == "Role2":
                     dcs_queue = fac.entry_lines.get("DCS", [])
                     counts = {"T1": 0, "T2": 0, "T3": 0}
