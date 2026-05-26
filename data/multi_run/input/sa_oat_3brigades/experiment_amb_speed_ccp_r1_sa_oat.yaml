@@ -89,6 +89,20 @@ outcomes:
   - in_care_dcr_t2_bcas_dcr
   - in_care_pec_t3_bcas_pec
 
+  # ── Deaths by phase × triage (12) ──────────────────────────────────────────
+  - n_died_ccp_wait_transport_T1
+  - n_died_ccp_wait_transport_T2
+  - n_died_ccp_wait_transport_T3
+  - n_died_r1_wait_care_T1
+  - n_died_r1_wait_care_T2
+  - n_died_r1_wait_care_T3
+  - n_died_r1_wait_transport_T1
+  - n_died_r1_wait_transport_T2
+  - n_died_r1_wait_transport_T3
+  - n_died_r2_wait_care_T1
+  - n_died_r2_wait_care_T2
+  - n_died_r2_wait_care_T3
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ARRAY OUTCOMES (one per R1 × triage tier)

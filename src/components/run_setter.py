@@ -56,17 +56,14 @@ class RunSetter:
         master_seed = self._resolve_seed(kwargs)
         seeds       = self._derive_seeds(master_seed)
         data     = dict(self.base_data)
-        # Travel-time overrides run in layers, each applied only if its kwargs
-        # are present.  Ring-tier methods set same/neighbor/non_contig cells;
-        # the legacy R2-split method below is kept so old YAMLs (r2_basic_*,
-        # r2_enhanced_*) still work.  The generic per-pair `tt_a__b`
+        # Travel-time overrides: 2-level schema (same/inter at battalion
+        # level, same/other at brigade level).  The per-pair `tt_a__b`
         # override runs last, so it always wins over topology-level values.
         data     = self._apply_ccp_r1_times(data, kwargs)
         data     = self._apply_r1_r1_times(data, kwargs)
-        data     = self._apply_r1_axp_times(data, kwargs)
-        data     = self._apply_r2_r1_times(data, kwargs)   # legacy R2-split
-        data     = self._apply_r1_r2_times(data, kwargs)   # unified R2 tiers
-        data     = self._apply_axp_r2_times(data, kwargs)
+        data     = self._apply_axp_r1_times(data, kwargs)
+        data     = self._apply_r1_r2_times(data, kwargs)
+        data     = self._apply_r2_r2_times(data, kwargs)
         data     = self._apply_tt_overrides(data, kwargs)
         data     = self._apply_dcs_capacity(data, kwargs)
         data     = self._apply_pec_capacity(data, kwargs)
@@ -149,18 +146,15 @@ class RunSetter:
         return {b: list(dict.fromkeys(ids)) for b, ids in result.items()}
 
     def _apply_ccp_r1_times(self, data: dict, kwargs: dict) -> dict:
-        """Override CCP↔R1 travel times via three levers (same/neighbor/non_contig battalion).
+        """Override CCP↔R1 travel times (same-BN vs. inter-BN within brigade).
 
-        Levers (all optional, minutes):
-        - ``r1_ccp_same_min``:       CCP ↔ R1 of the same battalion
-        - ``r1_ccp_neighbor_min``:   CCP ↔ R1 of a neighbor battalion (same brigade)
-        - ``r1_ccp_non_contig_min``: CCP ↔ R1 of a non-contig battalion (same
-                                    brigade, not own, not neighbor)
+        Kwargs (all optional, minutes):
+        - ``ccp_r1_same_bn_min``:  CCP ↔ R1 of the same battalion
+        - ``ccp_r1_inter_bn_min``: CCP ↔ R1 of another battalion (same brigade)
         """
-        same_min       = kwargs.get("r1_ccp_same_min")
-        nbr_min        = kwargs.get("r1_ccp_neighbor_min")
-        non_contig_min = kwargs.get("r1_ccp_non_contig_min")
-        if same_min is None and nbr_min is None and non_contig_min is None:
+        same_bn  = kwargs.get("ccp_r1_same_bn_min")
+        inter_bn = kwargs.get("ccp_r1_inter_bn_min")
+        if same_bn is None and inter_bn is None:
             return data
 
         force_df = self.base_config.get("force_structure_df")
@@ -171,32 +165,24 @@ class RunSetter:
         r1s_by_bde = self._group_by_brigade(force_df, "r1_ids")
 
         for _, row in force_df.iterrows():
-            bde         = str(row.get("brigade", "")).lower()
-            ccp_ids     = self._parse_facility_list(row.get("ccp_ids"))
-            r1_ids      = self._parse_facility_list(row.get("r1_ids"))
-            nbr_r1_ids  = self._parse_facility_list(row.get("neighbor_r1_ids"))
-            same_bde_r1s = r1s_by_bde.get(bde, [])
-            non_contig_r1_ids = [r for r in same_bde_r1s
-                                 if r not in r1_ids and r not in nbr_r1_ids]
-            self._set_pairs(dm, r1_ids,             ccp_ids, same_min)
-            self._set_pairs(dm, nbr_r1_ids,         ccp_ids, nbr_min)
-            self._set_pairs(dm, non_contig_r1_ids,  ccp_ids, non_contig_min)
+            bde      = str(row.get("brigade", "")).lower()
+            ccp_ids  = self._parse_facility_list(row.get("ccp_ids"))
+            own_r1s  = self._parse_facility_list(row.get("r1_ids"))
+            other_bn_r1s = [r for r in r1s_by_bde.get(bde, []) if r not in own_r1s]
+            self._set_pairs(dm, ccp_ids, own_r1s,      same_bn)
+            self._set_pairs(dm, ccp_ids, other_bn_r1s, inter_bn)
 
         data["travel_time_matrix"] = dm
         return data
 
     def _apply_r1_r1_times(self, data: dict, kwargs: dict) -> dict:
-        """Override R1↔R1 travel times for within-brigade tiers and cross-brigade (flat).
+        """Override R1↔R1 travel times (inter-battalion within same brigade).
 
-        Levers (all optional, minutes):
-        - ``r1_r1_neighbor_min``:   R1 ↔ R1 of a neighbor battalion (same brigade)
-        - ``r1_r1_non_contig_min``: R1 ↔ R1 of a non-contig battalion (same brigade)
-        - ``r1_r1_inter_bde_min``:  R1 ↔ R1 across brigades (single flat value)
+        Kwargs (all optional, minutes):
+        - ``r1_r1_inter_bn_min``: R1 ↔ R1 across battalions (same brigade)
         """
-        neighbor_min   = kwargs.get("r1_r1_neighbor_min")
-        non_contig_min = kwargs.get("r1_r1_non_contig_min")
-        inter_bde_min  = kwargs.get("r1_r1_inter_bde_min")
-        if all(v is None for v in (neighbor_min, non_contig_min, inter_bde_min)):
+        inter_bn = kwargs.get("r1_r1_inter_bn_min")
+        if inter_bn is None:
             return data
 
         force_df = self.base_config.get("force_structure_df")
@@ -207,33 +193,24 @@ class RunSetter:
         r1s_by_bde = self._group_by_brigade(force_df, "r1_ids")
 
         for _, row in force_df.iterrows():
-            bde        = str(row.get("brigade", "")).lower()
-            own_r1s    = self._parse_facility_list(row.get("r1_ids"))
-            nbr_r1s    = self._parse_facility_list(row.get("neighbor_r1_ids"))
-            same_bde_r1s = r1s_by_bde.get(bde, [])
-            non_contig_r1s = [r for r in same_bde_r1s
-                              if r not in own_r1s and r not in nbr_r1s]
-            inter_bde_r1s  = [r for b, rs in r1s_by_bde.items()
-                              if b != bde for r in rs]
-            self._set_pairs(dm, own_r1s, nbr_r1s,        neighbor_min)
-            self._set_pairs(dm, own_r1s, non_contig_r1s, non_contig_min)
-            self._set_pairs(dm, own_r1s, inter_bde_r1s,  inter_bde_min)
+            bde     = str(row.get("brigade", "")).lower()
+            own_r1s = self._parse_facility_list(row.get("r1_ids"))
+            other_bn_r1s = [r for r in r1s_by_bde.get(bde, []) if r not in own_r1s]
+            self._set_pairs(dm, own_r1s, other_bn_r1s, inter_bn)
 
         data["travel_time_matrix"] = dm
         return data
 
-    def _apply_r1_axp_times(self, data: dict, kwargs: dict) -> dict:
-        """Override R1↔AXP travel times by brigade-ring tier.
+    def _apply_axp_r1_times(self, data: dict, kwargs: dict) -> dict:
+        """Override AXP↔R1 travel times (same-BDE vs. other-BDE, flat).
 
-        Levers (all optional, minutes):
-        - ``r1_axp_same_min``:       R1 ↔ AXP of the same brigade
-        - ``r1_axp_neighbor_min``:   R1 ↔ AXP of a neighbor brigade
-        - ``r1_axp_non_contig_min``: R1 ↔ AXP of a non-contig brigade
+        Kwargs (all optional, minutes):
+        - ``axp_r1_same_bde_min``:  AXP ↔ R1 within the same brigade
+        - ``axp_r1_other_bde_min``: AXP ↔ R1 in any other brigade
         """
-        same_min       = kwargs.get("r1_axp_same_min")
-        neighbor_min   = kwargs.get("r1_axp_neighbor_min")
-        non_contig_min = kwargs.get("r1_axp_non_contig_min")
-        if all(v is None for v in (same_min, neighbor_min, non_contig_min)):
+        same_bde  = kwargs.get("axp_r1_same_bde_min")
+        other_bde = kwargs.get("axp_r1_other_bde_min")
+        if same_bde is None and other_bde is None:
             return data
 
         force_df = self.base_config.get("force_structure_df")
@@ -241,35 +218,55 @@ class RunSetter:
             return data
 
         dm = data["travel_time_matrix"].copy()
+        r1s_by_bde  = self._group_by_brigade(force_df, "r1_ids")
         axps_by_bde = self._group_by_brigade(force_df, "axp_ids")
 
-        for _, row in force_df.iterrows():
-            bde           = str(row.get("brigade", "")).lower()
-            own_r1s       = self._parse_facility_list(row.get("r1_ids"))
-            own_axps      = self._parse_facility_list(row.get("axp_ids"))
-            nbr_axps      = self._parse_facility_list(row.get("neighbor_axp_ids"))
-            other_bde_axps = [a for b, axs in axps_by_bde.items()
-                              if b != bde for a in axs]
-            non_contig_axps = [a for a in other_bde_axps if a not in nbr_axps]
-            self._set_pairs(dm, own_r1s, own_axps,        same_min)
-            self._set_pairs(dm, own_r1s, nbr_axps,        neighbor_min)
-            self._set_pairs(dm, own_r1s, non_contig_axps, non_contig_min)
+        for bde, axps in axps_by_bde.items():
+            own_r1s   = r1s_by_bde.get(bde, [])
+            other_r1s = [r for b, rs in r1s_by_bde.items() if b != bde for r in rs]
+            self._set_pairs(dm, axps, own_r1s,   same_bde)
+            self._set_pairs(dm, axps, other_r1s, other_bde)
 
         data["travel_time_matrix"] = dm
         return data
 
     def _apply_r1_r2_times(self, data: dict, kwargs: dict) -> dict:
-        """Override R1↔R2 travel times by brigade-ring tier (R2b + R2e treated uniformly).
+        """Override R1↔R2 travel times (same-BDE vs. other-BDE, flat; R2b+R2e uniform).
 
-        Levers (all optional, minutes):
-        - ``r1_r2_same_min``:       R1 ↔ R2 of the same brigade
-        - ``r1_r2_neighbor_min``:   R1 ↔ R2 of a neighbor brigade
-        - ``r1_r2_non_contig_min``: R1 ↔ R2 of a non-contig brigade
+        Kwargs (all optional, minutes):
+        - ``r1_r2_same_bde_min``:  R1 ↔ R2 within the same brigade
+        - ``r1_r2_other_bde_min``: R1 ↔ R2 in any other brigade
         """
-        same_min       = kwargs.get("r1_r2_same_min")
-        neighbor_min   = kwargs.get("r1_r2_neighbor_min")
-        non_contig_min = kwargs.get("r1_r2_non_contig_min")
-        if all(v is None for v in (same_min, neighbor_min, non_contig_min)):
+        same_bde  = kwargs.get("r1_r2_same_bde_min")
+        other_bde = kwargs.get("r1_r2_other_bde_min")
+        if same_bde is None and other_bde is None:
+            return data
+
+        force_df = self.base_config.get("force_structure_df")
+        if force_df is None:
+            return data
+
+        dm = data["travel_time_matrix"].copy()
+        r1s_by_bde = self._group_by_brigade(force_df, "r1_ids")
+        r2s_by_bde = self._group_by_brigade(force_df, "r2b_ids", "r2e_ids")
+
+        for bde, r1s in r1s_by_bde.items():
+            own_r2s   = r2s_by_bde.get(bde, [])
+            other_r2s = [r for b, rs in r2s_by_bde.items() if b != bde for r in rs]
+            self._set_pairs(dm, r1s, own_r2s,   same_bde)
+            self._set_pairs(dm, r1s, other_r2s, other_bde)
+
+        data["travel_time_matrix"] = dm
+        return data
+
+    def _apply_r2_r2_times(self, data: dict, kwargs: dict) -> dict:
+        """Override R2↔R2 travel times (inter-brigade only, flat).
+
+        Kwargs (all optional, minutes):
+        - ``r2_r2_other_bde_min``: R2 ↔ R2 across brigades
+        """
+        other_bde = kwargs.get("r2_r2_other_bde_min")
+        if other_bde is None:
             return data
 
         force_df = self.base_config.get("force_structure_df")
@@ -279,106 +276,10 @@ class RunSetter:
         dm = data["travel_time_matrix"].copy()
         r2s_by_bde = self._group_by_brigade(force_df, "r2b_ids", "r2e_ids")
 
-        for _, row in force_df.iterrows():
-            bde      = str(row.get("brigade", "")).lower()
-            own_r1s  = self._parse_facility_list(row.get("r1_ids"))
-            own_r2s  = (self._parse_facility_list(row.get("r2b_ids"))
-                        + self._parse_facility_list(row.get("r2e_ids")))
-            nbr_r2s  = (self._parse_facility_list(row.get("neighbor_r2b_ids"))
-                        + self._parse_facility_list(row.get("neighbor_r2e_ids")))
-            other_bde_r2s = [r for b, rs in r2s_by_bde.items()
-                             if b != bde for r in rs]
-            non_contig_r2s = [r for r in other_bde_r2s if r not in nbr_r2s]
-            self._set_pairs(dm, own_r1s, own_r2s,        same_min)
-            self._set_pairs(dm, own_r1s, nbr_r2s,        neighbor_min)
-            self._set_pairs(dm, own_r1s, non_contig_r2s, non_contig_min)
-
-        data["travel_time_matrix"] = dm
-        return data
-
-    def _apply_axp_r2_times(self, data: dict, kwargs: dict) -> dict:
-        """Override AXP↔R2 travel times by brigade-ring tier (R2b + R2e uniformly).
-
-        Levers (all optional, minutes):
-        - ``axp_r2_same_min``:       AXP ↔ R2 of the same brigade
-        - ``axp_r2_neighbor_min``:   AXP ↔ R2 of a neighbor brigade
-        - ``axp_r2_non_contig_min``: AXP ↔ R2 of a non-contig brigade
-        """
-        same_min       = kwargs.get("axp_r2_same_min")
-        neighbor_min   = kwargs.get("axp_r2_neighbor_min")
-        non_contig_min = kwargs.get("axp_r2_non_contig_min")
-        if all(v is None for v in (same_min, neighbor_min, non_contig_min)):
-            return data
-
-        force_df = self.base_config.get("force_structure_df")
-        if force_df is None:
-            return data
-
-        dm = data["travel_time_matrix"].copy()
-        r2s_by_bde = self._group_by_brigade(force_df, "r2b_ids", "r2e_ids")
-
-        for _, row in force_df.iterrows():
-            bde      = str(row.get("brigade", "")).lower()
-            own_axps = self._parse_facility_list(row.get("axp_ids"))
-            own_r2s  = (self._parse_facility_list(row.get("r2b_ids"))
-                        + self._parse_facility_list(row.get("r2e_ids")))
-            nbr_r2s  = (self._parse_facility_list(row.get("neighbor_r2b_ids"))
-                        + self._parse_facility_list(row.get("neighbor_r2e_ids")))
-            other_bde_r2s = [r for b, rs in r2s_by_bde.items()
-                             if b != bde for r in rs]
-            non_contig_r2s = [r for r in other_bde_r2s if r not in nbr_r2s]
-            self._set_pairs(dm, own_axps, own_r2s,        same_min)
-            self._set_pairs(dm, own_axps, nbr_r2s,        neighbor_min)
-            self._set_pairs(dm, own_axps, non_contig_r2s, non_contig_min)
-
-        data["travel_time_matrix"] = dm
-        return data
-
-    def _apply_r2_r1_times(self, data: dict, kwargs: dict) -> dict:
-        """Override R1↔R2 travel times via four levers (basic/enhanced × same/neighbor).
-
-        Levers (all optional, minutes):
-        - ``r2_basic_r1_same_min``:     R2-basic ↔ same-brigade R1
-        - ``r2_basic_r1_neighbor_min``: R2-basic ↔ neighbor-brigade R1
-        - ``r2_enhanced_r1_same_min``:  R2-enhanced ↔ same-brigade R1
-        - ``r2_enhanced_r1_neighbor_min``: R2-enhanced ↔ neighbor-brigade R1
-        """
-        same_basic    = kwargs.get("r2_basic_r1_same_min")
-        nbr_basic     = kwargs.get("r2_basic_r1_neighbor_min")
-        same_enhanced = kwargs.get("r2_enhanced_r1_same_min")
-        nbr_enhanced  = kwargs.get("r2_enhanced_r1_neighbor_min")
-        if all(v is None for v in (same_basic, nbr_basic, same_enhanced, nbr_enhanced)):
-            return data
-
-        force_df = self.base_config.get("force_structure_df")
-        if force_df is None:
-            return data
-
-        dm = data["travel_time_matrix"].copy()
-
-        def _set_pairs(r1s, r2s, value):
-            if value is None or not r1s or not r2s:
-                return
-            v = float(value)
-            for r1 in r1s:
-                if r1 not in dm.index:
-                    continue
-                for r2 in r2s:
-                    if r2 not in dm.index:
-                        continue
-                    dm.loc[r1, r2] = v
-                    dm.loc[r2, r1] = v
-
-        for _, row in force_df.iterrows():
-            r1_ids       = self._parse_facility_list(row.get("r1_ids"))
-            r2b_ids      = self._parse_facility_list(row.get("r2b_ids"))
-            r2e_ids      = self._parse_facility_list(row.get("r2e_ids"))
-            nbr_r2b_ids  = self._parse_facility_list(row.get("neighbor_r2b_ids"))
-            nbr_r2e_ids  = self._parse_facility_list(row.get("neighbor_r2e_ids"))
-            _set_pairs(r1_ids, r2b_ids,     same_basic)
-            _set_pairs(r1_ids, nbr_r2b_ids, nbr_basic)
-            _set_pairs(r1_ids, r2e_ids,     same_enhanced)
-            _set_pairs(r1_ids, nbr_r2e_ids, nbr_enhanced)
+        bdes = list(r2s_by_bde.keys())
+        for i, bde_a in enumerate(bdes):
+            for bde_b in bdes[i + 1:]:
+                self._set_pairs(dm, r2s_by_bde[bde_a], r2s_by_bde[bde_b], other_bde)
 
         data["travel_time_matrix"] = dm
         return data

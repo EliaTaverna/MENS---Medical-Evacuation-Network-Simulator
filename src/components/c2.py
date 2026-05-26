@@ -123,9 +123,14 @@ class TransportC2(sim.Component):
         return False
 
     def ambulance_idle(self, amb: "Ambulance"):
-        """Register ambulance as idle (dispatch happens at next batch episode)."""
-        if amb in self.ambulances and amb not in self.idle_ambulances:
-            self.idle_ambulances.append(amb)
+        """Register ambulance as idle; wake C2 immediately if a T1 is pending."""
+        if amb not in self.ambulances or amb in self.idle_ambulances:
+            return
+        self.idle_ambulances.append(amb)
+        if any(r["triage"][:2] == "T1" and r["status"] == "pending"
+               for r in self._pending):
+            self._wake_reason = "ambulance_idle"
+            self.activate()
 
     # --------------------------------------------------------
     # main loop
@@ -134,7 +139,7 @@ class TransportC2(sim.Component):
     def process(self):
         while True:
             self.hold(_BATCH_INTERVAL)
-
+            self._wake_reason = "batch"
             self._dispatch_episode()
 
     def _dispatch_episode(self):
@@ -174,7 +179,7 @@ class TransportC2(sim.Component):
 
             plans_craft = craft_plans(c2=self, assigned_ambulances_df=assigned_df)
             dispatch_ambulances(c2=self, plans_craft=plans_craft)
-            self._log_dispatch(dispatch_df, snapshot_ambs, plans_craft)
+            self._log_dispatch(dispatch_df, snapshot_ambs, plans_craft, trigger_type)
 
             if not plans_craft:
                 for r in anchor_rows:
@@ -250,7 +255,8 @@ class TransportC2(sim.Component):
             if r["req_id"] not in exit_req_cache[fac_id]:
                 r["status"] = "expired"
 
-    def _log_dispatch(self, requests_df: pd.DataFrame, snapshot_ambs: list, plans_craft: dict):
+    def _log_dispatch(self, requests_df: pd.DataFrame, snapshot_ambs: list,
+                       plans_craft: dict, trigger_type: str = ""):
         """Append one decision row to env.c2_dispatch_logs[self.c2_id]."""
         logs = getattr(self.env, "c2_dispatch_logs", None)
         if logs is None:
@@ -273,8 +279,26 @@ class TransportC2(sim.Component):
             for amb_id, plan in plans_craft.items()
         }
 
+        assigned_ids = {pid for pids in assignments.values() for pid in pids}
+        triage_of = {
+            str(row.get("casualty_id", "")): str(row.get("triage", ""))
+            for _, row in requests_df.iterrows()
+        }
+        cargo_triages = [triage_of.get(pid, "") for pid in assigned_ids]
+        n_t1 = sum(1 for t in cargo_triages if t.startswith("T1"))
+        n_t2 = sum(1 for t in cargo_triages if t.startswith("T2"))
+        n_t3 = sum(1 for t in cargo_triages if t.startswith("T3"))
+
         logs.setdefault(self.c2_id, []).append({
-            "event":                json.dumps(self._wake_reason),
+            "time":                 self.env.now(),
+            "event":                self._wake_reason,
+            "trigger":              trigger_type,
+            "n_requests":           len(requests_df),
+            "n_idle_ambulances":    len(snapshot_ambs),
+            "n_assigned":           len(assigned_ids),
+            "n_t1_cargo":           n_t1,
+            "n_t2_cargo":           n_t2,
+            "n_t3_cargo":           n_t3,
             "transport_requests":   json.dumps(transport_requests),
             "available_ambulances": json.dumps(snapshot_ambs),
             "assignments":          json.dumps(assignments),

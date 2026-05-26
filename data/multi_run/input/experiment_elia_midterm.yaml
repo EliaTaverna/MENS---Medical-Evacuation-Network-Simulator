@@ -1,0 +1,391 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT TEMPLATE
+# ═══════════════════════════════════════════════════════════════════════════════
+# This template lists EVERY available uncertainty, lever, and outcome.
+# It is directly runnable. To create a new experiment, copy this file,
+# rename it, and comment out or remove what you don't need.
+# Every experiment YAML is a subset of this template.
+#
+# Any parameter can be placed under either 'uncertainties' or 'levers'
+# depending on whether you treat it as something you don't control
+# (uncertainty) or a policy decision you want to compare (lever).
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_elia_midterm.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES
+# Sampled across EMA scenarios. Each scenario is one combination of values.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+uncertainties:
+
+  # Controls all stochastic variation: casualty generation, ambulance removal,
+  # battalion selection, and salabim RNG.
+  # Range: any positive integer. [1, 10000] is the conventional range.
+  - name: seed
+    type: integer
+    lower: 1
+    upper: 10000
+
+  # Fraction of personnel-at-risk (PAR) that become casualties per wave.
+  # Overrides the bcas_rate from the sampling config for every spawning point
+  # whose labels contain "BCAS".
+  # Range: must be > 0. Realistic values are roughly [0.005, 0.05].
+  #   0.005 = low-intensity engagement (~5 casualties per 1000 PAR per wave)
+  #   0.05  = high-intensity engagement (~50 casualties per 1000 PAR per wave)
+  # Baseline in config_400.yaml: 0.023
+  - name: bcas_rate
+    type: categorical
+    values: [0.005, 0.02, 0.035, 0.05]
+
+  # Number of discrete casualty waves per simulated day.
+  # More waves = casualties arrive in more frequent bursts across the day.
+  # Range: >= 1. Realistic values are [1, 6].
+  # Baseline in config_400.yaml: 3
+  - name: waves_per_day
+    type: categorical
+    values: [1, 2, 3, 4]
+
+  # Duration of each casualty wave in minutes. Controls how concentrated
+  # casualties are within a wave.
+  #   Short (e.g. 1-10 min)  = sharp mass-casualty spike
+  #   Long  (e.g. 120-360 min) = casualties trickle in gradually
+  # Range: >= 1. Realistic values are [1, 360].
+  #   Must be shorter than (24*60 / waves_per_day) to avoid overlapping waves.
+  # Baseline in config_400.yaml: 30
+  - name: wave_duration_min
+    type: categorical
+    values: [10, 30, 60, 120, 240]
+
+  # How many days of combat to simulate.
+  # Range: >= 1. Must be consistent with simulation.till in the scenario YAML.
+  #   scenario_400 has till=7200 min (5 days), so n_days should be <= 5 for
+  #   that scenario. Increase till if you need more days.
+  # Baseline in config_400.yaml: 1
+  - name: n_days
+    type: integer
+    lower: 1
+    upper: 5
+
+  # ── BCAS triage mix ────────────────────────────────────────────────────────
+  # Two levers fix the T1_BCAS and T2_BCAS shares inside the BCAS block
+  # {T1_BCAS, T2_BCAS, T3_BCAS, KIA_BCAS, MIA_BCAS} (which always sums to 1).
+  # Each lever, when provided, pins its label's fraction. The remaining BCAS
+  # labels (T3_BCAS, KIA_BCAS, MIA_BCAS — plus T1 or T2 when only one lever
+  # is set) are rescaled proportionally to their baseline shares to fill the
+  # residual budget 1 - sum(pinned).
+  # Range: [0, 0.5] each. Their sum must be <= 1.0. DNBI mix is not touched.
+
+  - name: fraction_t1_bcas
+    type: real
+    lower: 0.0
+    upper: 0.5
+
+  - name: fraction_t2_bcas
+    type: real
+    lower: 0.0
+    upper: 0.5
+
+  # ── Tier 1: intra-battalion ───────────────────────────────────────────────
+  - name: ccp_r1_same_bn_min
+    type: real
+    lower: 5
+    upper: 20
+
+  # ── Tier 2: inter-battalion (same brigade) ──────────────────────────────
+  - name: ccp_r1_inter_bn_min
+    type: real
+    lower: 20
+    upper: 45
+
+  - name: r1_r1_inter_bn_min
+    type: real
+    lower: 20
+    upper: 45
+
+  # ── Tier 3: intra-brigade (vertical) ────────────────────────────────────
+  - name: axp_r1_same_bde_min
+    type: real
+    lower: 45
+    upper: 75
+
+  - name: r1_r2_same_bde_min
+    type: real
+    lower: 45
+    upper: 75
+
+  # ── Tier 4: inter-brigade ───────────────────────────────────────────────
+  - name: axp_r1_other_bde_min
+    type: real
+    lower: 75
+    upper: 120
+
+  - name: r1_r2_other_bde_min
+    type: real
+    lower: 75
+    upper: 120
+
+  - name: r2_r2_other_bde_min
+    type: real
+    lower: 75
+    upper: 120
+
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS
+# Policy choices sampled across EMA policies.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+levers:
+
+  # Selects which facility eligibility matrix to load. The matrix determines
+  # which destination facilities are allowed for each origin.
+  # Range: depends on how many matrices are defined in the scenario YAML.
+  #   scenario_400 defines two: 0 = strict, 1 = loose.
+  - name: facility_eligibility
+    type: integer
+    lower: 0
+    upper: 1
+
+  # Selects which ambulance eligibility matrix to load. The matrix determines
+  # which ambulances can serve which facilities.
+  # Range: depends on how many matrices are defined in the scenario YAML.
+  #   scenario_400 defines two: 0 = strict, 1 = loose.
+  - name: ambulance_eligibility
+    type: integer
+    lower: 0
+    upper: 1
+
+  # The ambulance dispatch algorithm used by C2 nodes.
+  # Range: currently only "greedy" is implemented.
+  #   Add new values here when alternative dispatch algorithms are built.
+  # - name: dispatch_policy
+  #   type: categorical
+  #   values: [greedy]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# One value per run, saved to results.csv.
+# Comment out any line to exclude that outcome from the experiment.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  # ── Overall mortality and survival ─────────────────────────────────────────
+  - death_rate                # fraction of all patients who died
+  - safe_rate                 # fraction of all patients who reached definitive care
+
+  # ── Mortality by triage and casualty type ──────────────────────────────────
+  - death_rate_T1_BCAS        # T1 battle casualties: fraction who died
+  - death_rate_T2_BCAS        # T2 battle casualties: fraction who died
+  - death_rate_T3_BCAS        # T3 battle casualties: fraction who died
+  - death_rate_T1_DNBI        # T1 non-battle injuries: fraction who died
+  - death_rate_T2_DNBI        # T2 non-battle injuries: fraction who died
+  - death_rate_T3_DNBI        # T3 non-battle injuries: fraction who died
+
+  # ── Patient counts by triage ───────────────────────────────────────────────
+  - n_patients_T1_BCAS        # total T1 BCAS patients generated
+  - n_patients_T2_BCAS        # total T2 BCAS patients generated
+  - n_patients_T3_BCAS        # total T3 BCAS patients generated
+  - n_dead_T1_BCAS            # absolute number of T1 BCAS deaths
+  - n_dead_T2_BCAS            # absolute number of T2 BCAS deaths
+  - n_dead_T3_BCAS            # absolute number of T3 BCAS deaths
+
+  # ── Mean wait time for care (minutes) ──────────────────────────────────────
+  # Time from arrival at a facility to start of treatment
+  - mean_wait_care_T1_BCAS
+  - mean_wait_care_T2_BCAS
+  - mean_wait_care_T3_BCAS
+  - mean_wait_care_T1_DNBI
+  - mean_wait_care_T2_DNBI
+  - mean_wait_care_T3_DNBI
+
+  # ── Mean wait time for transport (minutes) ─────────────────────────────────
+  # Time from arrival at a facility to departure by ambulance
+  - mean_wait_transport_T1_BCAS
+  - mean_wait_transport_T2_BCAS
+  - mean_wait_transport_T3_BCAS
+  - mean_wait_transport_T1_DNBI
+  - mean_wait_transport_T2_DNBI
+  - mean_wait_transport_T3_DNBI
+
+  # ── Total ambulance travel time (minutes) ──────────────────────────────────
+  - total_transport_time      # sum of all ambulance trip durations
+
+  # ── Phase durations (from patient_log) ─────────────────────────────────────
+  # Dynamically generated based on observed (triage, prescription) combinations.
+  # The naming pattern is:
+  #   waiting_transport_{facility_type}_{triage}_{prescription}
+  #   waiting_care_{care_type}_{triage}_{prescription}
+  #   transit_{from_type}_{to_type}_{triage}_{prescription}
+  #   in_care_{care_type}_{triage}_{prescription}
+  #
+  # The full set depends on the prescriptions in your diagnosis/prescription
+  # files. For scenario_400 with prescriptions [DCR,DCS], [DCR], [PEC,DCS],
+  # [PEC], the complete list is below. Remove DNBI lines if dnbi_rate = 0.
+
+  # ── Queue: waiting for transport at CCP (12) ──────────────────────────────
+  - waiting_transport_ccp_t1_bcas_dcr_dcs
+  - waiting_transport_ccp_t1_bcas_dcr
+  - waiting_transport_ccp_t2_bcas_dcr_dcs
+  - waiting_transport_ccp_t2_bcas_dcr
+  - waiting_transport_ccp_t3_bcas_pec_dcs
+  - waiting_transport_ccp_t3_bcas_pec
+  - waiting_transport_ccp_t1_dnbi_dcr_dcs
+  - waiting_transport_ccp_t1_dnbi_dcr
+  - waiting_transport_ccp_t2_dnbi_dcr_dcs
+  - waiting_transport_ccp_t2_dnbi_dcr
+  - waiting_transport_ccp_t3_dnbi_pec_dcs
+  - waiting_transport_ccp_t3_dnbi_pec
+
+  # ── Queue: waiting for transport at Role 1 (6) ────────────────────────────
+  - waiting_transport_role1_t1_bcas_dcr_dcs
+  - waiting_transport_role1_t2_bcas_dcr_dcs
+  - waiting_transport_role1_t3_bcas_pec_dcs
+  - waiting_transport_role1_t1_dnbi_dcr_dcs
+  - waiting_transport_role1_t2_dnbi_dcr_dcs
+  - waiting_transport_role1_t3_dnbi_pec_dcs
+
+  # ── Queue: waiting for DCR care at Role 1 (8) ─────────────────────────────
+  - waiting_care_dcr_t1_bcas_dcr_dcs
+  - waiting_care_dcr_t1_bcas_dcr
+  - waiting_care_dcr_t2_bcas_dcr_dcs
+  - waiting_care_dcr_t2_bcas_dcr
+  - waiting_care_dcr_t1_dnbi_dcr_dcs
+  - waiting_care_dcr_t1_dnbi_dcr
+  - waiting_care_dcr_t2_dnbi_dcr_dcs
+  - waiting_care_dcr_t2_dnbi_dcr
+
+  # ── Queue: waiting for PEC care at Role 1 (4) ─────────────────────────────
+  - waiting_care_pec_t3_bcas_pec_dcs
+  - waiting_care_pec_t3_bcas_pec
+  - waiting_care_pec_t3_dnbi_pec_dcs
+  - waiting_care_pec_t3_dnbi_pec
+
+  # ── Queue: waiting for DCS surgery at Role 2 (6) ──────────────────────────
+  - waiting_care_dcs_t1_bcas_dcr_dcs
+  - waiting_care_dcs_t2_bcas_dcr_dcs
+  - waiting_care_dcs_t3_bcas_pec_dcs
+  - waiting_care_dcs_t1_dnbi_dcr_dcs
+  - waiting_care_dcs_t2_dnbi_dcr_dcs
+  - waiting_care_dcs_t3_dnbi_pec_dcs
+
+  # ── Phase duration: transit CCP -> Role 1 (12) ────────────────────────────
+  - transit_ccp_role1_t1_bcas_dcr_dcs
+  - transit_ccp_role1_t1_bcas_dcr
+  - transit_ccp_role1_t2_bcas_dcr_dcs
+  - transit_ccp_role1_t2_bcas_dcr
+  - transit_ccp_role1_t3_bcas_pec_dcs
+  - transit_ccp_role1_t3_bcas_pec
+  - transit_ccp_role1_t1_dnbi_dcr_dcs
+  - transit_ccp_role1_t1_dnbi_dcr
+  - transit_ccp_role1_t2_dnbi_dcr_dcs
+  - transit_ccp_role1_t2_dnbi_dcr
+  - transit_ccp_role1_t3_dnbi_pec_dcs
+  - transit_ccp_role1_t3_dnbi_pec
+
+  # ── Phase duration: transit Role 1 -> Role 2 (6) ──────────────────────────
+  - transit_role1_role2_t1_bcas_dcr_dcs
+  - transit_role1_role2_t2_bcas_dcr_dcs
+  - transit_role1_role2_t3_bcas_pec_dcs
+  - transit_role1_role2_t1_dnbi_dcr_dcs
+  - transit_role1_role2_t2_dnbi_dcr_dcs
+  - transit_role1_role2_t3_dnbi_pec_dcs
+
+  # ── Phase duration: time in DCR care at Role 1 (8) ────────────────────────
+  - in_care_dcr_t1_bcas_dcr_dcs
+  - in_care_dcr_t1_bcas_dcr
+  - in_care_dcr_t2_bcas_dcr_dcs
+  - in_care_dcr_t2_bcas_dcr
+  - in_care_dcr_t1_dnbi_dcr_dcs
+  - in_care_dcr_t1_dnbi_dcr
+  - in_care_dcr_t2_dnbi_dcr_dcs
+  - in_care_dcr_t2_dnbi_dcr
+
+  # ── Phase duration: time in PEC care at Role 1 (4) ────────────────────────
+  - in_care_pec_t3_bcas_pec_dcs
+  - in_care_pec_t3_bcas_pec
+  - in_care_pec_t3_dnbi_pec_dcs
+  - in_care_pec_t3_dnbi_pec
+
+  # ── Phase duration: time in DCS surgery at Role 2 (6) ─────────────────────
+  - in_care_dcs_t1_bcas_dcr_dcs
+  - in_care_dcs_t2_bcas_dcr_dcs
+  - in_care_dcs_t3_bcas_pec_dcs
+  - in_care_dcs_t1_dnbi_dcr_dcs
+  - in_care_dcs_t2_dnbi_dcr_dcs
+  - in_care_dcs_t3_dnbi_pec_dcs
+
+  # ── Deaths by phase × triage (12) ──────────────────────────────────────────
+  # Number of patients who died while in each evacuation phase, by triage class
+  - n_died_ccp_wait_transport_T1
+  - n_died_ccp_wait_transport_T2
+  - n_died_ccp_wait_transport_T3
+  - n_died_r1_wait_care_T1
+  - n_died_r1_wait_care_T2
+  - n_died_r1_wait_care_T3
+  - n_died_r1_wait_transport_T1
+  - n_died_r1_wait_transport_T2
+  - n_died_r1_wait_transport_T3
+  - n_died_r2_wait_care_T1
+  - n_died_r2_wait_care_T2
+  - n_died_r2_wait_care_T3
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARRAY OUTCOMES (time series — saved to timeseries.npz, not results.csv)
+# Each entry is a 1-D array of length n_timesteps per run.
+# Requires data_collector_interval > 0 in the scenario YAML.
+# The naming pattern is ts_{metric}_{facility_id}_{triage}.
+# Adjust facility IDs to match your scenario's facilities.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+array_outcomes:
+
+  # ── Queue length at Role 1: patients waiting for transport ─────────────────
+  # scenario_400 has 6 Role 1 facilities (r1_1 .. r1_6) x 3 triage = 18
+  - ts_transport_r1_1_T1
+  - ts_transport_r1_1_T2
+  - ts_transport_r1_1_T3
+  - ts_transport_r1_2_T1
+  - ts_transport_r1_2_T2
+  - ts_transport_r1_2_T3
+  - ts_transport_r1_3_T1
+  - ts_transport_r1_3_T2
+  - ts_transport_r1_3_T3
+  - ts_transporssxt_r1_4_T1
+  - ts_transport_r1_4_T2
+  - ts_transport_r1_4_T3
+  - ts_transport_r1_5_T1
+  - ts_transport_r1_5_T2
+  - ts_transport_r1_5_T3
+  - ts_transport_r1_6_T1
+  - ts_transport_r1_6_T2
+  - ts_transport_r1_6_T3
+
+  # ── Queue length at Role 2: patients waiting for DCS surgery ───────────────
+  # scenario_400 has 2 Role 2 facilities (r2_1, r2_2) x 3 triage = 6
+  - ts_dcs_r2_1_T1
+  - ts_dcs_r2_1_T2
+  - ts_dcs_r2_1_T3
+  - ts_dcs_r2_2_T1
+  - ts_dcs_r2_2_T2
+  - ts_dcs_r2_2_T3
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 1000            # number of sampled uncertainty scenarios
+  n_policies: 4               # number of lever policies per scenario
+  uncertainty_sampler: lhs     # lhs | fullfactorial | mc
+  lever_sampler: fullfactorial # lhs | fullfactorial | mc
+  batch_size: 50              # max scenarios per batch (0 = no batching)
+  max_parallel: 4             # worker processes (1 = sequential)

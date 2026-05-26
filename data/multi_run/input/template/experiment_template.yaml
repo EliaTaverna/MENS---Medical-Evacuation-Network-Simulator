@@ -108,127 +108,58 @@ levers:
     values: [1, 2, 3, 6]
 
   # ══════════════════════════════════════════════════════════════════════════
-  # TRAVEL-TIME LEVERS — 3-tier ring schema (minutes)
+  # TRAVEL-TIME LEVERS — 2-level schema (minutes)
   # ══════════════════════════════════════════════════════════════════════════
-  # Each tier lever rewrites every matching cell in the travel-time matrix.
-  # Tier classification (matches the dataset builder notebook):
-  #   battalion ring (within a brigade):  same / neighbor / non_contig
-  #   brigade ring:                        same / neighbor / non_contig
-  #   cross-brigade R1↔R1:                 single flat value ("inter_bde")
-  # A lever, when omitted, leaves the corresponding edges at their scenario
-  # baseline. A tier that has zero matching cells in the current topology
-  # (e.g. *_non_contig_* under TOROIDAL=True with a 3-ring) silently sweeps
-  # with no observable effect.
+  # Matches the dataset builder notebook's distance categories:
+  #   Battalion level (within a brigade): same-BN vs. inter-BN
+  #   Brigade level:                      same-BDE vs. other-BDE (flat)
   #
-  # Legacy per-R2-type levers r2_basic_r1_* and r2_enhanced_r1_* still work
-  # for backward compatibility (applied BEFORE the unified r1_r2_* levers,
-  # so if both are set the unified value wins).
+  # Each lever rewrites every matching cell in the travel-time matrix.
+  # Omitted levers leave edges at their scenario baseline.
 
-  # ── CCP↔R1 (battalion-ring tiers; CCPs never cross brigades) ──────────────
-  - name: r1_ccp_same_min
-    type: real
-    lower: 1
-    upper: 30
-
-  - name: r1_ccp_neighbor_min
-    type: real
-    lower: 2
-    upper: 60
-
-  - name: r1_ccp_non_contig_min
+  # ── Tier 1: intra-battalion ───────────────────────────────────────────────
+  - name: ccp_r1_same_bn_min
     type: real
     lower: 5
-    upper: 90
+    upper: 20
 
-  # ── R1↔R1 (battalion-ring within brigade + flat cross-brigade) ────────────
-  - name: r1_r1_neighbor_min
+  # ── Tier 2: inter-battalion (same brigade) ──────────────────────────────
+  - name: ccp_r1_inter_bn_min
     type: real
-    lower: 2
-    upper: 60
+    lower: 20
+    upper: 45
 
-  - name: r1_r1_non_contig_min
+  - name: r1_r1_inter_bn_min
     type: real
-    lower: 5
-    upper: 90
+    lower: 20
+    upper: 45
 
-  # Flat value applied to every inter-brigade R1 pair.  Active when loose
-  # ambulance_eligibility lets R1-homed R1→R2 ambulances cross brigades.
-  - name: r1_r1_inter_bde_min
+  # ── Tier 3: intra-brigade (vertical) ────────────────────────────────────
+  - name: axp_r1_same_bde_min
     type: real
-    lower: 10
-    upper: 150
+    lower: 45
+    upper: 75
 
-  # ── R1↔AXP (brigade-ring tiers) ───────────────────────────────────────────
-  - name: r1_axp_same_min
+  - name: r1_r2_same_bde_min
     type: real
-    lower: 1
-    upper: 40
+    lower: 45
+    upper: 75
 
-  - name: r1_axp_neighbor_min
+  # ── Tier 4: inter-brigade ───────────────────────────────────────────────
+  - name: axp_r1_other_bde_min
     type: real
-    lower: 5
-    upper: 90
+    lower: 75
+    upper: 120
 
-  - name: r1_axp_non_contig_min
+  - name: r1_r2_other_bde_min
     type: real
-    lower: 10
-    upper: 150
+    lower: 75
+    upper: 120
 
-  # ── R1↔R2 (brigade-ring tiers; R2b and R2e treated uniformly) ─────────────
-  - name: r1_r2_same_min
+  - name: r2_r2_other_bde_min
     type: real
-    lower: 2
-    upper: 60
-
-  - name: r1_r2_neighbor_min
-    type: real
-    lower: 5
-    upper: 100
-
-  - name: r1_r2_non_contig_min
-    type: real
-    lower: 10
-    upper: 200
-
-  # ── AXP↔R2 (brigade-ring tiers; R2b and R2e treated uniformly) ────────────
-  - name: axp_r2_same_min
-    type: real
-    lower: 1
-    upper: 40
-
-  - name: axp_r2_neighbor_min
-    type: real
-    lower: 5
-    upper: 90
-
-  - name: axp_r2_non_contig_min
-    type: real
-    lower: 10
-    upper: 150
-
-  # ── Legacy per-R2-type levers (kept for backward compat) ──────────────────
-  # Prefer the unified r1_r2_* levers above for new experiments.  These four
-  # are still honoured — they run first and are overridden by any unified
-  # value set alongside them.
-  - name: r2_basic_r1_same_min
-    type: real
-    lower: 2
-    upper: 60
-
-  - name: r2_basic_r1_neighbor_min
-    type: real
-    lower: 5
-    upper: 100
-
-  - name: r2_enhanced_r1_same_min
-    type: real
-    lower: 2
-    upper: 60
-
-  - name: r2_enhanced_r1_neighbor_min
-    type: real
-    lower: 5
-    upper: 100
+    lower: 75
+    upper: 120
 
   # Overrides the capacity (max simultaneous patients) of every DCS unit
   # across all facilities.
@@ -482,6 +413,21 @@ outcomes:
   - in_care_dcs_t1_dnbi_dcr_dcs
   - in_care_dcs_t2_dnbi_dcr_dcs
   - in_care_dcs_t3_dnbi_pec_dcs
+
+  # ── Deaths by phase × triage (12) ──────────────────────────────────────────
+  # Number of patients who died while in each evacuation phase, by triage class
+  - n_died_ccp_wait_transport_T1
+  - n_died_ccp_wait_transport_T2
+  - n_died_ccp_wait_transport_T3
+  - n_died_r1_wait_care_T1
+  - n_died_r1_wait_care_T2
+  - n_died_r1_wait_care_T3
+  - n_died_r1_wait_transport_T1
+  - n_died_r1_wait_transport_T2
+  - n_died_r1_wait_transport_T3
+  - n_died_r2_wait_care_T1
+  - n_died_r2_wait_care_T2
+  - n_died_r2_wait_care_T3
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

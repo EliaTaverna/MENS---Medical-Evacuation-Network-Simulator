@@ -172,6 +172,21 @@ outcomes:
   - in_care_dcs_t2_dnbi_dcr_dcs
   - in_care_dcs_t3_dnbi_pec_dcs
 
+  # ── Deaths by phase × triage (12) ──────────────────────────────────────────
+  # Number of patients who died while in each evacuation phase, by triage class
+  - n_died_ccp_wait_transport_T1
+  - n_died_ccp_wait_transport_T2
+  - n_died_ccp_wait_transport_T3
+  - n_died_r1_wait_care_T1
+  - n_died_r1_wait_care_T2
+  - n_died_r1_wait_care_T3
+  - n_died_r1_wait_transport_T1
+  - n_died_r1_wait_transport_T2
+  - n_died_r1_wait_transport_T3
+  - n_died_r2_wait_care_T1
+  - n_died_r2_wait_care_T2
+  - n_died_r2_wait_care_T3
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # ARRAY OUTCOMES  (time series — saved to timeseries.npz, not results.csv)
 # Each entry is a 1-D array of length n_timesteps per run.

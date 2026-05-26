@@ -13,7 +13,7 @@ from src.helpers.helpers_run import prepare_run, save_logs, save_network_image, 
 
 if __name__ == "__main__":
     data, settings, run_folder = prepare_run(
-        scenario_path="data/single_run/input/scenarios/scenario_second_test.yaml",
+        scenario_path="data/single_run/input/scenarios/scenario_elia_midterm.yaml",
     )
     results = run_simulation(data, settings, run_folder)
 
@@ -23,5 +23,4 @@ if __name__ == "__main__":
         save_gantt_chart(data, results)
     if settings["make_video"]:
         make_video(data, results, settings)
-
     print_summary(results, data)

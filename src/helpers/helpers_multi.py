@@ -279,6 +279,41 @@ def compute_outcomes(results: dict) -> dict:
         phase_durations = _compute_phase_durations(patient_log_df)
         outcomes.update(phase_durations)
 
+    # Deaths by phase × triage
+    if patient_log_df is not None and not patient_log_df.empty:
+        _PHASE_TO_LOC = {
+            "WAITING_TRANSPORT:ccp":   "ccp_wait_transport",
+            "WAITING_CARE:dcr":        "r1_wait_care",
+            "WAITING_CARE:pec":        "r1_wait_care",
+            "WAITING_TRANSPORT:role1": "r1_wait_transport",
+            "WAITING_CARE:dcs":        "r2_wait_care",
+        }
+        _LOCATIONS = ["ccp_wait_transport", "r1_wait_care",
+                       "r1_wait_transport", "r2_wait_care"]
+        death_counts: dict[str, int] = {}
+        for loc in _LOCATIONS:
+            for t in ["T1", "T2", "T3"]:
+                death_counts[f"n_died_{loc}_{t}"] = 0
+
+        dead_ids = patient_log_df.loc[
+            patient_log_df["action"] == "DIED", "patient_id"
+        ].unique()
+        for pid in dead_ids:
+            prows = patient_log_df[patient_log_df["patient_id"] == pid].sort_values("time")
+            died_idx = prows.index[prows["action"] == "DIED"][0]
+            pos = prows.index.get_loc(died_idx)
+            for i in range(pos - 1, -1, -1):
+                act = prows.iloc[i]["action"]
+                if act in _PHASE_TO_LOC:
+                    triage_raw = str(prows.iloc[i]["triage"])
+                    t_short = triage_raw.split("_")[0] if "_" in triage_raw else triage_raw
+                    loc = _PHASE_TO_LOC[act]
+                    key = f"n_died_{loc}_{t_short}"
+                    if key in death_counts:
+                        death_counts[key] += 1
+                    break
+        outcomes.update(death_counts)
+
     # Time series from DataCollector
     records = results.get("data_collector_records", [])
     if records:

@@ -6,5 +6,5 @@ bcas_rate: 0.05
 dnbi_rate: 0
 
 diagnosis_mix: casualty_generation_settings/diagnosis/diagnosis_mix_meisner.xlsx
-prescriptions: casualty_generation_settings/prescriptions/prescriptions_second_test.xlsx
+prescriptions: casualty_generation_settings/prescriptions/prescriptions_demonstration.xlsx
 force_structure: casualty_generation_settings/military_force_structure/force_structure_second_test.xlsx
