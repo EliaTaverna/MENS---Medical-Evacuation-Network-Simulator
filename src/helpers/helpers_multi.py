@@ -418,6 +418,13 @@ def compute_outcomes(results: dict) -> dict:
                 _phase_completed[f"{phase_name}_{t}"] = 0
                 _phase_started[f"{phase_name}_{t}"]   = 0
 
+        # Timeline tracking for T2: fraction meeting evacuation timelines
+        # R1 care within 1h of CCP arrival, R2 care within 2h of CCP arrival
+        _T2_TIMELINE_R1_MAX = 60.0    # minutes
+        _T2_TIMELINE_R2_MAX = 120.0   # minutes
+        _t2_total = 0
+        _t2_within = 0
+
         for pid, grp in patient_log_df.groupby("patient_id"):
             triage_raw = str(grp["triage"].iloc[0])
             t_short = triage_raw.split("_")[0] if "_" in triage_raw else triage_raw
@@ -428,6 +435,13 @@ def compute_outcomes(results: dict) -> dict:
             actions = rows["action"].tolist()
             times = rows["time"].tolist()
             died = "DIED" in actions
+
+            # Track key timestamps for timeline KPI (T2 only)
+            t_ccp = None       # time entering CCP (WAITING_TRANSPORT:ccp)
+            t_r1_care = None   # time R1 care starts (CLOCK_PAUSED:care after dcr/pec)
+            t_r2_care = None   # time R2 care starts (CLOCK_PAUSED:care after dcs)
+            _saw_r1_wait = False
+            _saw_r2_wait = False
 
             for phase_name, checks in _PHASES.items():
                 key = f"{phase_name}_{t_short}"
@@ -452,8 +466,36 @@ def compute_outcomes(results: dict) -> dict:
                     _phase_durations[key].append(times[end_idx] - times[start_idx])
                     _phase_completed[key] += 1
                 elif died:
-                    _phase_durations[key].append(float("inf"))
+                    pass  # died during phase — excluded from median, counted in mortality
                 # else: simulation ended mid-phase, exclude
+
+                # Collect timestamps for timeline KPI
+                if t_short == "T2":
+                    if phase_name == "ccp_transport" and start_idx is not None:
+                        t_ccp = times[start_idx]
+                    elif phase_name == "r1_care":
+                        _saw_r1_wait = True
+                        if end_idx is not None:
+                            t_r1_care = times[end_idx]
+                    elif phase_name == "r2_care":
+                        _saw_r2_wait = True
+                        if end_idx is not None:
+                            t_r2_care = times[end_idx]
+
+            # Evaluate timeline for this T2 patient
+            if t_short == "T2" and t_ccp is not None:
+                _t2_total += 1
+                # R1 timeline: must reach R1 care
+                r1_ok = (t_r1_care is not None and
+                         (t_r1_care - t_ccp) <= _T2_TIMELINE_R1_MAX)
+                # R2 timeline: only checked if patient entered R2 care phase
+                if _saw_r2_wait:
+                    r2_ok = (t_r2_care is not None and
+                             (t_r2_care - t_ccp) <= _T2_TIMELINE_R2_MAX)
+                else:
+                    r2_ok = True  # no R2 needed
+                if r1_ok and r2_ok:
+                    _t2_within += 1
 
         for phase_name in _PHASES:
             for t in ("T1", "T2"):
@@ -465,6 +507,15 @@ def compute_outcomes(results: dict) -> dict:
                     outcomes[f"median_wait_{key}"] = 0.0
                 outcomes[f"n_completed_{key}"] = _phase_completed[key]
                 outcomes[f"n_started_{key}"]   = _phase_started[key]
+                started = _phase_started[key]
+                outcomes[f"mortality_{key}"] = (
+                    (started - _phase_completed[key]) / started
+                    if started > 0 else 0.0
+                )
+
+        outcomes["frac_t2_within_timeline"] = (
+            _t2_within / _t2_total if _t2_total > 0 else 0.0
+        )
     else:
         for phase_name in _PHASES:
             for t in ("T1", "T2"):
@@ -472,6 +523,8 @@ def compute_outcomes(results: dict) -> dict:
                 outcomes[f"median_wait_{key}"] = 0.0
                 outcomes[f"n_completed_{key}"] = 0
                 outcomes[f"n_started_{key}"]   = 0
+                outcomes[f"mortality_{key}"]   = 0.0
+        outcomes["frac_t2_within_timeline"] = 0.0
 
     # Time series from DataCollector
     records = results.get("data_collector_records", [])

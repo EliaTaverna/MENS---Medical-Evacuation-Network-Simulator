@@ -1,0 +1,182 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT 7 — LHS WITH 3-LEVEL POOLING & NEW OUTCOMES
+# ═══════════════════════════════════════════════════════════════════════════════
+# Same uncertainty ranges as the midterm 16k run (experiment 4), but with:
+#   - 3-level pooling levers (strict / bn_pool / bde_pool)
+#   - New outcomes: median phase waits, per-phase mortality, timeline compliance
+#
+# 4000 LHS scenarios × 9 FF policies = 36,000 total runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_elia_midterm.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+uncertainties:
+
+  - name: seed
+    type: integer
+    lower: 1
+    upper: 10000
+
+  - name: bcas_rate
+    type: real
+    lower: 0.001
+    upper: 0.1
+
+  - name: waves_per_day
+    type: integer
+    lower: 1
+    upper: 10
+
+  - name: wave_duration_min
+    type: integer
+    lower: 1
+    upper: 60
+
+  - name: fraction_t1_bcas
+    type: real
+    lower: 0.0
+    upper: 0.5
+
+  - name: fraction_t2_bcas
+    type: real
+    lower: 0.0
+    upper: 0.5
+
+  # ── Travel times ───────────────────────────────────────────────────────────
+  - name: ccp_r1_same_bn_min
+    type: real
+    lower: 5
+    upper: 20
+
+  - name: ccp_r1_inter_bn_min
+    type: real
+    lower: 20
+    upper: 45
+
+  - name: r1_r1_inter_bn_min
+    type: real
+    lower: 20
+    upper: 45
+
+  - name: axp_r1_same_bde_min
+    type: real
+    lower: 45
+    upper: 75
+
+  - name: r1_r2_same_bde_min
+    type: real
+    lower: 45
+    upper: 75
+
+  - name: axp_r1_other_bde_min
+    type: real
+    lower: 75
+    upper: 120
+
+  - name: r1_r2_other_bde_min
+    type: real
+    lower: 75
+    upper: 120
+
+  - name: r2_r2_other_bde_min
+    type: real
+    lower: 75
+    upper: 120
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS — 2 ordinal pooling levels (3 × 3 = 9 FF policies)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Each maps to 4 binary dimensions (transport/capacity × bn/bde):
+#   0 = strict:   own battalion only             (bn=0, bde=0)
+#   1 = bn_pool:  any battalion within brigade    (bn=1, bde=0)
+#   2 = bde_pool: across brigades too             (bn=1, bde=1)
+
+levers:
+
+  # Capacity pooling: which destination facilities are reachable
+  - name: facility_eligibility
+    type: integer
+    lower: 0
+    upper: 2
+
+  # Transport pooling: which ambulances can serve which facilities
+  - name: ambulance_eligibility
+    type: integer
+    lower: 0
+    upper: 2
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES (33)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Median wait = survivors only. Mortality = fraction who entered but died.
+
+outcomes:
+
+  # ── Death rates (2) ────────────────────────────────────────────────────────
+  - death_rate_T1_BCAS            # fraction of T1 battle casualties who died
+  - death_rate_T2_BCAS            # fraction of T2 battle casualties who died
+
+  # ── Waiting for transport at CCP (6) ───────────────────────────────────────
+  - median_wait_ccp_transport_T1  # median minutes waiting for ambulance at CCP
+  - median_wait_ccp_transport_T2
+  - n_started_ccp_transport_T1    # how many T1 entered this phase
+  - n_started_ccp_transport_T2
+  - n_completed_ccp_transport_T1  # how many T1 got picked up (completed phase)
+  - n_completed_ccp_transport_T2
+
+  # ── Waiting for care at R1 (6) ─────────────────────────────────────────────
+  - median_wait_r1_care_T1        # median minutes waiting for DCR/PEC at R1
+  - median_wait_r1_care_T2
+  - n_started_r1_care_T1
+  - n_started_r1_care_T2
+  - n_completed_r1_care_T1        # how many T1 received R1 care
+  - n_completed_r1_care_T2
+
+  # ── Waiting for transport at R1 (6) ────────────────────────────────────────
+  - median_wait_r1_transport_T1   # median minutes waiting for transfer to R2
+  - median_wait_r1_transport_T2
+  - n_started_r1_transport_T1
+  - n_started_r1_transport_T2
+  - n_completed_r1_transport_T1   # how many T1 got transferred to R2
+  - n_completed_r1_transport_T2
+
+  # ── Waiting for care at R2 (4) ─────────────────────────────────────────────
+  - median_wait_r2_care_T1        # median minutes waiting for DCS surgery
+  - median_wait_r2_care_T2
+  - n_started_r2_care_T1
+  - n_started_r2_care_T2
+
+  # ── Per-phase mortality rates (8) ────────────────────────────────────────────
+  # Fraction of patients who entered a phase but died during it
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Evacuation timeline compliance (1) ─────────────────────────────────────
+  - frac_t2_within_timeline       # fraction of T2 meeting R1≤1h AND R2≤2h from CCP
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 4000              # LHS scenarios
+  n_policies: 9                  # 3 × 3 full factorial (transport × capacity)
+  uncertainty_sampler: lhs
+  lever_sampler: fullfactorial
+  batch_size: 50                 # max scenarios per batch
+  max_parallel: 4                # worker processes
