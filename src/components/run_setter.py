@@ -580,10 +580,39 @@ class RunSetter:
     # ── Levers ────────────────────────────────────────────────────────────────
 
     def _apply_levers(self, kwargs: dict, seed: int) -> dict:
-        """Build the levers dict, overriding any scenario defaults with kwargs values."""
+        """Build the levers dict, overriding any scenario defaults with kwargs values.
+
+        Supports decomposed binary pooling levers: if any of
+        ``{transport,capacity}_{bn,bde}_pool`` are present in kwargs,
+        they are mapped to the integer ``ambulance_eligibility`` and
+        ``facility_eligibility`` values the simulation expects:
+
+            bn=0, bde=0 → 0 (strict)
+            bn=1, bde=0 → 1 (bn_pool)
+            bn=1, bde=1 → 2 (bde_pool)
+        """
         levers = dict(self.scenario.get("levers", {}))
+
+        # Map 4 binary levers → 2 integer eligibility values
+        _BINARY_LEVER_GROUPS = {
+            "ambulance_eligibility":  ("transport_bn_pool", "transport_bde_pool"),
+            "facility_eligibility":   ("capacity_bn_pool",  "capacity_bde_pool"),
+        }
+        _binary_keys = set()
+        for elig_key, (bn_key, bde_key) in _BINARY_LEVER_GROUPS.items():
+            if bn_key in kwargs or bde_key in kwargs:
+                bn  = int(kwargs.get(bn_key, 0))
+                bde = int(kwargs.get(bde_key, 0))
+                if bde:
+                    levers[elig_key] = 2   # bde_pool (implies bn)
+                elif bn:
+                    levers[elig_key] = 1   # bn_pool
+                else:
+                    levers[elig_key] = 0   # strict
+                _binary_keys.update((bn_key, bde_key))
+
         for key, val in kwargs.items():
-            if key in levers:
+            if key in levers and key not in _binary_keys:
                 levers[key] = val
         levers["random_seed"] = seed
         return levers

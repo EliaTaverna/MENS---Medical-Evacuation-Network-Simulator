@@ -274,6 +274,69 @@ def compute_outcomes(results: dict) -> dict:
                     total_time += arr["time"] - matching.iloc[-1]["time"]
     outcomes["total_transport_time"] = total_time
 
+    # ── Pooling counts ──────────────────────────────────────────────────
+    # Count trips that are same-battalion vs cross-battalion (within brigade)
+    # vs cross-brigade, separately for facility (destination) and transport
+    # (which ambulance picked up).
+    _pool_keys = [
+        "n_facility_same_bn", "n_facility_cross_bn",
+        "n_facility_same_bde", "n_facility_cross_bde",
+        "n_transport_same_bn", "n_transport_cross_bn",
+        "n_transport_same_bde", "n_transport_cross_bde",
+    ]
+    for k in _pool_keys:
+        outcomes[k] = 0
+
+    def _parse_bde_bn(loc_id: str):
+        """Extract (brigade, battalion) from a facility ID like ccp_br1_bt2_3."""
+        bde, bn = None, None
+        for part in str(loc_id).lower().split("_"):
+            if part.startswith("br"):
+                bde = part
+            elif part.startswith("bt"):
+                bn = part
+        return bde, bn
+
+    if not transport_events.empty:
+        departures = transport_events[transport_events["event"] == "departure"].copy()
+
+        # Build ambulance home lookup: amb_id -> (brigade, battalion)
+        amb_home = {}
+        ambulance_df = results.get("ambulance_df")
+        if ambulance_df is not None:
+            for _, row in ambulance_df.iterrows():
+                amb_home[str(row["amb_id"])] = _parse_bde_bn(row["start_loc_id"])
+
+        for _, dep in departures.iterrows():
+            from_bde, from_bn = _parse_bde_bn(dep["from_loc"])
+            to_bde, to_bn = _parse_bde_bn(dep["to_loc"])
+
+            # Facility pooling: compare origin vs destination
+            # Skip trips where either end lacks a battalion (e.g. R1→R2)
+            if from_bde and to_bde:
+                if from_bde != to_bde:
+                    outcomes["n_facility_cross_bde"] += 1
+                elif from_bn and to_bn and from_bn != to_bn:
+                    outcomes["n_facility_cross_bn"] += 1
+                    outcomes["n_facility_same_bde"] += 1
+                elif from_bn and to_bn:
+                    outcomes["n_facility_same_bn"] += 1
+                    outcomes["n_facility_same_bde"] += 1
+                # else: one or both lack a battalion → skip bn-level count
+
+            # Transport pooling: compare ambulance home vs pickup location
+            amb_id = str(dep["amb_id"])
+            home_bde, home_bn = amb_home.get(amb_id, (None, None))
+            if home_bde and from_bde:
+                if home_bde != from_bde:
+                    outcomes["n_transport_cross_bde"] += 1
+                elif home_bn and from_bn and home_bn != from_bn:
+                    outcomes["n_transport_cross_bn"] += 1
+                    outcomes["n_transport_same_bde"] += 1
+                else:
+                    outcomes["n_transport_same_bn"] += 1
+                    outcomes["n_transport_same_bde"] += 1
+
     # Phase durations from advanced patient log
     if patient_log_df is not None and not patient_log_df.empty:
         phase_durations = _compute_phase_durations(patient_log_df)
@@ -313,6 +376,102 @@ def compute_outcomes(results: dict) -> dict:
                         death_counts[key] += 1
                     break
         outcomes.update(death_counts)
+
+    # ── Median phase wait times & completion counts ────────────────────
+    # For each phase × triage (T1, T2):
+    #   - Patients who entered and completed the phase: duration = end - start
+    #   - Patients who entered but died during: duration = inf (pushes median up)
+    #   - Patients who never entered (died before or not generated): excluded
+    # Phases:
+    #   ccp_transport:  WAITING_TRANSPORT:ccp  → CLOCK_PAUSED:transport
+    #   r1_care:        WAITING_CARE:(dcr|pec) → CLOCK_PAUSED:care
+    #   r1_transport:   WAITING_TRANSPORT:role1 → CLOCK_PAUSED:transport
+    #   r2_care:        WAITING_CARE:dcs        → CLOCK_PAUSED:care
+    _PHASES = {
+        "ccp_transport": {
+            "start": lambda a: a == "WAITING_TRANSPORT:ccp",
+            "end":   lambda a: a == "CLOCK_PAUSED:transport",
+        },
+        "r1_care": {
+            "start": lambda a: a in ("WAITING_CARE:dcr", "WAITING_CARE:pec"),
+            "end":   lambda a: a == "CLOCK_PAUSED:care",
+        },
+        "r1_transport": {
+            "start": lambda a: a == "WAITING_TRANSPORT:role1",
+            "end":   lambda a: a == "CLOCK_PAUSED:transport",
+        },
+        "r2_care": {
+            "start": lambda a: a == "WAITING_CARE:dcs",
+            "end":   lambda a: a == "CLOCK_PAUSED:care",
+        },
+    }
+
+    if patient_log_df is not None and not patient_log_df.empty:
+        # Pre-group by patient for efficiency
+        _phase_durations: dict[str, list] = {}     # phase_triage -> list of durations (inf for died)
+        _phase_completed: dict[str, int]  = {}     # phase_triage -> count completed
+        _phase_started:   dict[str, int]  = {}     # phase_triage -> count entered
+
+        for phase_name in _PHASES:
+            for t in ("T1", "T2"):
+                _phase_durations[f"{phase_name}_{t}"] = []
+                _phase_completed[f"{phase_name}_{t}"] = 0
+                _phase_started[f"{phase_name}_{t}"]   = 0
+
+        for pid, grp in patient_log_df.groupby("patient_id"):
+            triage_raw = str(grp["triage"].iloc[0])
+            t_short = triage_raw.split("_")[0] if "_" in triage_raw else triage_raw
+            if t_short not in ("T1", "T2"):
+                continue
+
+            rows = grp.sort_values("time")
+            actions = rows["action"].tolist()
+            times = rows["time"].tolist()
+            died = "DIED" in actions
+
+            for phase_name, checks in _PHASES.items():
+                key = f"{phase_name}_{t_short}"
+                # Find first start action
+                start_idx = None
+                for i, a in enumerate(actions):
+                    if checks["start"](a):
+                        start_idx = i
+                        break
+                if start_idx is None:
+                    continue  # never entered this phase
+                _phase_started[key] += 1
+
+                # Find first end action after start
+                end_idx = None
+                for j in range(start_idx + 1, len(actions)):
+                    if checks["end"](actions[j]):
+                        end_idx = j
+                        break
+
+                if end_idx is not None:
+                    _phase_durations[key].append(times[end_idx] - times[start_idx])
+                    _phase_completed[key] += 1
+                elif died:
+                    _phase_durations[key].append(float("inf"))
+                # else: simulation ended mid-phase, exclude
+
+        for phase_name in _PHASES:
+            for t in ("T1", "T2"):
+                key = f"{phase_name}_{t}"
+                durations = _phase_durations[key]
+                if durations:
+                    outcomes[f"median_wait_{key}"] = float(np.median(durations))
+                else:
+                    outcomes[f"median_wait_{key}"] = 0.0
+                outcomes[f"n_completed_{key}"] = _phase_completed[key]
+                outcomes[f"n_started_{key}"]   = _phase_started[key]
+    else:
+        for phase_name in _PHASES:
+            for t in ("T1", "T2"):
+                key = f"{phase_name}_{t}"
+                outcomes[f"median_wait_{key}"] = 0.0
+                outcomes[f"n_completed_{key}"] = 0
+                outcomes[f"n_started_{key}"]   = 0
 
     # Time series from DataCollector
     records = results.get("data_collector_records", [])

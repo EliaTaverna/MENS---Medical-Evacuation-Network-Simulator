@@ -258,6 +258,7 @@ def collect_results(env, data: dict, settings: dict, run_folder: Path) -> dict:
         "sim_duration": settings["till"],
         "run_folder": run_folder,
         "travel_time_matrix": data["travel_time_matrix"],
+        "ambulance_df": data.get("ambulance_df"),
         "outputs": settings.get("outputs", _DEFAULT_OUTPUTS),
         "c2_dispatch_logs": c2_dispatch_logs,
         "data_collector_records": env.data_collector_records,
