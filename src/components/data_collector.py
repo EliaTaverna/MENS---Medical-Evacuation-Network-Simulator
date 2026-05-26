@@ -46,7 +46,7 @@ class DataCollector(sim.Component):
                          **counts_dcr}
                     )
 
-                elif fac.facility_type == "Role2":
+                elif fac.facility_type.startswith("Role2"):
                     dcs_queue = fac.entry_lines.get("DCS", [])
                     counts = {"T1": 0, "T2": 0, "T3": 0}
                     for p in dcs_queue:
