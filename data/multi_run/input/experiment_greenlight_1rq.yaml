@@ -14,35 +14,32 @@ output_folder: data/multi_run/output
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# UNCERTAINTIES (11 — seed moved to levers; r1_r1 and r2_r2 removed as unused)
+# UNCERTAINTIES (11 — r1_r1 and r2_r2 removed as unused)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 uncertainties:
 
   - name: bcas_rate
-    type: real
-    lower: 0.001
-    upper: 0.1
+    type: categorical
+    values: [0.1, 0.3, 0.6]
 
   - name: waves_per_day
-    type: integer
-    lower: 1
-    upper: 10
+    type: categorical
+    values: [1, 5, 10]
 
   - name: wave_duration_min
-    type: integer
-    lower: 1
-    upper: 60
+    type: categorical
+    values: [1, 30, 60]
 
   - name: fraction_t1_bcas
     type: real
-    lower: 0.0
-    upper: 0.5
+    lower: 0.1
+    upper: 0.2
 
   - name: fraction_t2_bcas
     type: real
-    lower: 0.0
-    upper: 0.5
+    lower: 0.2
+    upper: 0.3
 
   # ── Travel times ───────────────────────────────────────────────────────────
   - name: ccp_r1_same_bn_min
@@ -80,8 +77,6 @@ uncertainties:
 # ═══════════════════════════════════════════════════════════════════════════════
 # LEVERS — 3-level pooling × 10 seed replications (3 × 3 × 10 = 90 FF)
 # ═══════════════════════════════════════════════════════════════════════════════
-# Seed is a lever so each scenario gets all 10 seeds paired identically,
-# enabling paired statistical tests (e.g. paired t-test on policy diffs).
 
 levers:
 
