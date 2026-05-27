@@ -178,7 +178,7 @@ outcomes:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 run_settings:
-  n_scenarios: 4000              # LHS scenarios
+  n_scenarios: 100               # LHS scenarios (100 × 9 policies = 900 runs)
   n_policies: 9                  # 3 × 3 full factorial (transport × capacity)
   uncertainty_sampler: lhs
   lever_sampler: fullfactorial

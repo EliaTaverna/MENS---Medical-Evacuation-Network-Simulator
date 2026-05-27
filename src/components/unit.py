@@ -52,9 +52,16 @@ class Unit(sim.Component):
         return 1.0
 
     def expected_wait_if_join_now(self) -> float:
-        """Calculate expected waiting time if a patient joins the queue now."""
+        """Calculate expected waiting time if a patient joins the queue now.
+
+        Accounts for both patients physically in the queue *and* patients
+        currently in transit to this facility (tracked via
+        ``facility.incoming_patients``).
+        """
         q = self.facility.entry_lines[self.service_type]
-        n = len(q)
+        n_queue = len(q)
+        n_incoming = getattr(self.facility, "incoming_patients", {}).get(self.service_type, 0)
+        n = n_queue + n_incoming
         M = self.capacity
         if M == 0:
             return float("inf")

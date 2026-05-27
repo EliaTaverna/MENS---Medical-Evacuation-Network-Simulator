@@ -25,6 +25,7 @@ class Facility(sim.Component):
         self.load_key = load_key
         self.units = {st: None for st in self.service_types}
         self.entry_lines = {st: [] for st in self.service_types}
+        self.incoming_patients = {st: 0 for st in self.service_types}
         self.exit_queue: List[TransportRequest] = []
         self._amb_queue: List = []
 
@@ -42,6 +43,9 @@ class Facility(sim.Component):
         needed = p.unit_needed
 
         if needed in self.entry_lines:
+            # Patient arrived — no longer in transit
+            if self.incoming_patients.get(needed, 0) > 0:
+                self.incoming_patients[needed] -= 1
             # stamp join time (for realized wait)
             p._unit_queue_entry_time = self.env.now()
             unit = self.units[needed]

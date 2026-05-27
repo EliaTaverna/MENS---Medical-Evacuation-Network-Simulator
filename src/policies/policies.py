@@ -187,6 +187,15 @@ def craft_plans(
         pickup_step = PlanStep(facility=pickup_fac, unload_patients=[], load_patients=patients)
         dropoff_step = PlanStep(facility=dropoff_fac, unload_patients=patients, load_patients=[])
 
+        # Register in-transit patients so destination's expected_wait accounts
+        # for them before they physically arrive.
+        incoming = getattr(dropoff_fac, "incoming_patients", None)
+        if incoming is not None:
+            for p in patients:
+                svc = getattr(p, "unit_needed", None)
+                if svc and svc in incoming:
+                    incoming[svc] += 1
+
         plans[amb_id] = [pickup_step, dropoff_step]
 
     return plans
