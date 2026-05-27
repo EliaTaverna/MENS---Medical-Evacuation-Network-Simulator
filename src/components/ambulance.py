@@ -62,6 +62,7 @@ class Ambulance(sim.Component):
 
             # 2) I've been dispatched
             self._leave_current_spot()
+            self._log_mission_event("mission_start")
 
             # 3) Execute plan to completion
             for step in self.plan or []:
@@ -70,17 +71,47 @@ class Ambulance(sim.Component):
                 self._travel_to(step.facility)
 
                 self.location = step.facility
+
+                # Hold for unloading (patients still on board, clocks paused)
+                if self.load_unload_time_max > 0 and self.onboard:
+                    lo, hi = self.load_unload_time_min, self.load_unload_time_max
+                    self.hold(random.uniform(lo, hi))
+
                 step.facility.ambulance_arrives(self)
                 self.passivate()  # facility wakes me after load/unload
 
-                if self.load_unload_time_max > 0:
+                # Hold for loading (new patients already on board)
+                if self.load_unload_time_max > 0 and self.onboard:
                     lo, hi = self.load_unload_time_min, self.load_unload_time_max
-                    self.hold(random.uniform(lo, hi) + random.uniform(lo, hi))
+                    self.hold(random.uniform(lo, hi))
 
             # 4) Plan complete: stay where you are (last location)
+            self._log_mission_event("mission_end")
             self.current_step = None
             self.plan = None
             # loop back: will announce idle at this same location next iteration
+
+    def _log_mission_event(self, event_type: str):
+        """Log a mission_start or mission_end event to transport_events."""
+        if not hasattr(self.env, "transport_events"):
+            return
+        plan_patients = []
+        if self.plan:
+            for s in self.plan:
+                for p in s.load_patients:
+                    plan_patients.append({
+                        "patient_id": p.patient_id,
+                        "triage": p.triage,
+                    })
+        self.env.transport_events.append({
+            "time": float(self.env.now()),
+            "event": event_type,
+            "amb_id": self.amb_id,
+            "from_loc": self._loc_id(self.location) if self.location else "",
+            "to_loc": "",
+            "patient_ids": [pp["patient_id"] for pp in plan_patients],
+            "patient_triages": [pp["triage"] for pp in plan_patients],
+        })
 
     def _travel_to(self, destination):
         from_id = self._loc_id(self.location)
@@ -94,7 +125,8 @@ class Ambulance(sim.Component):
                 "amb_id": self.amb_id,
                 "from_loc": from_id,
                 "to_loc": to_id,
-                "patient_triages": [p.triage for p in self.onboard].copy(),
+                "patient_ids": [p.patient_id for p in self.onboard],
+                "patient_triages": [p.triage for p in self.onboard],
             })
         minutes = self.env.travel_time_matrix.loc[from_id, to_id]
         self.hold(float(minutes))
@@ -105,5 +137,6 @@ class Ambulance(sim.Component):
                 "amb_id": self.amb_id,
                 "from_loc": from_id,
                 "to_loc": to_id,
-                "patient_triages": [p.triage for p in self.onboard].copy(),
+                "patient_ids": [p.patient_id for p in self.onboard],
+                "patient_triages": [p.triage for p in self.onboard],
             })

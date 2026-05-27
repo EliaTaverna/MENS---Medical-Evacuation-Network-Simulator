@@ -404,6 +404,168 @@ def save_gantt_chart(data: dict, results: dict) -> None:
     print(f"Gantt chart saved to {path}")
 
 
+def save_ambulance_gantt(results: dict) -> None:
+    """Save interactive Gantt charts of ambulance missions (CCP→R1 and R1→R2)."""
+    transport_df = results.get("transport_df", pd.DataFrame())
+    if transport_df.empty or "event" not in transport_df.columns:
+        return
+    if "mission_start" not in transport_df["event"].values:
+        return
+
+    import plotly.graph_objects as go
+
+    # ── Build missions from transport events ────────────────────────────
+    def _parse_mission(amb_id, events):
+        dispatch_time = events[0]["time"]
+        deps = [e for e in events if e["event"] == "departure"]
+        arrs = [e for e in events if e["event"] == "arrival"]
+
+        plan_triages = events[0].get("patient_triages", [])
+        if isinstance(plan_triages, str):
+            import json
+            plan_triages = json.loads(plan_triages)
+
+        n_t1 = sum(1 for t in plan_triages if str(t).startswith("T1"))
+        n_t2 = sum(1 for t in plan_triages if str(t).startswith("T2"))
+        n_t3 = sum(1 for t in plan_triages if str(t).startswith("T3"))
+
+        pickup_arrival_time = dispatch_time
+        delivery_depart_time = dispatch_time
+        delivery_arrival_time = dispatch_time
+        origin = ""
+        destination = ""
+
+        if arrs:
+            pickup_arrival_time = arrs[0]["time"]
+            origin = arrs[0].get("to_loc", "")
+        if len(deps) >= 2:
+            delivery_depart_time = deps[1]["time"]
+        elif len(deps) == 1 and not arrs:
+            delivery_depart_time = deps[0]["time"]
+        if len(arrs) >= 2:
+            delivery_arrival_time = arrs[-1]["time"]
+            destination = arrs[-1].get("to_loc", "")
+        elif len(arrs) == 1 and len(deps) <= 1:
+            delivery_arrival_time = arrs[0]["time"]
+            destination = arrs[0].get("to_loc", "")
+
+        return {
+            "amb_id": amb_id,
+            "dispatch_time": dispatch_time,
+            "pickup_arrival_time": pickup_arrival_time,
+            "delivery_depart_time": delivery_depart_time,
+            "delivery_arrival_time": delivery_arrival_time,
+            "origin": origin, "destination": destination,
+            "n_t1": n_t1, "n_t2": n_t2, "n_t3": n_t3,
+        }
+
+    missions = []
+    for amb_id, grp in transport_df.sort_values("time").groupby("amb_id"):
+        rows = grp.to_dict("records")
+        buf, in_mission = [], False
+        for row in rows:
+            evt = row["event"]
+            if evt == "mission_start":
+                in_mission, buf = True, [row]
+            elif evt == "mission_end" and in_mission:
+                buf.append(row)
+                missions.append(_parse_mission(amb_id, buf))
+                in_mission, buf = False, []
+            elif in_mission:
+                buf.append(row)
+
+    if not missions:
+        return
+    missions_df = pd.DataFrame(missions)
+
+    # ── Classify into CCP→R1 vs R1→R2 ──────────────────────────────────
+    ccp_r1_ambs, r1_r2_ambs = set(), set()
+    for aid, grp in missions_df.groupby("amb_id"):
+        origins = grp["origin"].str.lower()
+        dests = grp["destination"].str.lower()
+        if origins.str.contains("ccp").any() or dests.str.startswith("r1_").any():
+            ccp_r1_ambs.add(aid)
+        elif origins.str.startswith("r1_").any() or dests.str.startswith("r2").any():
+            r1_r2_ambs.add(aid)
+        else:
+            ccp_r1_ambs.add(aid)
+
+    # ── Plot helper ─────────────────────────────────────────────────────
+    LIGHT = "rgba(52, 152, 219, 0.45)"
+    DARK  = "rgba(41, 128, 185, 1.0)"
+
+    def _make_fig(m_df, title):
+        if m_df.empty:
+            return None
+        amb_order = sorted(m_df["amb_id"].unique())
+        fig = go.Figure()
+        for _, m in m_df.iterrows():
+            cargo = f"T1: {m['n_t1']}  T2: {m['n_t2']}  T3: {m['n_t3']}"
+            hover = (
+                f"<b>{m['amb_id']}</b><br>"
+                f"Origin: {m['origin']}<br>"
+                f"Destination: {m['destination']}<br>"
+                f"Plan: {cargo}"
+            )
+            t0, t1 = m["dispatch_time"], m["pickup_arrival_time"]
+            if t1 > t0:
+                fig.add_trace(go.Bar(
+                    x=[t1 - t0], y=[m["amb_id"]], base=[t0], orientation="h",
+                    marker_color=LIGHT, marker_line_width=0, showlegend=False,
+                    hovertemplate=(
+                        hover + f"<br><br><b>Transit to pickup</b><br>"
+                        f"Dispatch: {t0:.1f} min<br>Arrived: {t1:.1f} min<br>"
+                        f"Duration: {t1-t0:.1f} min<extra></extra>"
+                    ),
+                ))
+            t2, t3 = m["delivery_depart_time"], m["delivery_arrival_time"]
+            if t3 > t2:
+                fig.add_trace(go.Bar(
+                    x=[t3 - t2], y=[m["amb_id"]], base=[t2], orientation="h",
+                    marker_color=DARK, marker_line_width=0, showlegend=False,
+                    hovertemplate=(
+                        hover + f"<br><br><b>Delivery</b><br>"
+                        f"Left origin: {t2:.1f} min<br>Arrived: {t3:.1f} min<br>"
+                        f"Duration: {t3-t2:.1f} min<extra></extra>"
+                    ),
+                ))
+        # Legend entries
+        fig.add_trace(go.Bar(
+            x=[0], y=[amb_order[0]], base=[0], orientation="h",
+            marker_color=LIGHT, name="Transit to pickup", showlegend=True,
+            hoverinfo="skip",
+        ))
+        fig.add_trace(go.Bar(
+            x=[0], y=[amb_order[0]], base=[0], orientation="h",
+            marker_color=DARK, name="Delivery", showlegend=True,
+            hoverinfo="skip",
+        ))
+        fig.update_layout(
+            title=title, xaxis_title="Simulation time (minutes)",
+            yaxis_title="Ambulance", barmode="overlay",
+            height=max(400, 40 * len(amb_order)),
+            yaxis=dict(categoryorder="array",
+                       categoryarray=list(reversed(amb_order))),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                        xanchor="left", x=0),
+            hoverlabel=dict(bgcolor="white", font_size=12),
+        )
+        return fig
+
+    # ── Save HTML files ─────────────────────────────────────────────────
+    run_folder = results["run_folder"]
+    for subset, ambs, fname in [
+        ("CCP → R1", ccp_r1_ambs, "gantt_ambulances_ccp_r1.html"),
+        ("R1 → R2",  r1_r2_ambs,  "gantt_ambulances_r1_r2.html"),
+    ]:
+        m_sub = missions_df[missions_df["amb_id"].isin(ambs)]
+        fig = _make_fig(m_sub, f"{subset} — Ambulance missions")
+        if fig is not None:
+            path = run_folder / fname
+            fig.write_html(str(path))
+            print(f"Ambulance Gantt ({subset}) saved to {path}")
+
+
 def save_network_image(data: dict, results: dict) -> None:
     """Save a static PNG of the facility network to the run folder."""
     import matplotlib

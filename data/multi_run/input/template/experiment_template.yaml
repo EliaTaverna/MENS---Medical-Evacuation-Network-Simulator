@@ -129,10 +129,7 @@ levers:
     lower: 20
     upper: 45
 
-  - name: r1_r1_inter_bn_min
-    type: real
-    lower: 20
-    upper: 45
+  # r1_r1_inter_bn_min — REMOVED: no C2 ever routes R1→R1
 
   # ── Tier 3: intra-brigade (vertical) ────────────────────────────────────
   - name: axp_r1_same_bde_min
@@ -156,10 +153,7 @@ levers:
     lower: 75
     upper: 120
 
-  - name: r2_r2_other_bde_min
-    type: real
-    lower: 75
-    upper: 120
+  # r2_r2_other_bde_min — REMOVED: no C2 ever routes R2→R2
 
   # Overrides the capacity (max simultaneous patients) of every DCS unit
   # across all facilities.
@@ -238,20 +232,25 @@ levers:
   # Selects which facility eligibility matrix to load. The matrix determines
   # which destination facilities are allowed for each origin.
   # Range: depends on how many matrices are defined in the scenario YAML.
-  #   scenario_400 defines two: 0 = strict, 1 = loose.
+  #   4 levels: 0 = strict, 1 = bn_pool, 2 = bde_pool, 3 = r2_bde_pool
+  #   strict     — CCP→own-bn R1, R1→own-bde R2
+  #   bn_pool    — CCP→any-bn-in-bde R1, R1→own-bde R2
+  #   bde_pool   — CCP→any-bn-in-bde R1, R1→any-bde R2
+  #   r2_bde_pool— CCP→own-bn R1, R1→any-bde R2
   - name: facility_eligibility
     type: integer
     lower: 0
-    upper: 1
+    upper: 3
 
   # Selects which ambulance eligibility matrix to load. The matrix determines
   # which ambulances can serve which facilities.
   # Range: depends on how many matrices are defined in the scenario YAML.
-  #   scenario_400 defines two: 0 = strict, 1 = loose.
+  #   4 levels: 0 = strict, 1 = bn_pool, 2 = bde_pool, 3 = r2_bde_pool
+  #   (same crossing logic as facility_eligibility)
   - name: ambulance_eligibility
     type: integer
     lower: 0
-    upper: 1
+    upper: 3
 
   # The ambulance dispatch algorithm used by C2 nodes.
   # Range: currently only "greedy" is implemented.
@@ -428,6 +427,55 @@ outcomes:
   - n_died_r2_wait_care_T1
   - n_died_r2_wait_care_T2
   - n_died_r2_wait_care_T3
+
+  # ── Median wait times per phase (6) ───────────────────────────────────────
+  # Median minutes spent waiting (survivors only) — complements the mean_wait_*
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+
+  # ── Phase entry/completion counts (16) ─────────────────────────────────────
+  # How many patients entered (started) and completed each phase
+  - n_started_ccp_transport_T1
+  - n_started_ccp_transport_T2
+  - n_completed_ccp_transport_T1
+  - n_completed_ccp_transport_T2
+  - n_started_r1_care_T1
+  - n_started_r1_care_T2
+  - n_completed_r1_care_T1
+  - n_completed_r1_care_T2
+  - n_started_r1_transport_T1
+  - n_started_r1_transport_T2
+  - n_completed_r1_transport_T1
+  - n_completed_r1_transport_T2
+  - n_started_r2_care_T1
+  - n_started_r2_care_T2
+  - n_completed_r2_care_T1
+  - n_completed_r2_care_T2
+
+  # ── Per-phase mortality rates (8) ──────────────────────────────────────────
+  # Fraction of patients who entered a phase but died during it
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Queue imbalance across facilities (2) ──────────────────────────────────
+  # Mean over time of std dev of queue length across same-echelon facilities
+  - mean_std_queue_dcr             # DCR queue imbalance across R1s
+  - mean_std_queue_dcs             # DCS queue imbalance across R2s
+
+  # ── Evacuation timeline compliance (1) ─────────────────────────────────────
+  - frac_t2_within_timeline        # fraction of T2 meeting R1≤1h AND R2≤2h from CCP
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
