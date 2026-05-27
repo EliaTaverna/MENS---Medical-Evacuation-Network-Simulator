@@ -1,0 +1,158 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT 7 — SOBOL WITH 3-LEVEL POOLING, 10 SEED REPLICATIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+# All 11 uncertainties are categorical (discrete levels).
+# Sobol (Saltelli) sampling for global sensitivity indices.
+# N=50 base sample × (11+2) = 650 Saltelli rows × 90 FF policies = 58,500 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_elia_midterm.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES (11 — r1_r1 and r2_r2 removed as unused)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+uncertainties:
+
+  - name: bcas_rate
+    type: categorical
+    values: [0.1, 0.3, 0.6]
+
+  - name: waves_per_day
+    type: categorical
+    values: [1, 5, 10]
+
+  - name: wave_duration_min
+    type: categorical
+    values: [1, 30, 60]
+
+  - name: fraction_t1_bcas
+    type: categorical
+    values: [0.1, 0.15, 0.2]
+
+  - name: fraction_t2_bcas
+    type: categorical
+    values: [0.2, 0.25, 0.3]
+
+  # ── Travel times ───────────────────────────────────────────────────────────
+  - name: ccp_r1_same_bn_min
+    type: categorical
+    values: [5, 10, 15, 20]
+
+  - name: ccp_r1_inter_bn_min
+    type: categorical
+    values: [5, 10, 15, 20, 30, 40]
+
+  - name: axp_r1_same_bde_min
+    type: categorical
+    values: [5, 10, 15]
+
+  - name: axp_r1_other_bde_min
+    type: categorical
+    values: [5, 10, 15, 20, 30, 40]
+
+  - name: r1_r2_same_bde_min
+    type: categorical
+    values: [15, 30, 45]
+
+  - name: r1_r2_other_bde_min
+    type: categorical
+    values: [15, 30, 45, 60, 90]
+
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS — 3-level pooling × 10 seed replications (3 × 3 × 10 = 90 FF)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+levers:
+
+  - name: facility_eligibility
+    type: integer
+    lower: 0
+    upper: 2
+
+  - name: ambulance_eligibility
+    type: integer
+    lower: 0
+    upper: 2
+
+  - name: seed
+    type: categorical
+    values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES (35)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Median wait = survivors only. Mortality = fraction who entered but died.
+
+outcomes:
+
+  # ── Death rates (2) ────────────────────────────────────────────────────────
+  - death_rate_T1_BCAS            # fraction of T1 battle casualties who died
+  - death_rate_T2_BCAS            # fraction of T2 battle casualties who died
+
+  # ── Waiting for transport at CCP (6) ───────────────────────────────────────
+  - median_wait_ccp_transport_T1  # median minutes waiting for ambulance at CCP
+  - median_wait_ccp_transport_T2
+  - n_started_ccp_transport_T1    # how many T1 entered this phase
+  - n_started_ccp_transport_T2
+  - n_completed_ccp_transport_T1  # how many T1 got picked up (completed phase)
+  - n_completed_ccp_transport_T2
+
+  # ── Waiting for care at R1 (6) ─────────────────────────────────────────────
+  - median_wait_r1_care_T1        # median minutes waiting for DCR/PEC at R1
+  - median_wait_r1_care_T2
+  - n_started_r1_care_T1
+  - n_started_r1_care_T2
+  - n_completed_r1_care_T1        # how many T1 received R1 care
+  - n_completed_r1_care_T2
+
+  # ── Waiting for transport at R1 (6) ────────────────────────────────────────
+  - median_wait_r1_transport_T1   # median minutes waiting for transfer to R2
+  - median_wait_r1_transport_T2
+  - n_started_r1_transport_T1
+  - n_started_r1_transport_T2
+  - n_completed_r1_transport_T1   # how many T1 got transferred to R2
+  - n_completed_r1_transport_T2
+
+  # ── Waiting for care at R2 (4) ─────────────────────────────────────────────
+  - median_wait_r2_care_T1        # median minutes waiting for DCS surgery
+  - median_wait_r2_care_T2
+  - n_started_r2_care_T1
+  - n_started_r2_care_T2
+
+  # ── Per-phase mortality rates (8) ────────────────────────────────────────────
+  # Fraction of patients who entered a phase but died during it
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Queue imbalance across facilities (2) ───────────────────────────────────
+  - mean_std_queue_dcr            # mean over time of std dev of DCR queue across R1s
+  - mean_std_queue_dcs            # mean over time of std dev of DCS queue across R2s
+
+  # ── Evacuation timeline compliance (1) ─────────────────────────────────────
+  - frac_t2_within_timeline       # fraction of T2 meeting R1≤1h AND R2≤2h from CCP
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 50                # Saltelli base N → 50×(11+2) = 650 rows
+  n_policies: 90                 # 3 × 3 × 10 full factorial (pooling × seed)
+  uncertainty_sampler: sobol
+  lever_sampler: fullfactorial
+  batch_size: 50                 # max scenarios per chunk
+  max_parallel: 4                # worker processes
+  sobol_second_order: false

@@ -14,10 +14,12 @@ policy_matrixes:
     0: policy_matrixes/facility_eligibility/facility_eligibility_elia_midterm_strict.xlsx
     1: policy_matrixes/facility_eligibility/facility_eligibility_elia_midterm_bn_pool.xlsx
     2: policy_matrixes/facility_eligibility/facility_eligibility_elia_midterm_bde_pool.xlsx
+    3: policy_matrixes/facility_eligibility/facility_eligibility_elia_midterm_r2_bde_pool.xlsx
   ambulance_eligibility:
     0: policy_matrixes/ambulance_eligibility/ambulance_eligibility_elia_midterm_strict.xlsx
     1: policy_matrixes/ambulance_eligibility/ambulance_eligibility_elia_midterm_bn_pool.xlsx
     2: policy_matrixes/ambulance_eligibility/ambulance_eligibility_elia_midterm_bde_pool.xlsx
+    3: policy_matrixes/ambulance_eligibility/ambulance_eligibility_elia_midterm_r2_bde_pool.xlsx
 casualty_generation:
   config: casualty_generation_settings/sampling_settings/config_elia_midterm.yaml
 levers:
