@@ -1,0 +1,167 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT 8 — CASUALTY PATTERN FF + TRAVEL TIME LHS
+# ═══════════════════════════════════════════════════════════════════════════════
+# Moves 3 casualty-generation parameters into FF levers (4 levels each)
+# so KPI response to casualty patterns can be studied directly.
+# Remaining 8 uncertainties (travel times + triage fractions) stay LHS.
+#
+# FF levers: 4×4×4 casualty × 3×3 pooling × 10 seeds = 5,760 policies
+# 200 LHS scenarios × 5,760 = 1,152,000 total runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_elia_midterm.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES (8 — casualty generation moved to levers)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+uncertainties:
+
+  - name: fraction_t1_bcas
+    type: real
+    lower: 0.0
+    upper: 0.5
+
+  - name: fraction_t2_bcas
+    type: real
+    lower: 0.0
+    upper: 0.5
+
+  # ── Travel times ───────────────────────────────────────────────────────────
+  - name: ccp_r1_same_bn_min
+    type: real
+    lower: 5
+    upper: 20
+
+  - name: ccp_r1_inter_bn_min
+    type: real
+    lower: 20
+    upper: 45
+
+  - name: axp_r1_same_bde_min
+    type: real
+    lower: 45
+    upper: 75
+
+  - name: r1_r2_same_bde_min
+    type: real
+    lower: 45
+    upper: 75
+
+  - name: axp_r1_other_bde_min
+    type: real
+    lower: 75
+    upper: 120
+
+  - name: r1_r2_other_bde_min
+    type: real
+    lower: 75
+    upper: 120
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS — casualty pattern (4^3) × pooling (3×3) × seed (10) = 5,760 FF
+# ═══════════════════════════════════════════════════════════════════════════════
+
+levers:
+
+  # ── Casualty generation (4 levels each) ────────────────────────────────────
+  - name: bcas_rate
+    type: categorical
+    values: [0.001, 0.034, 0.067, 0.1]
+
+  - name: waves_per_day
+    type: categorical
+    values: [1, 4, 7, 10]
+
+  - name: wave_duration_min
+    type: categorical
+    values: [1, 20, 40, 60]
+
+  # ── Pooling policy ─────────────────────────────────────────────────────────
+  - name: facility_eligibility
+    type: integer
+    lower: 0
+    upper: 2
+
+  - name: ambulance_eligibility
+    type: integer
+    lower: 0
+    upper: 2
+
+  - name: seed
+    type: categorical
+    values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES (35)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  # ── Death rates (2) ────────────────────────────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+
+  # ── Waiting for transport at CCP (6) ───────────────────────────────────────
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - n_started_ccp_transport_T1
+  - n_started_ccp_transport_T2
+  - n_completed_ccp_transport_T1
+  - n_completed_ccp_transport_T2
+
+  # ── Waiting for care at R1 (6) ─────────────────────────────────────────────
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - n_started_r1_care_T1
+  - n_started_r1_care_T2
+  - n_completed_r1_care_T1
+  - n_completed_r1_care_T2
+
+  # ── Waiting for transport at R1 (6) ────────────────────────────────────────
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - n_started_r1_transport_T1
+  - n_started_r1_transport_T2
+  - n_completed_r1_transport_T1
+  - n_completed_r1_transport_T2
+
+  # ── Waiting for care at R2 (4) ─────────────────────────────────────────────
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+  - n_started_r2_care_T1
+  - n_started_r2_care_T2
+
+  # ── Per-phase mortality rates (8) ────────────────────────────────────────────
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Queue imbalance across facilities (2) ───────────────────────────────────
+  - mean_std_queue_dcr
+  - mean_std_queue_dcs
+
+  # ── Evacuation timeline compliance (1) ─────────────────────────────────────
+  - frac_t2_within_timeline
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 200               # LHS scenarios (travel times + triage fractions)
+  n_policies: 5760               # 4×4×4 × 3×3 × 10 full factorial
+  uncertainty_sampler: lhs
+  lever_sampler: fullfactorial
+  batch_size: 50
+  max_parallel: 4
