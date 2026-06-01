@@ -1,0 +1,63 @@
+name: scenario_1ccp_1btg
+seed: 42
+description: 1 battalion with 1 single ccp and 1 r1, with diminished variance on loading
+  time
+components:
+  travel_time_matrix: components/distances/travel_time_matrix_1ccp_1btg.xlsx
+  coordinates: components/distances/coordinates_1ccp_1btg.xlsx
+  axp: components/AXPs/axp_1ccp_1btg.xlsx
+  facilities: components/facilities/facilities_1ccp_1btg.xlsx
+  units: components/units/units_1ccp_1btg.xlsx
+  ambulances: components/ambulances/amb_1ccp_1btg.xlsx
+  c2: components/c2/c2_1ccp_1btg.xlsx
+policy_matrixes:
+  facility_eligibility:
+    0: policy_matrixes/facility_eligibility/facility_eligibility_1ccp_1btg_strict.xlsx
+    1: policy_matrixes/facility_eligibility/facility_eligibility_1ccp_1btg_bn_pool.xlsx
+    2: policy_matrixes/facility_eligibility/facility_eligibility_1ccp_1btg_bde_pool.xlsx
+    3: policy_matrixes/facility_eligibility/facility_eligibility_1ccp_1btg_r2_bde_pool.xlsx
+  ambulance_eligibility:
+    0: policy_matrixes/ambulance_eligibility/ambulance_eligibility_1ccp_1btg_strict.xlsx
+    1: policy_matrixes/ambulance_eligibility/ambulance_eligibility_1ccp_1btg_bn_pool.xlsx
+    2: policy_matrixes/ambulance_eligibility/ambulance_eligibility_1ccp_1btg_bde_pool.xlsx
+    3: policy_matrixes/ambulance_eligibility/ambulance_eligibility_1ccp_1btg_r2_bde_pool.xlsx
+casualty_generation:
+  config: casualty_generation_settings/sampling_settings/config_1ccp_1btg.yaml
+dispatch_rules:
+  - triage: T1
+    min_count: 1
+    min_wait_min: 0
+  - triage: T2
+    min_count: 2
+    min_wait_min: 0
+  - triage: T2
+    min_count: 1
+    min_wait_min: 240
+  - triage: T3
+    min_count: 1
+    min_wait_min: 720
+levers:
+  dispatch_policy: greedy
+  facility_eligibility: 0
+  ambulance_eligibility: 0
+simulation:
+  till: 7200
+  trace: false
+  data_collector_interval: 5.0
+video:
+  enabled: true
+  fps: 24
+  time_scale: 5.0
+  dpi: 100
+  state_log_interval: 5.0
+  start_time: 0
+  duration: null
+logs:
+  enabled: true
+  path: simulation_logs
+outputs:
+  patient_log: true
+  safe_patients: true
+  transport_events: true
+  wait_times: true
+  facility_states: false

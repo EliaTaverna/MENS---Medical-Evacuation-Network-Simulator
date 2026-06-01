@@ -158,6 +158,9 @@ def load_data_from_scenario(scenario: dict) -> dict:
         coord_df = pd.read_excel(resolve(components["coordinates"]))
         coord_df["facility_id"] = coord_df["facility_id"].str.lower()
 
+    # Dispatch rules (optional) — configurable C2 dispatch conditions
+    dispatch_rules = scenario.get("dispatch_rules", None)
+
     return {
         "travel_time_matrix": travel_time_matrix,
         "axp_df": axp_df,
@@ -168,6 +171,7 @@ def load_data_from_scenario(scenario: dict) -> dict:
         "coord_df": coord_df,
         "fac_eligibility_datasets": fac_elig_datasets,
         "amb_eligibility_datasets": amb_elig_datasets,
+        "dispatch_rules": dispatch_rules,
     }
 
 

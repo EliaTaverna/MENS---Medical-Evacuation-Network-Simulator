@@ -19,9 +19,17 @@ from src.policies.policies import (
 )
 from src.policies.solvers import solve_triage
 
-_BATCH_INTERVAL = 5       # minutes between dispatch episodes
-_T2_WAIT_THRESHOLD = 240  # minutes (4 hours) before a lone T2 triggers dispatch
-_T3_WAIT_THRESHOLD = 720  # minutes (12 hours) before T3s trigger dispatch
+_BATCH_INTERVAL = 5  # minutes between dispatch episodes
+
+# Default dispatch rules — matches the original hardcoded behaviour.
+# Each rule: triage prefix, min count at one facility, min wait (minutes).
+# Rules are evaluated in list order; first match wins (= highest priority).
+DEFAULT_DISPATCH_RULES = [
+    {"triage": "T1", "min_count": 1, "min_wait_min": 0},
+    {"triage": "T2", "min_count": 2, "min_wait_min": 0},
+    {"triage": "T2", "min_count": 1, "min_wait_min": 240},
+    {"triage": "T3", "min_count": 1, "min_wait_min": 720},
+]
 
 _DISPATCH_SOLVERS = {
     "greedy": solve_triage,
@@ -33,23 +41,33 @@ _DF_COLUMNS = [
 ]
 
 
+def _rule_label(rule: dict) -> str:
+    """Build a human-readable trigger label from a dispatch rule."""
+    t = rule["triage"].lower()
+    mc = rule["min_count"]
+    mw = rule["min_wait_min"]
+    if mw == 0 and mc == 1:
+        return t                       # e.g. "t1"
+    if mw == 0 and mc > 1:
+        return f"{t}_x{mc}"            # e.g. "t2_x2"
+    if mc == 1:
+        return f"{t}_threshold"        # e.g. "t2_threshold"
+    return f"{t}_x{mc}_threshold"      # e.g. "t2_x3_threshold"
+
+
 class TransportC2(sim.Component):
     """
     C2 dispatcher for one evacuation leg.
 
-    Dispatches in two modes:
-      - Immediate: T1 request or qualifying T2 pair wakes C2 instantly.
-      - Batched:   every _BATCH_INTERVAL minutes, evaluate all pending
-        requests against thresholds (T2 > 4 h, T3 > 12 h) and dispatch.
+    Dispatch rules are an ordered list of conditions. Each rule specifies:
+      - triage:       triage prefix to match (e.g. "T1", "T2", "T3")
+      - min_count:    minimum patients of that triage at one facility
+      - min_wait_min: minimum waiting time (minutes) of the oldest patient
 
-    Triage priority within each dispatch episode:
-      1. T1 (oldest first)
-      2. T2 pairs (two or more at same facility)
-      3. T2 over threshold
-      4. T3 over threshold
-
-    One ambulance dispatched per actionable facility; loop until no more
-    idle ambulances or no more actionable requests.
+    Rules are evaluated in list order during each dispatch episode.
+    The first rule whose condition is met selects the facility and triggers
+    a dispatch. One ambulance is sent per match; the loop repeats until
+    no more rules match or no idle ambulances remain.
     """
 
     def setup(
@@ -60,6 +78,7 @@ class TransportC2(sim.Component):
         lever_value_facility_eligibility: int = 0,
         lever_value_ambulance_eligibility: int = 0,
         dispatch_policy: str = "greedy",
+        dispatch_rules: list[dict] | None = None,
     ):
         self.c2_id = c2_id
         self.facility_ids = list(facility_ids)
@@ -75,7 +94,19 @@ class TransportC2(sim.Component):
         self.lever_value_ambulance_eligibility = int(lever_value_ambulance_eligibility)
 
         self.dispatch_policy = dispatch_policy
+        self.dispatch_rules = dispatch_rules or list(DEFAULT_DISPATCH_RULES)
         self._wake_reason = "init"
+
+        # Pre-compute which triage prefixes can trigger an immediate wake
+        # (rules with min_wait_min == 0).  For each prefix, store the
+        # min_count that would satisfy at least one rule.
+        self._immediate_wake: dict[str, int] = {}
+        for rule in self.dispatch_rules:
+            if rule["min_wait_min"] == 0:
+                prefix = rule["triage"][:2]
+                prev = self._immediate_wake.get(prefix)
+                if prev is None or rule["min_count"] < prev:
+                    self._immediate_wake[prefix] = rule["min_count"]
 
     @property
     def pending_transport_requests_df(self):
@@ -88,7 +119,7 @@ class TransportC2(sim.Component):
     # --------------------------------------------------------
 
     def receive_request(self, req: "TransportRequest"):
-        """Append request. Only wake C2 immediately for T1 or qualifying T2 pair."""
+        """Append request. Wake C2 immediately if a zero-wait rule is met."""
         issuing_facility_id = getattr(getattr(req, "issuing_facility", None), "loc_id", None) \
                               or getattr(req, "issuing_facility_id", None)
         triage = getattr(req, "triage", None) or ""
@@ -104,33 +135,37 @@ class TransportC2(sim.Component):
             "status":              "pending",
         })
 
-        should_wake = False
-        if triage[:2] == "T1":
-            should_wake = True
-        elif triage[:2] == "T2":
-            should_wake = self._has_pending_t2_at(issuing_facility_id)
-
-        if should_wake:
-            self._wake_reason = "request"
-            self.activate()
-
-    def _has_pending_t2_at(self, facility_id: str) -> bool:
-        for r in self._pending[:-1]:
-            if (r["issuing_facility_id"] == facility_id
-                    and r["triage"][:2] == "T2"
-                    and r["status"] == "pending"):
-                return True
-        return False
+        prefix = triage[:2]
+        needed = self._immediate_wake.get(prefix)
+        if needed is not None:
+            # Count how many pending of this triage at this facility
+            count = sum(
+                1 for r in self._pending
+                if r["issuing_facility_id"] == issuing_facility_id
+                and r["triage"][:2] == prefix
+                and r["status"] == "pending"
+            )
+            if count >= needed:
+                self._wake_reason = "request"
+                self.activate()
 
     def ambulance_idle(self, amb: "Ambulance"):
-        """Register ambulance as idle; wake C2 immediately if a T1 is pending."""
+        """Register ambulance as idle; wake C2 immediately if any zero-wait rule is satisfiable."""
         if amb not in self.ambulances or amb in self.idle_ambulances:
             return
         self.idle_ambulances.append(amb)
-        if any(r["triage"][:2] == "T1" and r["status"] == "pending"
-               for r in self._pending):
-            self._wake_reason = "ambulance_idle"
-            self.activate()
+
+        # Check if any immediate-wake rule is currently satisfied
+        for prefix, needed in self._immediate_wake.items():
+            fac_counts: dict[str, int] = {}
+            for r in self._pending:
+                if r["triage"][:2] == prefix and r["status"] == "pending":
+                    fid = r["issuing_facility_id"]
+                    fac_counts[fid] = fac_counts.get(fid, 0) + 1
+            if any(c >= needed for c in fac_counts.values()):
+                self._wake_reason = "ambulance_idle"
+                self.activate()
+                return
 
     # --------------------------------------------------------
     # main loop
@@ -178,7 +213,7 @@ class TransportC2(sim.Component):
             )
 
             plans_craft = craft_plans(c2=self, assigned_ambulances_df=assigned_df)
-            dispatch_ambulances(c2=self, plans_craft=plans_craft)
+            dispatch_ambulances(c2=self, plans_craft=plans_craft, trigger_type=trigger_type)
             self._log_dispatch(dispatch_df, snapshot_ambs, plans_craft, trigger_type)
 
             if not plans_craft:
@@ -188,47 +223,44 @@ class TransportC2(sim.Component):
             self._pending = [r for r in self._pending if r["status"] == "pending"]
 
     # --------------------------------------------------------
-    # triage-based decision logic
+    # rule-based decision logic
     # --------------------------------------------------------
 
     def _choose_action(self, pending: list[dict]):
         """
-        Returns: (trigger_type, facility_id, rows_at_facility) or None
+        Evaluate dispatch rules in priority order.
+        Returns: (trigger_label, facility_id, all_rows_at_facility) or None
         """
         now = self.env.now()
 
-        t1s = [r for r in pending if r["triage"][:2] == "T1"]
-        if t1s:
-            t1s.sort(key=lambda r: r["t_issued"] or 0)
-            fac_id = t1s[0]["issuing_facility_id"]
-            at_fac = [r for r in pending if r["issuing_facility_id"] == fac_id]
-            return ("t1", fac_id, at_fac)
+        for rule in self.dispatch_rules:
+            prefix = rule["triage"][:2]
+            min_count = rule["min_count"]
+            min_wait = rule["min_wait_min"]
 
-        t2s = [r for r in pending if r["triage"][:2] == "T2"]
-        if t2s:
-            fac_counts: dict[str, int] = {}
-            for r in t2s:
-                fid = r["issuing_facility_id"]
-                fac_counts[fid] = fac_counts.get(fid, 0) + 1
-            for fac_id, cnt in fac_counts.items():
-                if cnt >= 2:
-                    at_fac = [r for r in pending if r["issuing_facility_id"] == fac_id]
-                    return ("t2_pair", fac_id, at_fac)
+            # Collect matching requests grouped by facility
+            by_fac: dict[str, list[dict]] = {}
+            for r in pending:
+                if r["triage"][:2] == prefix:
+                    fid = r["issuing_facility_id"]
+                    by_fac.setdefault(fid, []).append(r)
 
-        if t2s:
-            for r in sorted(t2s, key=lambda r: r["t_issued"] or 0):
-                if r["t_issued"] is not None and (now - r["t_issued"]) >= _T2_WAIT_THRESHOLD:
-                    fac_id = r["issuing_facility_id"]
-                    at_fac = [r for r in pending if r["issuing_facility_id"] == fac_id]
-                    return ("t2_threshold", fac_id, at_fac)
+            # Check each facility against this rule's conditions
+            # Sort facilities by oldest request to be deterministic
+            for fac_id, fac_rows in sorted(
+                by_fac.items(),
+                key=lambda item: min((r["t_issued"] or 0) for r in item[1]),
+            ):
+                if len(fac_rows) < min_count:
+                    continue
+                if min_wait > 0:
+                    oldest_issued = min((r["t_issued"] or 0) for r in fac_rows)
+                    if oldest_issued is None or (now - oldest_issued) < min_wait:
+                        continue
 
-        t3s = [r for r in pending if r["triage"][:2] == "T3"]
-        if t3s:
-            for r in sorted(t3s, key=lambda r: r["t_issued"] or 0):
-                if r["t_issued"] is not None and (now - r["t_issued"]) >= _T3_WAIT_THRESHOLD:
-                    fac_id = r["issuing_facility_id"]
-                    at_fac = [r for r in pending if r["issuing_facility_id"] == fac_id]
-                    return ("t3_threshold", fac_id, at_fac)
+                # Rule matched — return ALL pending at this facility
+                at_fac = [r for r in pending if r["issuing_facility_id"] == fac_id]
+                return (_rule_label(rule), fac_id, at_fac)
 
         return None
 

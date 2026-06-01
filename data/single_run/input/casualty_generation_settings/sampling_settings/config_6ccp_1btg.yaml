@@ -1,0 +1,10 @@
+n_days: 1
+waves_per_day: 3
+wave_duration_min: 30
+
+bcas_rate: 0.05
+dnbi_rate: 0
+
+diagnosis_mix: casualty_generation_settings/diagnosis/diagnosis_mix_no_kia.xlsx
+prescriptions: casualty_generation_settings/prescriptions/prescriptions_1ccp_1btg.xlsx
+force_structure: casualty_generation_settings/military_force_structure/force_structure_6ccp_1btg.xlsx

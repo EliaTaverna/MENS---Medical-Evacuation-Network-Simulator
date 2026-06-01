@@ -635,8 +635,8 @@ def build_ema_model(experiment: dict) -> Model:
                        expected_outcomes=expected_outcomes)
 
     model = Model("medevacmodel", function=runner)
-    model.uncertainties = [_make_ema_param(p) for p in experiment.get("uncertainties", [])]
-    model.levers        = [_make_ema_param(p) for p in experiment.get("levers", [])]
+    model.uncertainties = [_make_ema_param(p) for p in (experiment.get("uncertainties") or [])]
+    model.levers        = [_make_ema_param(p) for p in (experiment.get("levers") or [])]
     model.outcomes      = (
         [ScalarOutcome(o) for o in scalar_outcomes] +
         [ArrayOutcome(o)  for o in array_outcomes]
@@ -699,6 +699,11 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
     # chunks.  Plain batching would re-sample and break S_i / S_T estimators.
     if unc_sampler is Samplers.SOBOL and batch_size > 0:
         return run_ema_sobol_chunked(model, experiment, output_dir)
+
+    # Full factorial ignores n_scenarios — EMA enumerates all combinations.
+    # Disable batching to avoid re-running the same FF design per batch.
+    if unc_sampler is Samplers.FF and batch_size > 0:
+        batch_size = 0
 
     # EMA treats policies=0 as "no levers → 1 dummy policy"; reflect that in display
     n_policies_display = max(n_policies, 1)

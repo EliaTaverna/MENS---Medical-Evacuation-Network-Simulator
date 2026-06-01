@@ -37,6 +37,7 @@ class Ambulance(sim.Component):
         self.onboard: List[Patient] = []
         self.plan: List[PlanStep] | None = None
         self.current_step: PlanStep | None = None
+        self.dispatch_trigger: str = ""
 
     def _loc_id(self, x):
         return getattr(x, "loc_id", x)
@@ -102,6 +103,7 @@ class Ambulance(sim.Component):
                     plan_patients.append({
                         "patient_id": p.patient_id,
                         "triage": p.triage,
+                        "needed_unit": getattr(p, "unit_needed", ""),
                     })
         self.env.transport_events.append({
             "time": float(self.env.now()),
@@ -111,6 +113,8 @@ class Ambulance(sim.Component):
             "to_loc": "",
             "patient_ids": [pp["patient_id"] for pp in plan_patients],
             "patient_triages": [pp["triage"] for pp in plan_patients],
+            "needed_units": [pp["needed_unit"] for pp in plan_patients],
+            "dispatch_trigger": self.dispatch_trigger if event_type == "mission_start" else "",
         })
 
     def _travel_to(self, destination):

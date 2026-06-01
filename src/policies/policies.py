@@ -201,7 +201,7 @@ def craft_plans(
     return plans
 
 
-def dispatch_ambulances(c2: "TransportC2", plans_craft: dict[str, list["PlanStep"]]):
+def dispatch_ambulances(c2: "TransportC2", plans_craft: dict[str, list["PlanStep"]], trigger_type: str = ""):
     """
     Equip ambulances with a plan and dispatch them (activate).
 
@@ -249,8 +249,9 @@ def dispatch_ambulances(c2: "TransportC2", plans_craft: dict[str, list["PlanStep
                         f"ambulance eligibility matrices against the travel time matrix."
                     )
 
-        # attach plan
+        # attach plan and trigger reason
         amb.plan = plan
+        amb.dispatch_trigger = trigger_type
 
         # mark ambulance busy
         c2.idle_ambulances.remove(amb)

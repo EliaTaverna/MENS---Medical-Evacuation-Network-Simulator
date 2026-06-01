@@ -1,0 +1,460 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT TEMPLATE
+# ═══════════════════════════════════════════════════════════════════════════════
+# This template lists EVERY available uncertainty, lever, and outcome.
+# It is directly runnable. To create a new experiment, copy this file,
+# rename it, and comment out or remove what you don't need.
+# Every experiment YAML is a subset of this template.
+#
+# Any parameter can be placed under either 'uncertainties' or 'levers'
+# depending on whether you treat it as something you don't control
+# (uncertainty) or a policy decision you want to compare (lever).
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_9ccp_1btg.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES
+# Sampled across EMA scenarios. Each scenario is one combination of values.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+uncertainties:
+
+  # Fraction of personnel-at-risk (PAR) that become casualties per wave.
+  # Overrides the bcas_rate from the sampling config for every spawning point
+  # whose labels contain "BCAS".
+  # Range: must be > 0. Realistic values are roughly [0.005, 0.05].
+  #   0.005 = low-intensity engagement (~5 casualties per 1000 PAR per wave)
+  #   0.05  = high-intensity engagement (~50 casualties per 1000 PAR per wave)
+  # Baseline in config_400.yaml: 0.023
+  - name: bcas_rate
+    type: categorical
+    values: [0.03, 0.05, 0.07]
+
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS
+# Policy choices sampled across EMA policies.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+levers:
+  - name: seed
+    type: integer
+    lower: 1
+    upper: 100
+#  # ── Tier 1: intra-battalion ───────────────────────────────────────────────
+#  - name: ccp_r1_same_bn_min
+#    type: real
+#    lower: 5
+#    upper: 20
+#
+#  # ── Tier 2: inter-battalion (same brigade) ──────────────────────────────
+#  - name: ccp_r1_inter_bn_min
+#    type: real
+#    lower: 20
+#    upper: 45
+#
+#  # r1_r1_inter_bn_min — REMOVED: no C2 ever routes R1→R1
+#
+#  # ── Tier 3: intra-brigade (vertical) ────────────────────────────────────
+#  - name: axp_r1_same_bde_min
+#    type: real
+#    lower: 45
+#    upper: 75
+#
+#  - name: r1_r2_same_bde_min
+#    type: real
+#    lower: 45
+#    upper: 75
+#
+#  # ── Tier 4: inter-brigade ───────────────────────────────────────────────
+#  - name: axp_r1_other_bde_min
+#    type: real
+#    lower: 75
+#    upper: 120
+#
+#  - name: r1_r2_other_bde_min
+#    type: real
+#    lower: 75
+#    upper: 120
+#
+#  # r2_r2_other_bde_min — REMOVED: no C2 ever routes R2→R2
+#
+#  # Overrides the capacity (max simultaneous patients) of every DCS unit
+#  # across all facilities.
+#  # Range: >= 1. Check units.xlsx for the baseline capacity.
+#  #   Setting this too low creates a bottleneck at Role 2; setting it very
+#  #   high effectively removes the surgical constraint.
+#  - name: dcs_capacity
+#    type: integer
+#    lower: 1
+#    upper: 10
+#
+#  # Overrides the capacity of every PEC unit across all facilities.
+#  # Range: >= 1. Check units.xlsx for the baseline capacity.
+#  - name: pec_capacity
+#    type: integer
+#    lower: 1
+#    upper: 10
+#
+#  # Overrides the capacity of every DCR unit across all facilities.
+#  # Range: >= 1. Check units.xlsx for the baseline capacity.
+#  - name: dcr_capacity
+#    type: integer
+#    lower: 1
+#    upper: 10
+#
+#  # Sets the total number of ambulances on the forward leg (CCP -> R1).
+#  # Identified by start_loc_id prefix "axp_".
+#  # If n > current count: random ambulances are duplicated with new unique IDs,
+#  # registered with the owning C2 and inheriting the source row of the
+#  # ambulance_eligibility matrices.
+#  # If n < current count: random ambulances are removed from ambulance_df,
+#  # the C2 roster and the eligibility matrices.
+#  # Range: >= 1. Upper bound is open — you can duplicate above baseline.
+#  - name: n_amb_ccp_r1
+#    type: integer
+#    lower: 1
+#    upper: 16
+#
+#  # Sets the total number of ambulances on the rearward leg (R1 -> R2).
+#  # Identified by start_loc_id prefix "r1_". Same duplicate/remove semantics
+#  # as n_amb_ccp_r1.
+#  - name: n_amb_r1_r2
+#    type: integer
+#    lower: 1
+#    upper: 36
+#
+#  # OBSOLETE — amb_speed_ccp_r1 and amb_speed_r1_r2 have been removed.
+#  # The distance matrix has been replaced with a travel-time matrix (minutes),
+#  # so ambulance speed is no longer a separate parameter.
+#  # - name: amb_speed_ccp_r1
+#  #   type: real
+#  #   lower: 20
+#  #   upper: 80
+#  # - name: amb_speed_r1_r2
+#  #   type: real
+#  #   lower: 20
+#  #   upper: 80
+
+#  # ── Per-pair travel-time overrides ──────────────────────────────────────────
+#  # Override an arbitrary single entry in the travel-time matrix (minutes).
+#  # Lever name pattern:   tt_<facility_id_1>__<facility_id_2>
+#  # The separator is a DOUBLE underscore because facility IDs themselves use
+#  # single underscores (e.g. r1_bn_1_1). Both tt[a,b] and tt[b,a] are set to
+#  # the lever value. Applied AFTER r2_retreat and r1_access, so an explicit
+#  # override always wins. Unknown IDs raise at run time.
+#  # Add one block per pair you want to sweep. Examples (uncomment to use):
+#  # - name: tt_r1_1__r2b_1
+#  #   type: real
+#  #   lower: 2
+#  #   upper: 60
+#  # - name: tt_ccp_1__r1_1
+#  #   type: real
+#  #   lower: 1
+#  #   upper: 30
+#
+#  # Selects which facility eligibility matrix to load. The matrix determines
+#  # which destination facilities are allowed for each origin.
+#  # Range: depends on how many matrices are defined in the scenario YAML.
+#  #   4 levels: 0 = strict, 1 = bn_pool, 2 = bde_pool, 3 = r2_bde_pool
+#  #   strict     — CCP→own-bn R1, R1→own-bde R2
+#  #   bn_pool    — CCP→any-bn-in-bde R1, R1→own-bde R2
+#  #   bde_pool   — CCP→any-bn-in-bde R1, R1→any-bde R2
+#  #   r2_bde_pool— CCP→own-bn R1, R1→any-bde R2
+#  - name: facility_eligibility
+#    type: integer
+#    lower: 0
+#    upper: 3
+#
+#  # Selects which ambulance eligibility matrix to load. The matrix determines
+#  # which ambulances can serve which facilities.
+#  # Range: depends on how many matrices are defined in the scenario YAML.
+#  #   4 levels: 0 = strict, 1 = bn_pool, 2 = bde_pool, 3 = r2_bde_pool
+#  #   (same crossing logic as facility_eligibility)
+#  - name: ambulance_eligibility
+#    type: integer
+#    lower: 0
+#    upper: 3
+##
+##  # The ambulance dispatch algorithm used by C2 nodes.
+##  # Range: currently only "greedy" is implemented.
+##  #   Add new values here when alternative dispatch algorithms are built.
+##  # - name: dispatch_policy
+##  #   type: categorical
+##  #   values: [greedy]
+#
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# One value per run, saved to results.csv.
+# Comment out any line to exclude that outcome from the experiment.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  # ── Overall mortality and survival ─────────────────────────────────────────
+  - death_rate                # fraction of all patients who died
+  - safe_rate                 # fraction of all patients who reached definitive care
+
+  # ── Mortality by triage and casualty type ──────────────────────────────────
+  - death_rate_T1_BCAS        # T1 battle casualties: fraction who died
+  - death_rate_T2_BCAS        # T2 battle casualties: fraction who died
+  - death_rate_T3_BCAS        # T3 battle casualties: fraction who died
+  - death_rate_T1_DNBI        # T1 non-battle injuries: fraction who died
+  - death_rate_T2_DNBI        # T2 non-battle injuries: fraction who died
+  - death_rate_T3_DNBI        # T3 non-battle injuries: fraction who died
+
+  # ── Patient counts by triage ───────────────────────────────────────────────
+  - n_patients_T1_BCAS        # total T1 BCAS patients generated
+  - n_patients_T2_BCAS        # total T2 BCAS patients generated
+  - n_patients_T3_BCAS        # total T3 BCAS patients generated
+  - n_dead_T1_BCAS            # absolute number of T1 BCAS deaths
+  - n_dead_T2_BCAS            # absolute number of T2 BCAS deaths
+  - n_dead_T3_BCAS            # absolute number of T3 BCAS deaths
+
+  # ── Mean wait time for care (minutes) ──────────────────────────────────────
+  # Time from arrival at a facility to start of treatment
+  - mean_wait_care_T1_BCAS
+  - mean_wait_care_T2_BCAS
+  - mean_wait_care_T3_BCAS
+  - mean_wait_care_T1_DNBI
+  - mean_wait_care_T2_DNBI
+  - mean_wait_care_T3_DNBI
+
+  # ── Mean wait time for transport (minutes) ─────────────────────────────────
+  # Time from arrival at a facility to departure by ambulance
+  - mean_wait_transport_T1_BCAS
+  - mean_wait_transport_T2_BCAS
+  - mean_wait_transport_T3_BCAS
+  - mean_wait_transport_T1_DNBI
+  - mean_wait_transport_T2_DNBI
+  - mean_wait_transport_T3_DNBI
+
+  # ── Total ambulance travel time (minutes) ──────────────────────────────────
+  - total_transport_time      # sum of all ambulance trip durations
+
+  # ── Phase durations (from patient_log) ─────────────────────────────────────
+  # Dynamically generated based on observed (triage, prescription) combinations.
+  # The naming pattern is:
+  #   waiting_transport_{facility_type}_{triage}_{prescription}
+  #   waiting_care_{care_type}_{triage}_{prescription}
+  #   transit_{from_type}_{to_type}_{triage}_{prescription}
+  #   in_care_{care_type}_{triage}_{prescription}
+  #
+  # The full set depends on the prescriptions in your diagnosis/prescription
+  # files. For scenario_400 with prescriptions [DCR,DCS], [DCR], [PEC,DCS],
+  # [PEC], the complete list is below. Remove DNBI lines if dnbi_rate = 0.
+
+  # ── Queue: waiting for transport at CCP (12) ──────────────────────────────
+  - waiting_transport_ccp_t1_bcas_dcr_dcs
+  - waiting_transport_ccp_t1_bcas_dcr
+  - waiting_transport_ccp_t2_bcas_dcr_dcs
+  - waiting_transport_ccp_t2_bcas_dcr
+  - waiting_transport_ccp_t3_bcas_pec_dcs
+  - waiting_transport_ccp_t3_bcas_pec
+  - waiting_transport_ccp_t1_dnbi_dcr_dcs
+  - waiting_transport_ccp_t1_dnbi_dcr
+  - waiting_transport_ccp_t2_dnbi_dcr_dcs
+  - waiting_transport_ccp_t2_dnbi_dcr
+  - waiting_transport_ccp_t3_dnbi_pec_dcs
+  - waiting_transport_ccp_t3_dnbi_pec
+
+  # ── Queue: waiting for transport at Role 1 (6) ────────────────────────────
+  - waiting_transport_role1_t1_bcas_dcr_dcs
+  - waiting_transport_role1_t2_bcas_dcr_dcs
+  - waiting_transport_role1_t3_bcas_pec_dcs
+  - waiting_transport_role1_t1_dnbi_dcr_dcs
+  - waiting_transport_role1_t2_dnbi_dcr_dcs
+  - waiting_transport_role1_t3_dnbi_pec_dcs
+
+  # ── Queue: waiting for DCR care at Role 1 (8) ─────────────────────────────
+  - waiting_care_dcr_t1_bcas_dcr_dcs
+  - waiting_care_dcr_t1_bcas_dcr
+  - waiting_care_dcr_t2_bcas_dcr_dcs
+  - waiting_care_dcr_t2_bcas_dcr
+  - waiting_care_dcr_t1_dnbi_dcr_dcs
+  - waiting_care_dcr_t1_dnbi_dcr
+  - waiting_care_dcr_t2_dnbi_dcr_dcs
+  - waiting_care_dcr_t2_dnbi_dcr
+
+  # ── Queue: waiting for PEC care at Role 1 (4) ─────────────────────────────
+  - waiting_care_pec_t3_bcas_pec_dcs
+  - waiting_care_pec_t3_bcas_pec
+  - waiting_care_pec_t3_dnbi_pec_dcs
+  - waiting_care_pec_t3_dnbi_pec
+
+  # ── Queue: waiting for DCS surgery at Role 2 (6) ──────────────────────────
+  - waiting_care_dcs_t1_bcas_dcr_dcs
+  - waiting_care_dcs_t2_bcas_dcr_dcs
+  - waiting_care_dcs_t3_bcas_pec_dcs
+  - waiting_care_dcs_t1_dnbi_dcr_dcs
+  - waiting_care_dcs_t2_dnbi_dcr_dcs
+  - waiting_care_dcs_t3_dnbi_pec_dcs
+
+  # ── Phase duration: transit CCP -> Role 1 (12) ────────────────────────────
+  - transit_ccp_role1_t1_bcas_dcr_dcs
+  - transit_ccp_role1_t1_bcas_dcr
+  - transit_ccp_role1_t2_bcas_dcr_dcs
+  - transit_ccp_role1_t2_bcas_dcr
+  - transit_ccp_role1_t3_bcas_pec_dcs
+  - transit_ccp_role1_t3_bcas_pec
+  - transit_ccp_role1_t1_dnbi_dcr_dcs
+  - transit_ccp_role1_t1_dnbi_dcr
+  - transit_ccp_role1_t2_dnbi_dcr_dcs
+  - transit_ccp_role1_t2_dnbi_dcr
+  - transit_ccp_role1_t3_dnbi_pec_dcs
+  - transit_ccp_role1_t3_dnbi_pec
+
+  # ── Phase duration: transit Role 1 -> Role 2 (6) ──────────────────────────
+  - transit_role1_role2_t1_bcas_dcr_dcs
+  - transit_role1_role2_t2_bcas_dcr_dcs
+  - transit_role1_role2_t3_bcas_pec_dcs
+  - transit_role1_role2_t1_dnbi_dcr_dcs
+  - transit_role1_role2_t2_dnbi_dcr_dcs
+  - transit_role1_role2_t3_dnbi_pec_dcs
+
+  # ── Phase duration: time in DCR care at Role 1 (8) ────────────────────────
+  - in_care_dcr_t1_bcas_dcr_dcs
+  - in_care_dcr_t1_bcas_dcr
+  - in_care_dcr_t2_bcas_dcr_dcs
+  - in_care_dcr_t2_bcas_dcr
+  - in_care_dcr_t1_dnbi_dcr_dcs
+  - in_care_dcr_t1_dnbi_dcr
+  - in_care_dcr_t2_dnbi_dcr_dcs
+  - in_care_dcr_t2_dnbi_dcr
+
+  # ── Phase duration: time in PEC care at Role 1 (4) ────────────────────────
+  - in_care_pec_t3_bcas_pec_dcs
+  - in_care_pec_t3_bcas_pec
+  - in_care_pec_t3_dnbi_pec_dcs
+  - in_care_pec_t3_dnbi_pec
+
+  # ── Phase duration: time in DCS surgery at Role 2 (6) ─────────────────────
+  - in_care_dcs_t1_bcas_dcr_dcs
+  - in_care_dcs_t2_bcas_dcr_dcs
+  - in_care_dcs_t3_bcas_pec_dcs
+  - in_care_dcs_t1_dnbi_dcr_dcs
+  - in_care_dcs_t2_dnbi_dcr_dcs
+  - in_care_dcs_t3_dnbi_pec_dcs
+
+  # ── Deaths by phase × triage (12) ──────────────────────────────────────────
+  # Number of patients who died while in each evacuation phase, by triage class
+  - n_died_ccp_wait_transport_T1
+  - n_died_ccp_wait_transport_T2
+  - n_died_ccp_wait_transport_T3
+  - n_died_r1_wait_care_T1
+  - n_died_r1_wait_care_T2
+  - n_died_r1_wait_care_T3
+  - n_died_r1_wait_transport_T1
+  - n_died_r1_wait_transport_T2
+  - n_died_r1_wait_transport_T3
+  - n_died_r2_wait_care_T1
+  - n_died_r2_wait_care_T2
+  - n_died_r2_wait_care_T3
+
+  # ── Median wait times per phase (6) ───────────────────────────────────────
+  # Median minutes spent waiting (survivors only) — complements the mean_wait_*
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+
+  # ── Phase entry/completion counts (16) ─────────────────────────────────────
+  # How many patients entered (started) and completed each phase
+  - n_started_ccp_transport_T1
+  - n_started_ccp_transport_T2
+  - n_completed_ccp_transport_T1
+  - n_completed_ccp_transport_T2
+  - n_started_r1_care_T1
+  - n_started_r1_care_T2
+  - n_completed_r1_care_T1
+  - n_completed_r1_care_T2
+  - n_started_r1_transport_T1
+  - n_started_r1_transport_T2
+  - n_completed_r1_transport_T1
+  - n_completed_r1_transport_T2
+  - n_started_r2_care_T1
+  - n_started_r2_care_T2
+  - n_completed_r2_care_T1
+  - n_completed_r2_care_T2
+
+  # ── Per-phase mortality rates (8) ──────────────────────────────────────────
+  # Fraction of patients who entered a phase but died during it
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Queue imbalance across facilities (2) ──────────────────────────────────
+  # Mean over time of std dev of queue length across same-echelon facilities
+  - mean_std_queue_dcr             # DCR queue imbalance across R1s
+  - mean_std_queue_dcs             # DCS queue imbalance across R2s
+
+  # ── Evacuation timeline compliance (1) ─────────────────────────────────────
+  - frac_t2_within_timeline        # fraction of T2 meeting R1≤1h AND R2≤2h from CCP
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARRAY OUTCOMES (time series — saved to timeseries.npz, not results.csv)
+# Each entry is a 1-D array of length n_timesteps per run.
+# Requires data_collector_interval > 0 in the scenario YAML.
+# The naming pattern is ts_{metric}_{facility_id}_{triage}.
+# Adjust facility IDs to match your scenario's facilities.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+#array_outcomes:
+#
+#  # ── Queue length at Role 1: patients waiting for transport ─────────────────
+#  # scenario_400 has 6 Role 1 facilities (r1_1 .. r1_6) x 3 triage = 18
+#  - ts_transport_r1_1_T1
+#  - ts_transport_r1_1_T2
+#  - ts_transport_r1_1_T3
+#  - ts_transport_r1_2_T1
+#  - ts_transport_r1_2_T2
+#  - ts_transport_r1_2_T3
+#  - ts_transport_r1_3_T1
+#  - ts_transport_r1_3_T2
+#  - ts_transport_r1_3_T3
+#  - ts_transport_r1_4_T1
+#  - ts_transport_r1_4_T2
+#  - ts_transport_r1_4_T3
+#  - ts_transport_r1_5_T1
+#  - ts_transport_r1_5_T2
+#  - ts_transport_r1_5_T3
+#  - ts_transport_r1_6_T1
+#  - ts_transport_r1_6_T2
+#  - ts_transport_r1_6_T3
+#
+#  # ── Queue length at Role 2: patients waiting for DCS surgery ───────────────
+#  # scenario_400 has 2 Role 2 facilities (r2_1, r2_2) x 3 triage = 6
+#  - ts_dcs_r2_1_T1
+#  - ts_dcs_r2_1_T2
+#  - ts_dcs_r2_1_T3
+#  - ts_dcs_r2_2_T1
+#  - ts_dcs_r2_2_T2
+#  - ts_dcs_r2_2_T3
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 3             # 3×3×3 full factorial (bcas_rate × waves × duration)
+  n_policies: 100               # 15 seeds × 4 ambulance_eligibility = 60 FF policies
+  uncertainty_sampler: fullfactorial     # lhs | fullfactorial | mc
+  lever_sampler: fullfactorial # lhs | fullfactorial | mc
+  batch_size: 0               # 0 = no batching (FF generates exact count)
+  max_parallel: 4             # worker processes (1 = sequential)

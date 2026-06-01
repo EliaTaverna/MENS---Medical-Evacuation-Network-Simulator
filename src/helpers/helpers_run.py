@@ -424,10 +424,11 @@ def save_ambulance_gantt(results: dict) -> None:
         if isinstance(plan_triages, str):
             import json
             plan_triages = json.loads(plan_triages)
-
         n_t1 = sum(1 for t in plan_triages if str(t).startswith("T1"))
         n_t2 = sum(1 for t in plan_triages if str(t).startswith("T2"))
         n_t3 = sum(1 for t in plan_triages if str(t).startswith("T3"))
+        # Dispatch trigger (e.g. "t1", "t2_pair", "t2_threshold", "t3_threshold")
+        reason = events[0].get("dispatch_trigger", "")
 
         pickup_arrival_time = dispatch_time
         delivery_depart_time = dispatch_time
@@ -457,6 +458,7 @@ def save_ambulance_gantt(results: dict) -> None:
             "delivery_arrival_time": delivery_arrival_time,
             "origin": origin, "destination": destination,
             "n_t1": n_t1, "n_t2": n_t2, "n_t3": n_t3,
+            "reason": reason,
         }
 
     missions = []
@@ -501,10 +503,16 @@ def save_ambulance_gantt(results: dict) -> None:
         fig = go.Figure()
         for _, m in m_df.iterrows():
             cargo = f"T1: {m['n_t1']}  T2: {m['n_t2']}  T3: {m['n_t3']}"
+            reason_raw = m.get('reason', '')
+            # Show the raw trigger label directly — it's already readable
+            # (e.g. "t1", "t2_x2", "t2_threshold", "t3_threshold")
+            reason = reason_raw
+            reason_line = f"Trigger: {reason}<br>" if reason else ""
             hover = (
                 f"<b>{m['amb_id']}</b><br>"
                 f"Origin: {m['origin']}<br>"
                 f"Destination: {m['destination']}<br>"
+                f"{reason_line}"
                 f"Plan: {cargo}"
             )
             t0, t1 = m["dispatch_time"], m["pickup_arrival_time"]

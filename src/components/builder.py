@@ -37,7 +37,7 @@ class ModelBuilder:
         self.env.fac_eligibility_datasets = fac_eligibility_datasets
         self.env.amb_eligibility_datasets = amb_eligibility_datasets
 
-    def build_c2s(self, c2_df: pd.DataFrame):
+    def build_c2s(self, c2_df: pd.DataFrame, dispatch_rules: list[dict] | None = None):
         self.env.c2_by_id = {}
         levers = getattr(self.env, "levers", {})
         for r in c2_df.itertuples(index=False):
@@ -49,6 +49,7 @@ class ModelBuilder:
                 lever_value_facility_eligibility=levers.get("facility_eligibility", 0),
                 lever_value_ambulance_eligibility=levers.get("ambulance_eligibility", 0),
                 dispatch_policy=levers.get("dispatch_policy", "greedy"),
+                dispatch_rules=dispatch_rules,
             )
 
     def build_facilities(self, facility_df: pd.DataFrame, units_df: pd.DataFrame):
@@ -99,11 +100,12 @@ class ModelBuilder:
             self.env.amb_by_id[r.amb_id] = amb
 
     def build_all(self, travel_time_matrix, axp_df, facility_df, units_df, ambulance_df, c2_df,
-                  fac_eligibility_datasets=None, amb_eligibility_datasets=None):
+                  fac_eligibility_datasets=None, amb_eligibility_datasets=None,
+                  dispatch_rules=None):
         self.build_roads(travel_time_matrix)
         self.build_axps(axp_df)
         self.build_eligibility_datasets(fac_eligibility_datasets or {}, amb_eligibility_datasets or {})
-        self.build_c2s(c2_df)
+        self.build_c2s(c2_df, dispatch_rules=dispatch_rules)
         self.build_facilities(facility_df, units_df)
         self.build_units(units_df)
         self.build_ambulances(ambulance_df)

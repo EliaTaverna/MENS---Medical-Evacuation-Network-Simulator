@@ -1,8 +1,9 @@
 name: scenario_second_test
 seed: 42
-description: Auto-generated topology-driven scenario
+description: 1 battalion with 1 single ccp and 1 r1, with diminished variance on loading
+  time
 components:
-  travel_time_matrix: components/distances/distance_matrix_second_test.xlsx
+  travel_time_matrix: components/distances/travel_time_matrix_second_test.xlsx
   coordinates: components/distances/coordinates_second_test.xlsx
   axp: components/AXPs/axp_second_test.xlsx
   facilities: components/facilities/facilities_second_test.xlsx
@@ -12,12 +13,16 @@ components:
 policy_matrixes:
   facility_eligibility:
     0: policy_matrixes/facility_eligibility/facility_eligibility_second_test_strict.xlsx
-    1: policy_matrixes/facility_eligibility/facility_eligibility_second_test_loose.xlsx
+    1: policy_matrixes/facility_eligibility/facility_eligibility_second_test_bn_pool.xlsx
+    2: policy_matrixes/facility_eligibility/facility_eligibility_second_test_bde_pool.xlsx
+    3: policy_matrixes/facility_eligibility/facility_eligibility_second_test_r2_bde_pool.xlsx
   ambulance_eligibility:
     0: policy_matrixes/ambulance_eligibility/ambulance_eligibility_second_test_strict.xlsx
-    1: policy_matrixes/ambulance_eligibility/ambulance_eligibility_second_test_loose.xlsx
+    1: policy_matrixes/ambulance_eligibility/ambulance_eligibility_second_test_bn_pool.xlsx
+    2: policy_matrixes/ambulance_eligibility/ambulance_eligibility_second_test_bde_pool.xlsx
+    3: policy_matrixes/ambulance_eligibility/ambulance_eligibility_second_test_r2_bde_pool.xlsx
 casualty_generation:
-  config: casualty_generation_settings/sampling_settings/config_template.yaml
+  config: casualty_generation_settings/sampling_settings/config_second_test.yaml
 levers:
   dispatch_policy: greedy
   facility_eligibility: 0
@@ -25,15 +30,15 @@ levers:
 simulation:
   till: 7200
   trace: false
-  data_collector_interval: 10.0
+  data_collector_interval: 5.0
 video:
-  enabled: true
+  enabled: false
   fps: 24
-  time_scale: 1.0
+  time_scale: 5.0
   dpi: 100
   state_log_interval: 5.0
   start_time: 0
-  duration: 100
+  duration: null
 logs:
   enabled: true
   path: simulation_logs

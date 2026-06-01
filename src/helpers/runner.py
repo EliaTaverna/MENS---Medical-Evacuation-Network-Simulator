@@ -63,6 +63,7 @@ def run_simulation(data: dict, settings: dict, run_folder: Path) -> dict:
         data["units_df"], data["ambulance_df"], data["c2_df"],
         fac_eligibility_datasets=data.get("fac_eligibility_datasets"),
         amb_eligibility_datasets=data.get("amb_eligibility_datasets"),
+        dispatch_rules=data.get("dispatch_rules"),
     )
     ModelConnector(env).connect_all()
 
