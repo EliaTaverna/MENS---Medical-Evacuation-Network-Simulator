@@ -259,6 +259,50 @@ levers:
   #   type: categorical
   #   values: [greedy]
 
+  # ── Dispatch rule parameters ────────────────────────────────────────────
+  # Override numeric fields of individual dispatch rules without changing
+  # their priority order.  Two parameters per triage class:
+  #   *_min_count     — count-trigger threshold (rule with min_wait_min=0)
+  #   *_min_wait_min  — wait-trigger threshold (rule with min_wait_min>0)
+  #
+  # Two rules per triage (6 total, AND logic within each rule):
+  #   count-trigger (wait=0): fires when >= min_count patients at a facility
+  #   wait-trigger  (wait>0): fires when >= 1 patient waited >= min_wait_min
+  # Rules are evaluated in list order; first match wins.
+
+  # T1 — highest priority. Baseline: count=1, wait=60.
+  - name: t1_min_count
+    type: integer
+    lower: 1
+    upper: 4
+
+  - name: t1_min_wait_min
+    type: integer
+    lower: 0
+    upper: 120
+
+  # T2 — urgent. Baseline: count=2, wait=240.
+  - name: t2_min_count
+    type: integer
+    lower: 1
+    upper: 4
+
+  - name: t2_min_wait_min
+    type: integer
+    lower: 60
+    upper: 480
+
+  # T3 — delayed. Baseline: count=4, wait=720.
+  - name: t3_min_count
+    type: integer
+    lower: 1
+    upper: 4
+
+  - name: t3_min_wait_min
+    type: integer
+    lower: 120
+    upper: 1440
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SCALAR OUTCOMES

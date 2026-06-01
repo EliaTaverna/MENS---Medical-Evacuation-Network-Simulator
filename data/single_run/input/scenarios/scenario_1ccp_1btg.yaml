@@ -27,12 +27,18 @@ dispatch_rules:
   - triage: T1
     min_count: 1
     min_wait_min: 0
+  - triage: T1
+    min_count: 1
+    min_wait_min: 0
   - triage: T2
-    min_count: 2
+    min_count: 1000
     min_wait_min: 0
   - triage: T2
     min_count: 1
-    min_wait_min: 240
+    min_wait_min: 120
+  - triage: T3
+    min_count: 400
+    min_wait_min: 0
   - triage: T3
     min_count: 1
     min_wait_min: 720
@@ -45,7 +51,7 @@ simulation:
   trace: false
   data_collector_interval: 5.0
 video:
-  enabled: true
+  enabled: false
   fps: 24
   time_scale: 5.0
   dpi: 100

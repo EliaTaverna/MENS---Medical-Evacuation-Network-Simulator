@@ -21,14 +21,18 @@ from src.policies.solvers import solve_triage
 
 _BATCH_INTERVAL = 5  # minutes between dispatch episodes
 
-# Default dispatch rules — matches the original hardcoded behaviour.
+# Default dispatch rules — evaluated in list order; first match wins.
 # Each rule: triage prefix, min count at one facility, min wait (minutes).
-# Rules are evaluated in list order; first match wins (= highest priority).
+# A rule with min_wait_min == 0 is a pure count trigger (fires immediately).
+# A rule with min_wait_min > 0 requires BOTH count AND wait to be met.
+# Typically two rules per triage: a count-trigger + a wait-trigger.
 DEFAULT_DISPATCH_RULES = [
-    {"triage": "T1", "min_count": 1, "min_wait_min": 0},
-    {"triage": "T2", "min_count": 2, "min_wait_min": 0},
-    {"triage": "T2", "min_count": 1, "min_wait_min": 240},
-    {"triage": "T3", "min_count": 1, "min_wait_min": 720},
+    {"triage": "T1", "min_count": 1, "min_wait_min": 0},     # T1 count-trigger
+    {"triage": "T1", "min_count": 1, "min_wait_min": 60},    # T1 wait-trigger
+    {"triage": "T2", "min_count": 2, "min_wait_min": 0},     # T2 count-trigger
+    {"triage": "T2", "min_count": 1, "min_wait_min": 240},   # T2 wait-trigger
+    {"triage": "T3", "min_count": 4, "min_wait_min": 0},     # T3 count-trigger
+    {"triage": "T3", "min_count": 1, "min_wait_min": 720},   # T3 wait-trigger
 ]
 
 _DISPATCH_SOLVERS = {
@@ -42,17 +46,15 @@ _DF_COLUMNS = [
 
 
 def _rule_label(rule: dict) -> str:
-    """Build a human-readable trigger label from a dispatch rule."""
+    """Build a human-readable trigger label from a dispatch rule.
+
+    Rules with ``min_wait_min == 0`` are count triggers; rules with
+    ``min_wait_min > 0`` are wait triggers.
+    """
     t = rule["triage"].lower()
-    mc = rule["min_count"]
-    mw = rule["min_wait_min"]
-    if mw == 0 and mc == 1:
-        return t                       # e.g. "t1"
-    if mw == 0 and mc > 1:
-        return f"{t}_x{mc}"            # e.g. "t2_x2"
-    if mc == 1:
-        return f"{t}_threshold"        # e.g. "t2_threshold"
-    return f"{t}_x{mc}_threshold"      # e.g. "t2_x3_threshold"
+    if rule["min_wait_min"] == 0:
+        return f"{t}_count_{rule['min_count']}"     # e.g. "t1_count_1", "t2_count_2"
+    return f"{t}_wait_{rule['min_wait_min']}"       # e.g. "t1_wait_60", "t2_wait_240"
 
 
 class TransportC2(sim.Component):
@@ -63,6 +65,7 @@ class TransportC2(sim.Component):
       - triage:       triage prefix to match (e.g. "T1", "T2", "T3")
       - min_count:    minimum patients of that triage at one facility
       - min_wait_min: minimum waiting time (minutes) of the oldest patient
+                      (0 = no wait required, fires on count alone)
 
     Rules are evaluated in list order during each dispatch episode.
     The first rule whose condition is met selects the facility and triggers

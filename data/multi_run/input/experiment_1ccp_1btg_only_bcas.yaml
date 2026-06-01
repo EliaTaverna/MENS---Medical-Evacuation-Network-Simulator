@@ -186,6 +186,32 @@ levers:
 ##  #   type: categorical
 ##  #   values: [greedy]
 #
+#  # ── Dispatch rule parameters ────────────────────────────────────────────
+#  - name: t1_min_count
+#    type: integer
+#    lower: 1
+#    upper: 4
+#  - name: t1_min_wait_min
+#    type: integer
+#    lower: 0
+#    upper: 120
+#  - name: t2_min_count
+#    type: integer
+#    lower: 1
+#    upper: 4
+#  - name: t2_min_wait_min
+#    type: integer
+#    lower: 60
+#    upper: 480
+#  - name: t3_min_count
+#    type: integer
+#    lower: 1
+#    upper: 4
+#  - name: t3_min_wait_min
+#    type: integer
+#    lower: 120
+#    upper: 1440
+#
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SCALAR OUTCOMES

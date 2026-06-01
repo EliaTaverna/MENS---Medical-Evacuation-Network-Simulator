@@ -1,0 +1,256 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: DISPATCH RULE PARAMETER SWEEP — 6 CCP, 1 BTG
+# ═══════════════════════════════════════════════════════════════════════════════
+# Varies the numeric parameters of dispatch rules (min_count, wait thresholds)
+# while keeping the priority order fixed.  Uses the 6-CCP single-battalion
+# scenario as the base topology.
+#
+# Design: 3 bcas_rate uncertainties × (50 seeds × 2×2×2×2×2×2 dispatch combos)
+#       = 3 × 3200 = 9600 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_1ccp_1btg.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+uncertainties:
+
+  - name: bcas_rate
+    type: categorical
+    values: [0.03, 0.07]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+levers:
+
+  - name: seed
+    type: integer
+    lower: 1
+    upper: 30
+
+  # T2 — urgent. Baseline: count=2 (pair rule), wait=240 min (safety net).
+  - name: t2_min_count
+    type: categorical
+    values: [1, 2]
+
+  - name: t2_min_wait_min
+    type: categorical
+    values: [0, 30, 60, 120]
+
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  # ── Overall mortality and survival ─────────────────────────────────────────
+  - death_rate
+  - safe_rate
+
+  # ── Mortality by triage and casualty type ──────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+  - death_rate_T1_DNBI
+  - death_rate_T2_DNBI
+  - death_rate_T3_DNBI
+
+  # ── Patient counts by triage ───────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+  - n_dead_T1_BCAS
+  - n_dead_T2_BCAS
+  - n_dead_T3_BCAS
+
+  # ── Mean wait time for care (minutes) ──────────────────────────────────────
+  - mean_wait_care_T1_BCAS
+  - mean_wait_care_T2_BCAS
+  - mean_wait_care_T3_BCAS
+  - mean_wait_care_T1_DNBI
+  - mean_wait_care_T2_DNBI
+  - mean_wait_care_T3_DNBI
+
+  # ── Mean wait time for transport (minutes) ─────────────────────────────────
+  - mean_wait_transport_T1_BCAS
+  - mean_wait_transport_T2_BCAS
+  - mean_wait_transport_T3_BCAS
+  - mean_wait_transport_T1_DNBI
+  - mean_wait_transport_T2_DNBI
+  - mean_wait_transport_T3_DNBI
+
+  # ── Total ambulance travel time (minutes) ──────────────────────────────────
+  - total_transport_time
+
+  # ── Queue: waiting for transport at CCP ────────────────────────────────────
+  - waiting_transport_ccp_t1_bcas_dcr_dcs
+  - waiting_transport_ccp_t1_bcas_dcr
+  - waiting_transport_ccp_t2_bcas_dcr_dcs
+  - waiting_transport_ccp_t2_bcas_dcr
+  - waiting_transport_ccp_t3_bcas_pec_dcs
+  - waiting_transport_ccp_t3_bcas_pec
+  - waiting_transport_ccp_t1_dnbi_dcr_dcs
+  - waiting_transport_ccp_t1_dnbi_dcr
+  - waiting_transport_ccp_t2_dnbi_dcr_dcs
+  - waiting_transport_ccp_t2_dnbi_dcr
+  - waiting_transport_ccp_t3_dnbi_pec_dcs
+  - waiting_transport_ccp_t3_dnbi_pec
+
+  # ── Queue: waiting for transport at Role 1 ─────────────────────────────────
+  - waiting_transport_role1_t1_bcas_dcr_dcs
+  - waiting_transport_role1_t2_bcas_dcr_dcs
+  - waiting_transport_role1_t3_bcas_pec_dcs
+  - waiting_transport_role1_t1_dnbi_dcr_dcs
+  - waiting_transport_role1_t2_dnbi_dcr_dcs
+  - waiting_transport_role1_t3_dnbi_pec_dcs
+
+  # ── Queue: waiting for DCR care at Role 1 ──────────────────────────────────
+  - waiting_care_dcr_t1_bcas_dcr_dcs
+  - waiting_care_dcr_t1_bcas_dcr
+  - waiting_care_dcr_t2_bcas_dcr_dcs
+  - waiting_care_dcr_t2_bcas_dcr
+  - waiting_care_dcr_t1_dnbi_dcr_dcs
+  - waiting_care_dcr_t1_dnbi_dcr
+  - waiting_care_dcr_t2_dnbi_dcr_dcs
+  - waiting_care_dcr_t2_dnbi_dcr
+
+  # ── Queue: waiting for PEC care at Role 1 ──────────────────────────────────
+  - waiting_care_pec_t3_bcas_pec_dcs
+  - waiting_care_pec_t3_bcas_pec
+  - waiting_care_pec_t3_dnbi_pec_dcs
+  - waiting_care_pec_t3_dnbi_pec
+
+  # ── Queue: waiting for DCS surgery at Role 2 ───────────────────────────────
+  - waiting_care_dcs_t1_bcas_dcr_dcs
+  - waiting_care_dcs_t2_bcas_dcr_dcs
+  - waiting_care_dcs_t3_bcas_pec_dcs
+  - waiting_care_dcs_t1_dnbi_dcr_dcs
+  - waiting_care_dcs_t2_dnbi_dcr_dcs
+  - waiting_care_dcs_t3_dnbi_pec_dcs
+
+  # ── Phase duration: transit CCP -> Role 1 ──────────────────────────────────
+  - transit_ccp_role1_t1_bcas_dcr_dcs
+  - transit_ccp_role1_t1_bcas_dcr
+  - transit_ccp_role1_t2_bcas_dcr_dcs
+  - transit_ccp_role1_t2_bcas_dcr
+  - transit_ccp_role1_t3_bcas_pec_dcs
+  - transit_ccp_role1_t3_bcas_pec
+  - transit_ccp_role1_t1_dnbi_dcr_dcs
+  - transit_ccp_role1_t1_dnbi_dcr
+  - transit_ccp_role1_t2_dnbi_dcr_dcs
+  - transit_ccp_role1_t2_dnbi_dcr
+  - transit_ccp_role1_t3_dnbi_pec_dcs
+  - transit_ccp_role1_t3_dnbi_pec
+
+  # ── Phase duration: transit Role 1 -> Role 2 ───────────────────────────────
+  - transit_role1_role2_t1_bcas_dcr_dcs
+  - transit_role1_role2_t2_bcas_dcr_dcs
+  - transit_role1_role2_t3_bcas_pec_dcs
+  - transit_role1_role2_t1_dnbi_dcr_dcs
+  - transit_role1_role2_t2_dnbi_dcr_dcs
+  - transit_role1_role2_t3_dnbi_pec_dcs
+
+  # ── Phase duration: time in DCR care at Role 1 ─────────────────────────────
+  - in_care_dcr_t1_bcas_dcr_dcs
+  - in_care_dcr_t1_bcas_dcr
+  - in_care_dcr_t2_bcas_dcr_dcs
+  - in_care_dcr_t2_bcas_dcr
+  - in_care_dcr_t1_dnbi_dcr_dcs
+  - in_care_dcr_t1_dnbi_dcr
+  - in_care_dcr_t2_dnbi_dcr_dcs
+  - in_care_dcr_t2_dnbi_dcr
+
+  # ── Phase duration: time in PEC care at Role 1 ─────────────────────────────
+  - in_care_pec_t3_bcas_pec_dcs
+  - in_care_pec_t3_bcas_pec
+  - in_care_pec_t3_dnbi_pec_dcs
+  - in_care_pec_t3_dnbi_pec
+
+  # ── Phase duration: time in DCS surgery at Role 2 ──────────────────────────
+  - in_care_dcs_t1_bcas_dcr_dcs
+  - in_care_dcs_t2_bcas_dcr_dcs
+  - in_care_dcs_t3_bcas_pec_dcs
+  - in_care_dcs_t1_dnbi_dcr_dcs
+  - in_care_dcs_t2_dnbi_dcr_dcs
+  - in_care_dcs_t3_dnbi_pec_dcs
+
+  # ── Deaths by phase × triage ───────────────────────────────────────────────
+  - n_died_ccp_wait_transport_T1
+  - n_died_ccp_wait_transport_T2
+  - n_died_ccp_wait_transport_T3
+  - n_died_r1_wait_care_T1
+  - n_died_r1_wait_care_T2
+  - n_died_r1_wait_care_T3
+  - n_died_r1_wait_transport_T1
+  - n_died_r1_wait_transport_T2
+  - n_died_r1_wait_transport_T3
+  - n_died_r2_wait_care_T1
+  - n_died_r2_wait_care_T2
+  - n_died_r2_wait_care_T3
+
+  # ── Median wait times per phase ────────────────────────────────────────────
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+
+  # ── Phase entry/completion counts ──────────────────────────────────────────
+  - n_started_ccp_transport_T1
+  - n_started_ccp_transport_T2
+  - n_completed_ccp_transport_T1
+  - n_completed_ccp_transport_T2
+  - n_started_r1_care_T1
+  - n_started_r1_care_T2
+  - n_completed_r1_care_T1
+  - n_completed_r1_care_T2
+  - n_started_r1_transport_T1
+  - n_started_r1_transport_T2
+  - n_completed_r1_transport_T1
+  - n_completed_r1_transport_T2
+  - n_started_r2_care_T1
+  - n_started_r2_care_T2
+  - n_completed_r2_care_T1
+  - n_completed_r2_care_T2
+
+  # ── Per-phase mortality rates ──────────────────────────────────────────────
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Queue imbalance across facilities ──────────────────────────────────────
+  - mean_std_queue_dcr
+  - mean_std_queue_dcs
+
+  # ── Evacuation timeline compliance ─────────────────────────────────────────
+  - frac_t2_within_timeline
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 3              # 3 bcas_rate levels (full factorial)
+  n_policies: 180            # 50 seeds × 2^6 dispatch combos (full factorial)
+  uncertainty_sampler: fullfactorial
+  lever_sampler: fullfactorial
+  batch_size: 50
+  max_parallel: 4

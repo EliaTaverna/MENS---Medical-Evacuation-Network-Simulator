@@ -72,6 +72,7 @@ class RunSetter:
         data     = self._apply_set_ambulances_r1_r2(data, kwargs, seeds["ambulances"])
         data     = self._apply_casualties(data, kwargs, seeds["casualties"],
                                           battalion_seed=seeds["battalions"])
+        data     = self._apply_dispatch_rules(data, kwargs)
         levers   = self._apply_levers(kwargs, master_seed)
         settings = self._build_settings(levers, master_seed, seeds["simulation"], kwargs)
         return data, settings
@@ -576,6 +577,90 @@ class RunSetter:
         if not s:
             return []
         return [c.strip().lower() for c in s.split(",") if c.strip()]
+
+    # ── Dispatch rules ───────────────────────────────────────────────────────
+
+    def _apply_dispatch_rules(self, data: dict, kwargs: dict) -> dict:
+        """Override individual dispatch-rule parameters while keeping rule order fixed.
+
+        The default dispatch_rules (from the scenario YAML) are an ordered list
+        of dicts, each with {triage, min_count, min_wait_min}.  This method
+        lets experiment levers tweak numeric fields without changing the
+        priority ordering.
+
+        For each triage class T the two tuneable aspects are:
+
+        - **count threshold** (``t<x>_min_count``): how many patients of that
+          triage must accumulate before the rule fires.  Applied to the
+          count-triggered rule (the one with ``min_wait_min == 0``) when
+          one exists, otherwise to the single rule for that triage.
+        - **wait threshold** (``t<x>_min_wait_min``): minutes a patient waits
+          before becoming eligible regardless of count.  Applied to the
+          time-triggered rule (``min_wait_min > 0``) when one exists,
+          otherwise to the single rule for that triage.
+
+        Supported kwargs (all optional):
+        - ``t1_min_count``      (default 1)
+        - ``t1_min_wait_min``   (default 60)
+        - ``t2_min_count``      (default 2)
+        - ``t2_min_wait_min``   (default 240)
+        - ``t3_min_count``      (default 4)
+        - ``t3_min_wait_min``   (default 720)
+        """
+        _TRIAGE_KEYS = {
+            "T1": ("t1_min_count", "t1_min_wait_min"),
+            "T2": ("t2_min_count", "t2_min_wait_min"),
+            "T3": ("t3_min_count", "t3_min_wait_min"),
+        }
+
+        # Collect only the kwargs that are actually provided
+        overrides: dict[str, dict] = {}  # triage → {"count": int, "wait": int}
+        for tri, (count_key, wait_key) in _TRIAGE_KEYS.items():
+            c = kwargs.get(count_key)
+            w = kwargs.get(wait_key)
+            if c is not None or w is not None:
+                overrides[tri] = {}
+                if c is not None:
+                    overrides[tri]["count"] = int(c)
+                if w is not None:
+                    overrides[tri]["wait"] = int(w)
+
+        if not overrides:
+            return data
+
+        rules = [dict(r) for r in (data.get("dispatch_rules") or [])]
+        if not rules:
+            return data
+
+        # Group rule indices by triage
+        by_triage: dict[str, list[int]] = {}
+        for i, rule in enumerate(rules):
+            by_triage.setdefault(rule["triage"], []).append(i)
+
+        for tri, ov in overrides.items():
+            indices = by_triage.get(tri, [])
+            if not indices:
+                continue
+
+            if len(indices) == 1:
+                # Single rule for this triage — apply both overrides to it
+                idx = indices[0]
+                if "count" in ov:
+                    rules[idx]["min_count"] = ov["count"]
+                if "wait" in ov:
+                    rules[idx]["min_wait_min"] = ov["wait"]
+            else:
+                # Multiple rules (e.g. T2 has a count-trigger and a wait-trigger).
+                # count override → rule with min_wait_min == 0
+                # wait override  → rule with min_wait_min > 0
+                for idx in indices:
+                    if rules[idx]["min_wait_min"] == 0 and "count" in ov:
+                        rules[idx]["min_count"] = ov["count"]
+                    elif rules[idx]["min_wait_min"] > 0 and "wait" in ov:
+                        rules[idx]["min_wait_min"] = ov["wait"]
+
+        data["dispatch_rules"] = rules
+        return data
 
     # ── Levers ────────────────────────────────────────────────────────────────
 

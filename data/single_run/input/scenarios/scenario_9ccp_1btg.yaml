@@ -27,12 +27,18 @@ dispatch_rules:
   - triage: T1
     min_count: 1
     min_wait_min: 0
-  - triage: T2
-    min_count: 2
+  - triage: T1
+    min_count: 1
     min_wait_min: 0
   - triage: T2
     min_count: 1
-    min_wait_min: 240
+    min_wait_min: 0
+  - triage: T2
+    min_count: 1
+    min_wait_min: 0
+  - triage: T3
+    min_count: 400
+    min_wait_min: 0
   - triage: T3
     min_count: 1
     min_wait_min: 720
