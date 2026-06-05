@@ -20,18 +20,18 @@ uncertainties:
 
   - name: ccp_r1_same_bn_min
     type: integer
-    lower: 5
-    upper: 60
+    lower: 10
+    upper: 20
 
   - name: ccp_r1_inter_bn_min
     type: integer
-    lower: 5
-    upper: 60
+    lower: 15
+    upper: 35
 
   - name: bcas_rate
     type: real
     lower: 0.01
-    upper: 0.08
+    upper: 0.07
 
   - name: waves_per_day
     type: integer
@@ -41,7 +41,7 @@ uncertainties:
   - name: wave_duration_min
     type: integer
     lower: 1
-    upper: 120
+    upper: 60
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

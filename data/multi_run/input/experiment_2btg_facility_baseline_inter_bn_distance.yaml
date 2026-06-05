@@ -1,0 +1,84 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: INTER-BN DISTANCE SWEEP — 2 BTG, FACILITY POOLING BASELINE
+# ═══════════════════════════════════════════════════════════════════════════════
+# Sweeps inter-battalion distance while keeping all other parameters at
+# baseline (distance_own=20, bcas=0.02, waves=2, wave_dur=30).
+# Scenario has facility_eligibility=1, ambulance_eligibility=0.
+#
+# Design: 12 distance levels × 100 seeds = 1200 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_2btg_1ccp_each_facility_baseline.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES
+# ═══════════════════════════════════════════════════════════════════════════════
+uncertainties:
+
+  - name: ccp_r1_inter_bn_min
+    type: categorical
+    values: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS
+# ═══════════════════════════════════════════════════════════════════════════════
+levers:
+
+  - name: seed
+    type: integer
+    lower: 1
+    upper: 100
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  - death_rate
+  - safe_rate
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+  - n_dead_T1_BCAS
+  - n_dead_T2_BCAS
+  - n_dead_T3_BCAS
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+  - frac_t2_within_timeline
+  - frac_facility_cross_bn
+  - frac_transport_cross_bn
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 12
+  n_policies: 100
+  uncertainty_sampler: fullfactorial
+  lever_sampler: fullfactorial
+  batch_size: 50
+  max_parallel: 4
