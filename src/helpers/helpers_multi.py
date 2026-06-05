@@ -337,6 +337,19 @@ def compute_outcomes(results: dict) -> dict:
                     outcomes["n_transport_same_bn"] += 1
                     outcomes["n_transport_same_bde"] += 1
 
+    # ── Pooling fractions ────────────────────────────────────────────────
+    n_fac_total = (outcomes["n_facility_same_bn"]
+                   + outcomes["n_facility_cross_bn"]
+                   + outcomes["n_facility_cross_bde"])
+    n_trn_total = (outcomes["n_transport_same_bn"]
+                   + outcomes["n_transport_cross_bn"]
+                   + outcomes["n_transport_cross_bde"])
+
+    outcomes["frac_facility_cross_bn"]  = (outcomes["n_facility_cross_bn"]  / n_fac_total) if n_fac_total else 0.0
+    outcomes["frac_facility_cross_bde"] = (outcomes["n_facility_cross_bde"] / n_fac_total) if n_fac_total else 0.0
+    outcomes["frac_transport_cross_bn"]  = (outcomes["n_transport_cross_bn"]  / n_trn_total) if n_trn_total else 0.0
+    outcomes["frac_transport_cross_bde"] = (outcomes["n_transport_cross_bde"] / n_trn_total) if n_trn_total else 0.0
+
     # Phase durations from advanced patient log
     if patient_log_df is not None and not patient_log_df.empty:
         phase_durations = _compute_phase_durations(patient_log_df)

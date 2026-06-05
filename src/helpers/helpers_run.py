@@ -391,7 +391,7 @@ def save_gantt_chart(data: dict, results: dict) -> None:
             title="Spawn location",
             tickvals=list(range(len(locations))),
             ticktext=locations,
-            range=[-0.5, len(locations) - 0.5],
+            autorange="reversed",
         ),
         height=max(400, len(locations) * 22 + 120),
         hovermode="closest",

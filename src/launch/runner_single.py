@@ -13,7 +13,7 @@ from src.helpers.helpers_run import prepare_run, save_logs, save_network_image, 
 
 if __name__ == "__main__":
     data, settings, run_folder = prepare_run(
-        scenario_path="data/single_run/input/scenarios/scenario_1ccp_1btg.yaml",
+        scenario_path="data/single_run/input/scenarios/scenario_2btg_1ccp_each.yaml",
     )
     results = run_simulation(data, settings, run_folder)
 

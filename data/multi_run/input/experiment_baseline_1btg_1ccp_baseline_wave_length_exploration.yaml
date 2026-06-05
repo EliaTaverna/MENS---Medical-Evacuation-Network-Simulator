@@ -1,0 +1,150 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: WAVE DURATION EXPLORATION — 1 BTG, 1 CCP (PRIM BASELINE)
+# ═══════════════════════════════════════════════════════════════════════════════
+# OAT sweep of wave_duration_min at the PRIM tipping-point baseline:
+#   distance = 20 min, bcas_rate = 0.02, waves_per_day = 2
+#
+# Design: 15 wave_duration levels × 100 seeds = 1500 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_1ccp_1btg_wave_exploration.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES
+# ═══════════════════════════════════════════════════════════════════════════════
+uncertainties:
+
+  - name: wave_duration_min
+    type: categorical
+    values: [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 120, 240]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS
+# ═══════════════════════════════════════════════════════════════════════════════
+levers:
+
+  - name: seed
+    type: integer
+    lower: 1
+    upper: 100
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  # ── Overall mortality and survival ─────────────────────────────────────────
+  - death_rate
+  - safe_rate
+
+  # ── Mortality by triage and casualty type ──────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+  - death_rate_T1_DNBI
+  - death_rate_T2_DNBI
+  - death_rate_T3_DNBI
+
+  # ── Patient counts by triage ───────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+  - n_dead_T1_BCAS
+  - n_dead_T2_BCAS
+  - n_dead_T3_BCAS
+
+  # ── Mean wait time for care (minutes) ──────────────────────────────────────
+  - mean_wait_care_T1_BCAS
+  - mean_wait_care_T2_BCAS
+  - mean_wait_care_T3_BCAS
+  - mean_wait_care_T1_DNBI
+  - mean_wait_care_T2_DNBI
+  - mean_wait_care_T3_DNBI
+
+  # ── Mean wait time for transport (minutes) ─────────────────────────────────
+  - mean_wait_transport_T1_BCAS
+  - mean_wait_transport_T2_BCAS
+  - mean_wait_transport_T3_BCAS
+  - mean_wait_transport_T1_DNBI
+  - mean_wait_transport_T2_DNBI
+  - mean_wait_transport_T3_DNBI
+
+  # ── Total ambulance travel time (minutes) ──────────────────────────────────
+  - total_transport_time
+
+  # ── Deaths by phase × triage ───────────────────────────────────────────────
+  - n_died_ccp_wait_transport_T1
+  - n_died_ccp_wait_transport_T2
+  - n_died_ccp_wait_transport_T3
+  - n_died_r1_wait_care_T1
+  - n_died_r1_wait_care_T2
+  - n_died_r1_wait_care_T3
+  - n_died_r1_wait_transport_T1
+  - n_died_r1_wait_transport_T2
+  - n_died_r1_wait_transport_T3
+  - n_died_r2_wait_care_T1
+  - n_died_r2_wait_care_T2
+  - n_died_r2_wait_care_T3
+
+  # ── Median wait times per phase ────────────────────────────────────────────
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+
+  # ── Phase entry/completion counts ──────────────────────────────────────────
+  - n_started_ccp_transport_T1
+  - n_started_ccp_transport_T2
+  - n_completed_ccp_transport_T1
+  - n_completed_ccp_transport_T2
+  - n_started_r1_care_T1
+  - n_started_r1_care_T2
+  - n_completed_r1_care_T1
+  - n_completed_r1_care_T2
+  - n_started_r1_transport_T1
+  - n_started_r1_transport_T2
+  - n_completed_r1_transport_T1
+  - n_completed_r1_transport_T2
+  - n_started_r2_care_T1
+  - n_started_r2_care_T2
+  - n_completed_r2_care_T1
+  - n_completed_r2_care_T2
+
+  # ── Per-phase mortality rates ──────────────────────────────────────────────
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Queue imbalance across facilities ──────────────────────────────────────
+  - mean_std_queue_dcr
+  - mean_std_queue_dcs
+
+  # ── Evacuation timeline compliance ─────────────────────────────────────────
+  - frac_t2_within_timeline
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 15             # 15 wave_duration levels (full factorial)
+  n_policies: 100             # 100 seeds
+  uncertainty_sampler: fullfactorial
+  lever_sampler: fullfactorial
+  batch_size: 50
+  max_parallel: 4

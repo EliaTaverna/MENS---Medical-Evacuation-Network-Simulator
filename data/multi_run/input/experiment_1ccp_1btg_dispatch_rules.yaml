@@ -9,7 +9,7 @@
 #       = 3 × 3200 = 9600 runs
 # ═══════════════════════════════════════════════════════════════════════════════
 
-scenario: data/single_run/input/scenarios/scenario_1ccp_1btg.yaml
+scenario: data/single_run/input/scenarios/scenario_1ccp_1btg_egalitarian.yaml
 output_folder: data/multi_run/output
 
 
@@ -33,16 +33,13 @@ levers:
   - name: seed
     type: integer
     lower: 1
-    upper: 30
+    upper: 100
 
   # T2 — urgent. Baseline: count=2 (pair rule), wait=240 min (safety net).
-  - name: t2_min_count
-    type: categorical
-    values: [1, 2]
 
   - name: t2_min_wait_min
     type: categorical
-    values: [0, 30, 60, 120]
+    values: [0, 120]
 
 
 
@@ -248,8 +245,8 @@ outcomes:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 run_settings:
-  n_scenarios: 3              # 3 bcas_rate levels (full factorial)
-  n_policies: 180            # 50 seeds × 2^6 dispatch combos (full factorial)
+  n_scenarios: 2             # 3 bcas_rate levels (full factorial)
+  n_policies: 200            # 50 seeds × 2^6 dispatch combos (full factorial)
   uncertainty_sampler: fullfactorial
   lever_sampler: fullfactorial
   batch_size: 50

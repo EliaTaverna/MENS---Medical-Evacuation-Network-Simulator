@@ -1,0 +1,250 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: DISTANCE TO NEIGHBOR R1 — 2 BTG, 1 CCP EACH
+# ═══════════════════════════════════════════════════════════════════════════════
+# Varies the travel time from a CCP to the other battalion's R1 (inter-BN)
+# while keeping the own-battalion CCP→R1 distance fixed at baseline (20 min).
+# Baseline parameters: bcas_rate=0.02, waves_per_day=2, wave_duration_min=30.
+# Facility and ambulance eligibility are set to bn_pool (1) so cross-battalion
+# routing is permitted.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_2btg_1ccp_each.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES
+# ═══════════════════════════════════════════════════════════════════════════════
+uncertainties:
+
+  - name: ccp_r1_inter_bn_min
+    type: categorical
+    values: [5,15,30,45,60,75,90,105,120,135]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+levers:
+
+  - name: seed
+    type: integer
+    lower: 1
+    upper: 100
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  # ── Overall mortality and survival ─────────────────────────────────────────
+  - death_rate
+  - safe_rate
+
+  # ── Mortality by triage and casualty type ──────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+  - death_rate_T1_DNBI
+  - death_rate_T2_DNBI
+  - death_rate_T3_DNBI
+
+  # ── Patient counts by triage ───────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+  - n_dead_T1_BCAS
+  - n_dead_T2_BCAS
+  - n_dead_T3_BCAS
+
+  # ── Mean wait time for care (minutes) ──────────────────────────────────────
+  - mean_wait_care_T1_BCAS
+  - mean_wait_care_T2_BCAS
+  - mean_wait_care_T3_BCAS
+  - mean_wait_care_T1_DNBI
+  - mean_wait_care_T2_DNBI
+  - mean_wait_care_T3_DNBI
+
+  # ── Mean wait time for transport (minutes) ─────────────────────────────────
+  - mean_wait_transport_T1_BCAS
+  - mean_wait_transport_T2_BCAS
+  - mean_wait_transport_T3_BCAS
+  - mean_wait_transport_T1_DNBI
+  - mean_wait_transport_T2_DNBI
+  - mean_wait_transport_T3_DNBI
+
+  # ── Total ambulance travel time (minutes) ──────────────────────────────────
+  - total_transport_time
+
+  # ── Queue: waiting for transport at CCP ────────────────────────────────────
+  - waiting_transport_ccp_t1_bcas_dcr_dcs
+  - waiting_transport_ccp_t1_bcas_dcr
+  - waiting_transport_ccp_t2_bcas_dcr_dcs
+  - waiting_transport_ccp_t2_bcas_dcr
+  - waiting_transport_ccp_t3_bcas_pec_dcs
+  - waiting_transport_ccp_t3_bcas_pec
+  - waiting_transport_ccp_t1_dnbi_dcr_dcs
+  - waiting_transport_ccp_t1_dnbi_dcr
+  - waiting_transport_ccp_t2_dnbi_dcr_dcs
+  - waiting_transport_ccp_t2_dnbi_dcr
+  - waiting_transport_ccp_t3_dnbi_pec_dcs
+  - waiting_transport_ccp_t3_dnbi_pec
+
+  # ── Queue: waiting for transport at Role 1 ─────────────────────────────────
+  - waiting_transport_role1_t1_bcas_dcr_dcs
+  - waiting_transport_role1_t2_bcas_dcr_dcs
+  - waiting_transport_role1_t3_bcas_pec_dcs
+  - waiting_transport_role1_t1_dnbi_dcr_dcs
+  - waiting_transport_role1_t2_dnbi_dcr_dcs
+  - waiting_transport_role1_t3_dnbi_pec_dcs
+
+  # ── Queue: waiting for DCR care at Role 1 ──────────────────────────────────
+  - waiting_care_dcr_t1_bcas_dcr_dcs
+  - waiting_care_dcr_t1_bcas_dcr
+  - waiting_care_dcr_t2_bcas_dcr_dcs
+  - waiting_care_dcr_t2_bcas_dcr
+  - waiting_care_dcr_t1_dnbi_dcr_dcs
+  - waiting_care_dcr_t1_dnbi_dcr
+  - waiting_care_dcr_t2_dnbi_dcr_dcs
+  - waiting_care_dcr_t2_dnbi_dcr
+
+  # ── Queue: waiting for PEC care at Role 1 ──────────────────────────────────
+  - waiting_care_pec_t3_bcas_pec_dcs
+  - waiting_care_pec_t3_bcas_pec
+  - waiting_care_pec_t3_dnbi_pec_dcs
+  - waiting_care_pec_t3_dnbi_pec
+
+  # ── Queue: waiting for DCS surgery at Role 2 ───────────────────────────────
+  - waiting_care_dcs_t1_bcas_dcr_dcs
+  - waiting_care_dcs_t2_bcas_dcr_dcs
+  - waiting_care_dcs_t3_bcas_pec_dcs
+  - waiting_care_dcs_t1_dnbi_dcr_dcs
+  - waiting_care_dcs_t2_dnbi_dcr_dcs
+  - waiting_care_dcs_t3_dnbi_pec_dcs
+
+  # ── Phase duration: transit CCP -> Role 1 ──────────────────────────────────
+  - transit_ccp_role1_t1_bcas_dcr_dcs
+  - transit_ccp_role1_t1_bcas_dcr
+  - transit_ccp_role1_t2_bcas_dcr_dcs
+  - transit_ccp_role1_t2_bcas_dcr
+  - transit_ccp_role1_t3_bcas_pec_dcs
+  - transit_ccp_role1_t3_bcas_pec
+  - transit_ccp_role1_t1_dnbi_dcr_dcs
+  - transit_ccp_role1_t1_dnbi_dcr
+  - transit_ccp_role1_t2_dnbi_dcr_dcs
+  - transit_ccp_role1_t2_dnbi_dcr
+  - transit_ccp_role1_t3_dnbi_pec_dcs
+  - transit_ccp_role1_t3_dnbi_pec
+
+  # ── Phase duration: transit Role 1 -> Role 2 ───────────────────────────────
+  - transit_role1_role2_t1_bcas_dcr_dcs
+  - transit_role1_role2_t2_bcas_dcr_dcs
+  - transit_role1_role2_t3_bcas_pec_dcs
+  - transit_role1_role2_t1_dnbi_dcr_dcs
+  - transit_role1_role2_t2_dnbi_dcr_dcs
+  - transit_role1_role2_t3_dnbi_pec_dcs
+
+  # ── Phase duration: time in DCR care at Role 1 ─────────────────────────────
+  - in_care_dcr_t1_bcas_dcr_dcs
+  - in_care_dcr_t1_bcas_dcr
+  - in_care_dcr_t2_bcas_dcr_dcs
+  - in_care_dcr_t2_bcas_dcr
+  - in_care_dcr_t1_dnbi_dcr_dcs
+  - in_care_dcr_t1_dnbi_dcr
+  - in_care_dcr_t2_dnbi_dcr_dcs
+  - in_care_dcr_t2_dnbi_dcr
+
+  # ── Phase duration: time in PEC care at Role 1 ─────────────────────────────
+  - in_care_pec_t3_bcas_pec_dcs
+  - in_care_pec_t3_bcas_pec
+  - in_care_pec_t3_dnbi_pec_dcs
+  - in_care_pec_t3_dnbi_pec
+
+  # ── Phase duration: time in DCS surgery at Role 2 ──────────────────────────
+  - in_care_dcs_t1_bcas_dcr_dcs
+  - in_care_dcs_t2_bcas_dcr_dcs
+  - in_care_dcs_t3_bcas_pec_dcs
+  - in_care_dcs_t1_dnbi_dcr_dcs
+  - in_care_dcs_t2_dnbi_dcr_dcs
+  - in_care_dcs_t3_dnbi_pec_dcs
+
+  # ── Deaths by phase × triage ───────────────────────────────────────────────
+  - n_died_ccp_wait_transport_T1
+  - n_died_ccp_wait_transport_T2
+  - n_died_ccp_wait_transport_T3
+  - n_died_r1_wait_care_T1
+  - n_died_r1_wait_care_T2
+  - n_died_r1_wait_care_T3
+  - n_died_r1_wait_transport_T1
+  - n_died_r1_wait_transport_T2
+  - n_died_r1_wait_transport_T3
+  - n_died_r2_wait_care_T1
+  - n_died_r2_wait_care_T2
+  - n_died_r2_wait_care_T3
+
+  # ── Median wait times per phase ────────────────────────────────────────────
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+
+  # ── Phase entry/completion counts ──────────────────────────────────────────
+  - n_started_ccp_transport_T1
+  - n_started_ccp_transport_T2
+  - n_completed_ccp_transport_T1
+  - n_completed_ccp_transport_T2
+  - n_started_r1_care_T1
+  - n_started_r1_care_T2
+  - n_completed_r1_care_T1
+  - n_completed_r1_care_T2
+  - n_started_r1_transport_T1
+  - n_started_r1_transport_T2
+  - n_completed_r1_transport_T1
+  - n_completed_r1_transport_T2
+  - n_started_r2_care_T1
+  - n_started_r2_care_T2
+  - n_completed_r2_care_T1
+  - n_completed_r2_care_T2
+
+  # ── Per-phase mortality rates ──────────────────────────────────────────────
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Queue imbalance across facilities ──────────────────────────────────────
+  - mean_std_queue_dcr
+  - mean_std_queue_dcs
+
+  # ── Evacuation timeline compliance ─────────────────────────────────────────
+  - frac_t2_within_timeline
+
+  # ── Pooling fractions ──────────────────────────────────────────────────────
+  - frac_facility_cross_bn
+  - frac_facility_cross_bde
+  - frac_transport_cross_bn
+  - frac_transport_cross_bde
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 10              # 6 distance levels (full factorial)
+  n_policies: 100             # 100 seeds
+  uncertainty_sampler: fullfactorial
+  lever_sampler: fullfactorial
+  batch_size: 50
+  max_parallel: 4

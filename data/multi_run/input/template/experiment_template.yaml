@@ -521,6 +521,14 @@ outcomes:
   # ── Evacuation timeline compliance (1) ─────────────────────────────────────
   - frac_t2_within_timeline        # fraction of T2 meeting R1≤1h AND R2≤2h from CCP
 
+  # ── Pooling fractions (4) ──────────────────────────────────────────────────
+  # Fraction of trips where the patient was sent to / picked up by a unit
+  # from a different battalion or brigade. Only meaningful with >1 battalion.
+  - frac_facility_cross_bn         # patient sent to R1 of a different battalion (same brigade)
+  - frac_facility_cross_bde        # patient sent to R1 of a different brigade
+  - frac_transport_cross_bn        # patient picked up by ambulance from a different battalion
+  - frac_transport_cross_bde       # patient picked up by ambulance from a different brigade
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ARRAY OUTCOMES (time series — saved to timeseries.npz, not results.csv)

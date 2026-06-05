@@ -1,0 +1,70 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: SOBOL SA ON AMBULANCE POOLING USEFULNESS — 2 BTG, 1 CCP EACH
+# ═══════════════════════════════════════════════════════════════════════════════
+# Sobol sensitivity analysis on delta T1 mortality (amb_pool − stovepipe).
+# Two policies per Saltelli row: stovepipe (fac=0, amb=0) and pool ambulances
+# (fac=0, amb=1). The delta is computed post-hoc in the analysis notebook.
+#
+# 4 uncertainties, N=256, second order → 256*(2*4+2) = 2560 Saltelli rows
+# × 2 policies = 5120 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_2btg_1ccp_each_ambulance_baseline.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES
+# ═══════════════════════════════════════════════════════════════════════════════
+uncertainties:
+
+  - name: ccp_r1_inter_bn_min
+    type: integer
+    lower: 10
+    upper: 150
+
+  - name: bcas_rate
+    type: real
+    lower: 0.01
+    upper: 0.08
+
+  - name: waves_per_day
+    type: integer
+    lower: 1
+    upper: 6
+
+  - name: wave_duration_min
+    type: integer
+    lower: 1
+    upper: 120
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS
+# ═══════════════════════════════════════════════════════════════════════════════
+levers:
+  - name: ambulance_eligibility
+    type: categorical
+    values: [0, 1]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  - death_rate_T1_BCAS
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 256
+  n_policies: 2               # stovepipe + amb_pool (full factorial on amb eligibility)
+  uncertainty_sampler: sobol
+  lever_sampler: fullfactorial
+  batch_size: 50
+  max_parallel: 4
