@@ -46,6 +46,8 @@ levers:
 outcomes:
 
   - death_rate_T1_BCAS
+  - frac_facility_cross_bn
+  - frac_transport_cross_bn
 
 run_settings:
   n_scenarios: 1024
