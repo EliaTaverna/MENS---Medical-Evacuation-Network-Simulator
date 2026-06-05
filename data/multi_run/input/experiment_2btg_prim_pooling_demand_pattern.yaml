@@ -1,0 +1,71 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: PRIM ON AMBULANCE POOLING DEMAND PATTERNS — 2 BTG, 1 CCP EACH
+# ═══════════════════════════════════════════════════════════════════════════════
+# LHS sweep to find demand conditions where ambulance pooling helps or hurts.
+# Inter-bn distance fixed at 35 min (justified by Sobol ST=0.05, negligible).
+# Two policies per scenario: stovepipe (amb=0) and pool (amb=1).
+# Delta computed post-hoc in the analysis notebook for PRIM.
+#
+# Design: 1000 LHS scenarios × 2 policies = 2000 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_2btg_pooling_limit_baseline_amb.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES
+# ═══════════════════════════════════════════════════════════════════════════════
+uncertainties:
+
+  - name: ccp_r1_same_bn_min
+    type: integer
+    lower: 10
+    upper: 20
+
+  - name: bcas_rate
+    type: real
+    lower: 0.01
+    upper: 0.07
+
+  - name: waves_per_day
+    type: integer
+    lower: 1
+    upper: 6
+
+  - name: wave_duration_min
+    type: integer
+    lower: 1
+    upper: 60
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LEVERS
+# ═══════════════════════════════════════════════════════════════════════════════
+levers:
+
+  - name: ambulance_eligibility
+    type: categorical
+    values: [0, 1]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  - death_rate_T1_BCAS
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 1000
+  n_policies: 2
+  uncertainty_sampler: lhs
+  lever_sampler: fullfactorial
+  batch_size: 50
+  max_parallel: 4
