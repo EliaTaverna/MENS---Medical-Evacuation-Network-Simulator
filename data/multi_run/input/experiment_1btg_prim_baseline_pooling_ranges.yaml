@@ -1,0 +1,59 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: PRIM BASELINE — 1 BTG, POOLING RANGES
+# ═══════════════════════════════════════════════════════════════════════════════
+# LHS sweep with the same ranges used in the pooling experiments to find
+# the mortality tipping point within the pooling-relevant parameter space.
+#
+# Design: 2000 LHS scenarios × 1 policy = 2000 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_1ccp_1btg_baseline.yaml
+output_folder: data/multi_run/output
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNCERTAINTIES
+# ═══════════════════════════════════════════════════════════════════════════════
+uncertainties:
+
+  - name: ccp_r1_same_bn_min
+    type: integer
+    lower: 10
+    upper: 20
+
+  - name: bcas_rate
+    type: real
+    lower: 0.01
+    upper: 0.07
+
+  - name: waves_per_day
+    type: integer
+    lower: 1
+    upper: 6
+
+  - name: wave_duration_min
+    type: integer
+    lower: 1
+    upper: 60
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SCALAR OUTCOMES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+outcomes:
+
+  - death_rate_T1_BCAS
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RUN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+run_settings:
+  n_scenarios: 2000
+  n_policies: 0
+  uncertainty_sampler: lhs
+  lever_sampler: fullfactorial
+  batch_size: 1000
+  max_parallel: 4

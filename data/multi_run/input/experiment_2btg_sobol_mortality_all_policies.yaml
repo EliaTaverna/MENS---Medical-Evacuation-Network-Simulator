@@ -1,0 +1,56 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: SOBOL SA ON T1 MORTALITY — ALL POLICIES — 2 BTG, 1 CCP EACH
+# ═══════════════════════════════════════════════════════════════════════════════
+# Same Saltelli design evaluated under all 4 policy combinations.
+# Split by policy post-hoc for Sobol and PRIM per policy.
+#
+# 4 uncertainties, N=1024, second order → 10240 Saltelli rows
+# × 4 policies = 40960 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_2btg_pooling_limit_baseline_stove.yaml
+output_folder: data/multi_run/output
+
+uncertainties:
+
+  - name: ccp_r1_same_bn_min
+    type: integer
+    lower: 10
+    upper: 20
+
+  - name: bcas_rate
+    type: real
+    lower: 0.01
+    upper: 0.07
+
+  - name: waves_per_day
+    type: integer
+    lower: 1
+    upper: 6
+
+  - name: wave_duration_min
+    type: integer
+    lower: 1
+    upper: 60
+
+levers:
+
+  - name: facility_eligibility
+    type: categorical
+    values: [0, 1]
+
+  - name: ambulance_eligibility
+    type: categorical
+    values: [0, 1]
+
+outcomes:
+
+  - death_rate_T1_BCAS
+
+run_settings:
+  n_scenarios: 1024
+  n_policies: 4
+  uncertainty_sampler: sobol
+  lever_sampler: fullfactorial
+  batch_size: 2000
+  max_parallel: 20

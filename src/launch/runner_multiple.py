@@ -25,7 +25,7 @@ from src.helpers.helpers_multi import (
 )
 
 # ── Point this at your experiment YAML ───────────────────────────────────────
-EXPERIMENT_PATH = "data/multi_run/input/experiment_2btg_prim_pooling_demand_pattern_fac.yaml"
+EXPERIMENT_PATH = "data/multi_run/input/experiment_1btg_prim_baseline_pooling_ranges.yaml"
 # ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
