@@ -4,8 +4,8 @@
 # Same Saltelli design evaluated under all 4 policy combinations.
 # Split by policy post-hoc for Sobol and PRIM per policy.
 #
-# 4 uncertainties, N=1024, second order → 10240 Saltelli rows
-# × 4 policies = 40960 runs
+# 4 uncertainties, N=2048, second order → 20480 Saltelli rows
+# × 4 policies = 81920 runs
 # ═══════════════════════════════════════════════════════════════════════════════
 
 scenario: data/single_run/input/scenarios/scenario_2btg_pooling_limit_baseline_stove.yaml
@@ -45,12 +45,42 @@ levers:
 
 outcomes:
 
+  # ── Mortality ──────────────────────────────────────────────────────────────
   - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+
+  # ── Patient counts ────────────────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+
+  # ── Median wait times per phase ────────────────────────────────────────────
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+
+  # ── Per-phase mortality rates ──────────────────────────────────────────────
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Pooling fractions ──────────────────────────────────────────────────────
   - frac_facility_cross_bn
   - frac_transport_cross_bn
 
 run_settings:
-  n_scenarios: 1024
+  n_scenarios: 2048
   n_policies: 4
   uncertainty_sampler: sobol
   lever_sampler: fullfactorial
