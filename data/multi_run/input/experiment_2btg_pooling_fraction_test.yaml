@@ -1,0 +1,46 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: POOLING FRACTION BUG TEST — 2 BTG, 1 CCP EACH
+# ═══════════════════════════════════════════════════════════════════════════════
+# Quick test to verify pooling fraction fix. Under amb-only (fac=0, amb=1),
+# frac_facility_cross_bn should be 0 since patients can only go to own R1.
+#
+# Design: 4 policies × 50 scenarios = 200 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_2btg_pooling_limit_baseline_stove.yaml
+output_folder: data/multi_run/output
+
+uncertainties:
+
+  - name: seed
+    type: integer
+    lower: 1
+    upper: 1000
+
+  - name: bcas_rate
+    type: categorical
+    values: [0.03, 0.05]
+
+levers:
+
+  - name: facility_eligibility
+    type: categorical
+    values: [0, 1]
+
+  - name: ambulance_eligibility
+    type: categorical
+    values: [0, 1]
+
+outcomes:
+
+  - death_rate_T1_BCAS
+  - frac_facility_cross_bn
+  - frac_transport_cross_bn
+
+run_settings:
+  n_scenarios: 50
+  n_policies: 4
+  uncertainty_sampler: lhs
+  lever_sampler: fullfactorial
+  batch_size: 50
+  max_parallel: 4

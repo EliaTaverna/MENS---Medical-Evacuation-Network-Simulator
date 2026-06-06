@@ -298,7 +298,9 @@ def compute_outcomes(results: dict) -> dict:
         return bde, bn
 
     if not transport_events.empty:
-        departures = transport_events[transport_events["event"] == "departure"].copy()
+        all_departures = transport_events[transport_events["event"] == "departure"].copy()
+        # Only count loaded trips (with patients on board) for pooling metrics
+        departures = all_departures[all_departures["patient_ids"].apply(lambda x: len(x) > 0 if isinstance(x, list) else False)].copy()
 
         # Build ambulance home lookup: amb_id -> (brigade, battalion)
         amb_home = {}
