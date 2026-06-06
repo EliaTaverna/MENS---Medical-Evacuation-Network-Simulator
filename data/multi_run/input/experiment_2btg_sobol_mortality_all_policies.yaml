@@ -4,8 +4,8 @@
 # Same Saltelli design evaluated under all 4 policy combinations.
 # Split by policy post-hoc for Sobol and PRIM per policy.
 #
-# 4 uncertainties, N=2048, second order → 20480 Saltelli rows
-# × 4 policies = 81920 runs
+# 5 uncertainties, N=2048, second order → 2048*(2*5+2) = 24576 Saltelli rows
+# × 4 policies = 98304 runs
 # ═══════════════════════════════════════════════════════════════════════════════
 
 scenario: data/single_run/input/scenarios/scenario_2btg_pooling_limit_baseline_stove.yaml
@@ -17,6 +17,11 @@ uncertainties:
     type: integer
     lower: 10
     upper: 20
+
+  - name: ccp_r1_inter_bn_min
+    type: integer
+    lower: 15
+    upper: 35
 
   - name: bcas_rate
     type: real
