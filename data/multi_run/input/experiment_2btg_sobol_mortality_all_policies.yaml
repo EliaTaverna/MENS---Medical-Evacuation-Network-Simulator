@@ -80,6 +80,9 @@ outcomes:
   - mortality_r2_care_T1
   - mortality_r2_care_T2
 
+  # ── Evacuation timeline compliance ──────────────────────────────────────────
+  - frac_t2_within_timeline
+
   # ── Pooling fractions ──────────────────────────────────────────────────────
   - frac_facility_cross_bn
   - frac_transport_cross_bn
