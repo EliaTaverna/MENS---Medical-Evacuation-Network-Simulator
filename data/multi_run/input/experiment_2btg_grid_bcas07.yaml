@@ -1,0 +1,75 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: DISTANCE GRID — BCAS 0.07 — ALL POLICIES — 100 REPLICATIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+# Full factorial on distance grid (same_bn × inter_bn) × 4 policies.
+# 100 replications per combination for stable statistics.
+#
+# 16 same_bn × 12 inter_bn × 4 policies = 768 combos × 100 = 76,800 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_ratio_bcas07.yaml
+output_folder: data/multi_run/output
+
+uncertainties: []
+
+levers:
+
+  - name: ccp_r1_same_bn_min
+    type: categorical
+    values: [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40]
+
+  - name: ccp_r1_inter_bn_min
+    type: categorical
+    values: [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
+
+  - name: facility_eligibility
+    type: categorical
+    values: [0, 1]
+
+  - name: ambulance_eligibility
+    type: categorical
+    values: [0, 1]
+
+outcomes:
+
+  # ── Mortality ──────────────────────────────────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+
+  # ── Patient counts ────────────────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+
+  # ── Median wait times per phase ────────────────────────────────────────────
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+
+  # ── Per-phase mortality rates ──────────────────────────────────────────────
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Pooling fractions ──────────────────────────────────────────────────────
+  - frac_facility_cross_bn
+  - frac_transport_cross_bn
+
+run_settings:
+  n_scenarios: 100
+  n_policies: 768           # 16 × 12 × 4
+  uncertainty_sampler: lhs
+  lever_sampler: fullfactorial
+  batch_size: 100
+  max_parallel: 20
