@@ -4,7 +4,7 @@
 # Full factorial on distance grid (same_bn × inter_bn) × 4 policies.
 # 100 replications per combination for stable statistics.
 #
-# 16 same_bn × 12 inter_bn × 4 policies = 768 combos × 100 = 76,800 runs
+# 16 same_bn × 12 inter_bn = 192 combos × 100 = 19,200 runs
 # ═══════════════════════════════════════════════════════════════════════════════
 
 scenario: data/single_run/input/scenarios/scenario_ratio_bcas07.yaml
@@ -22,13 +22,6 @@ levers:
     type: categorical
     values: [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
 
-  - name: facility_eligibility
-    type: categorical
-    values: [0, 1]
-
-  - name: ambulance_eligibility
-    type: categorical
-    values: [0, 1]
 
 outcomes:
 
@@ -68,7 +61,7 @@ outcomes:
 
 run_settings:
   n_scenarios: 100
-  n_policies: 768           # 16 × 12 × 4
+  n_policies: 192           # 16 × 12
   uncertainty_sampler: lhs
   lever_sampler: fullfactorial
   batch_size: 100

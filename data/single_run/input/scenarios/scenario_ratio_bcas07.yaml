@@ -40,8 +40,8 @@ dispatch_rules:
     min_wait_min: 720
 levers:
   dispatch_policy: greedy
-  facility_eligibility: 0
-  ambulance_eligibility: 0
+  facility_eligibility: 1
+  ambulance_eligibility: 1
 simulation:
   till: 7200
   trace: false
