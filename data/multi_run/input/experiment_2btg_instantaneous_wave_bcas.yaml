@@ -1,0 +1,82 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: INSTANTANEOUS WAVE — BCAS FULL FACTORIAL — ALL POLICIES
+# ═══════════════════════════════════════════════════════════════════════════════
+# Single instantaneous wave (1 min, 1 per day) to isolate demand intensity.
+# Full factorial on 14 bcas rates × 4 policies = 56 combos.
+# LHS on distances: same_bn 10-40, inter_bn 15-70.
+#
+# 2000 LHS scenarios × 56 combos = 112,000 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_ratio.yaml
+output_folder: data/multi_run/output
+
+uncertainties:
+
+  - name: ccp_r1_same_bn_min
+    type: integer
+    lower: 10
+    upper: 40
+
+  - name: ccp_r1_inter_bn_min
+    type: integer
+    lower: 15
+    upper: 70
+
+levers:
+
+  - name: bcas_rate
+    type: categorical
+    values: [0.005, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040, 0.045, 0.050, 0.055, 0.060, 0.065, 0.070]
+
+  - name: facility_eligibility
+    type: categorical
+    values: [0, 1]
+
+  - name: ambulance_eligibility
+    type: categorical
+    values: [0, 1]
+
+outcomes:
+
+  # ── Mortality ──────────────────────────────────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+
+  # ── Patient counts ────────────────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+
+  # ── Median wait times per phase ────────────────────────────────────────────
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+
+  # ── Per-phase mortality rates ──────────────────────────────────────────────
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Pooling fractions ──────────────────────────────────────────────────────
+  - frac_facility_cross_bn
+  - frac_transport_cross_bn
+
+run_settings:
+  n_scenarios: 2000
+  n_policies: 56          # 14 bcas × 2 fac × 2 amb
+  uncertainty_sampler: lhs
+  lever_sampler: fullfactorial
+  batch_size: 2000
+  max_parallel: 20
