@@ -1,0 +1,59 @@
+name: scenario_ratio_bcas07_stove
+seed: 42
+description: 2 battalion, 1 ccp each. Single wave, 1 min duration, bcas=0.07.
+  Stovepipe baseline for grid experiment.
+components:
+  travel_time_matrix: components/distances/travel_time_matrix_pooling_limit.xlsx
+  coordinates: components/distances/coordinates_2btg_1ccp_each.xlsx
+  axp: components/AXPs/axp_2btg_1ccp_each.xlsx
+  facilities: components/facilities/facilities_2btg_1ccp_each.xlsx
+  units: components/units/units_2btg_1ccp_each.xlsx
+  ambulances: components/ambulances/amb_2btg_1ccp_each.xlsx
+  c2: components/c2/c2_2btg_1ccp_each.xlsx
+policy_matrixes:
+  facility_eligibility:
+    0: policy_matrixes/facility_eligibility/facility_eligibility_2btg_1ccp_each_strict.xlsx
+    1: policy_matrixes/facility_eligibility/facility_eligibility_2btg_1ccp_each_bn_pool.xlsx
+  ambulance_eligibility:
+    0: policy_matrixes/ambulance_eligibility/ambulance_eligibility_2btg_1ccp_each_strict.xlsx
+    1: policy_matrixes/ambulance_eligibility/ambulance_eligibility_2btg_1ccp_each_bn_pool.xlsx
+casualty_generation:
+  config: casualty_generation_settings/sampling_settings/config_ratio_bcas07.yaml
+dispatch_rules:
+  - triage: T1
+    min_count: 1
+    min_wait_min: 0
+  - triage: T1
+    min_count: 1
+    min_wait_min: 0
+  - triage: T2
+    min_count: 1
+    min_wait_min: 0
+  - triage: T2
+    min_count: 1
+    min_wait_min: 0
+  - triage: T3
+    min_count: 4000
+    min_wait_min: 0
+  - triage: T3
+    min_count: 1
+    min_wait_min: 720
+levers:
+  dispatch_policy: greedy
+  facility_eligibility: 0
+  ambulance_eligibility: 0
+simulation:
+  till: 7200
+  trace: false
+  data_collector_interval: 5.0
+video:
+  enabled: false
+logs:
+  enabled: true
+  path: simulation_logs
+outputs:
+  patient_log: true
+  safe_patients: true
+  transport_events: true
+  wait_times: true
+  facility_states: false

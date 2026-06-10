@@ -1,0 +1,72 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: DISTANCE GRID — BCAS 0.07 — STOVEPIPE — 100 REPLICATIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+# Stovepipe baseline for the grid experiment.
+# Same distance grid and seeds as the both-pooling version.
+#
+# 16 same_bn × 12 inter_bn = 192 combos × 100 = 19,200 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_ratio_bcas07_stove.yaml
+output_folder: data/multi_run/output
+
+uncertainties:
+
+  - name: seed
+    type: integer
+    lower: 1
+    upper: 100000
+
+levers:
+
+  - name: ccp_r1_same_bn_min
+    type: categorical
+    values: [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40]
+
+  - name: ccp_r1_inter_bn_min
+    type: categorical
+    values: [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
+
+outcomes:
+
+  # ── Mortality ──────────────────────────────────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+
+  # ── Patient counts ────────────────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+
+  # ── Median wait times per phase ────────────────────────────────────────────
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+
+  # ── Per-phase mortality rates ──────────────────────────────────────────────
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Pooling fractions ──────────────────────────────────────────────────────
+  - frac_facility_cross_bn
+  - frac_transport_cross_bn
+
+run_settings:
+  n_scenarios: 100
+  n_policies: 192           # 16 × 12
+  uncertainty_sampler: lhs
+  lever_sampler: fullfactorial
+  batch_size: 100
+  max_parallel: 20
