@@ -1,0 +1,100 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: SOBOL SA — DCR CAPACITY DESTRUCTION — ALL POLICIES — 2 BTG
+# ═══════════════════════════════════════════════════════════════════════════════
+# Same Saltelli design as loose_ranges, plus n_dcr_destroyed lever [1,2,3].
+# Extended distance ranges: same_bn 10-40, inter_bn 15-70.
+#
+# 5 uncertainties, N=2048, second order → 2048*(2*5+2) = 24576 Saltelli rows
+# × 3 destruction levels × 4 policies = 12 combos → 294,912 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_2btg_pooling_limit_baseline_stove.yaml
+output_folder: data/multi_run/output
+
+uncertainties:
+
+  - name: ccp_r1_same_bn_min
+    type: integer
+    lower: 10
+    upper: 40
+
+  - name: ccp_r1_inter_bn_min
+    type: integer
+    lower: 15
+    upper: 70
+
+  - name: bcas_rate
+    type: real
+    lower: 0.01
+    upper: 0.07
+
+  - name: waves_per_day
+    type: integer
+    lower: 1
+    upper: 6
+
+  - name: wave_duration_min
+    type: integer
+    lower: 1
+    upper: 60
+
+levers:
+
+  - name: n_dcr_destroyed
+    type: categorical
+    values: [1, 2, 3]
+
+  - name: facility_eligibility
+    type: categorical
+    values: [0, 1]
+
+  - name: ambulance_eligibility
+    type: categorical
+    values: [0, 1]
+
+outcomes:
+
+  # ── Mortality ──────────────────────────────────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+
+  # ── Patient counts ────────────────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+
+  # ── Median wait times per phase ────────────────────────────────────────────
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+
+  # ── Per-phase mortality rates ──────────────────────────────────────────────
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Evacuation timeline compliance ──────────────────────────────────────────
+  - frac_t2_within_timeline
+
+  # ── Pooling fractions ──────────────────────────────────────────────────────
+  - frac_facility_cross_bn
+  - frac_transport_cross_bn
+
+run_settings:
+  n_scenarios: 2048
+  n_policies: 12          # 3 destruction × 2 fac × 2 amb
+  uncertainty_sampler: sobol
+  lever_sampler: fullfactorial
+  batch_size: 2000
+  max_parallel: 20

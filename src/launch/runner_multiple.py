@@ -25,7 +25,7 @@ from src.helpers.helpers_multi import (
 )
 
 # ── Point this at your experiment YAML ───────────────────────────────────────
-EXPERIMENT_PATH = "data/multi_run/input/experiment_2btg_pooling_fraction_test.yaml"
+EXPERIMENT_PATH = "data/multi_run/input/experiment_ratio.yaml"
 # ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

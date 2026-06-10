@@ -68,8 +68,10 @@ class RunSetter:
         data     = self._apply_dcs_capacity(data, kwargs)
         data     = self._apply_pec_capacity(data, kwargs)
         data     = self._apply_dcr_capacity(data, kwargs)
+        data     = self._apply_destroy_dcr(data, kwargs, seeds["ambulances"])
         data     = self._apply_set_ambulances_r1_to_ccp(data, kwargs, seeds["ambulances"])
         data     = self._apply_set_ambulances_r1_r2(data, kwargs, seeds["ambulances"])
+        data     = self._apply_destroy_ambulance(data, kwargs, seeds["ambulances"])
         data     = self._apply_casualties(data, kwargs, seeds["casualties"],
                                           battalion_seed=seeds["battalions"])
         data     = self._apply_dispatch_rules(data, kwargs)
@@ -356,6 +358,38 @@ class RunSetter:
         data["units_df"] = units_df
         return data
 
+    def _apply_destroy_dcr(self, data: dict, kwargs: dict, seed: int) -> dict:
+        """Destroy *n* DCR capacity slots by sampling facilities with replacement.
+
+        Lever: ``n_dcr_destroyed`` (int, default 0).
+        For each destruction, a random facility with DCR is drawn (with
+        replacement).  Its DCR capacity is reduced by 1 (minimum 0).
+        The same facility can be hit multiple times.
+        """
+        n = kwargs.get("n_dcr_destroyed")
+        if n is None or int(n) <= 0:
+            return data
+
+        n = int(n)
+        rng      = random.Random(seed + 7777)
+        units_df = data["units_df"].copy()
+        dcr_mask = units_df["service_type"] == "DCR"
+        dcr_facilities = sorted(units_df.loc[dcr_mask, "facility_id"].unique().tolist())
+
+        if not dcr_facilities:
+            return data
+
+        for _ in range(n):
+            victim = rng.choice(dcr_facilities)
+            idx = units_df.index[(units_df["facility_id"] == victim) & dcr_mask]
+            if len(idx) > 0:
+                row = idx[0]
+                if units_df.at[row, "capacity"] > 0:
+                    units_df.at[row, "capacity"] -= 1
+
+        data["units_df"] = units_df
+        return data
+
     def _apply_set_ambulances_r1_to_ccp(self, data: dict, kwargs: dict, seed: int) -> dict:
         """Set the number of CCP→R1 ambulances (dispatched by C2_CCP_R1) PER R1."""
         n = kwargs.get("n_amb_r1_to_ccp")
@@ -382,6 +416,63 @@ class RunSetter:
         if n is None:
             return data
         return self._set_ambulances(data, int(n), c2_id="c2_r1_r2", seed=seed)
+
+    def _apply_destroy_ambulance(self, data: dict, kwargs: dict, seed: int) -> dict:
+        """Destroy *n* CCP→R1 ambulances by sampling battalions with replacement.
+
+        Lever: ``n_amb_destroyed`` (int, default 0).
+        For each of the *n* destructions, a random battalion (home location)
+        is drawn with replacement.  One ambulance is removed from that
+        battalion's CCP→R1 leg.  The same battalion can be hit multiple
+        times; if it has no ambulances left, that draw is skipped.
+        """
+        n = kwargs.get("n_amb_destroyed")
+        if n is None or int(n) <= 0:
+            return data
+
+        n = int(n)
+        rng    = random.Random(seed + 9999)
+        amb_df = data["ambulance_df"]
+        c2_df  = data["c2_df"]
+        amb_elig = data.get("amb_eligibility_datasets", {})
+
+        mask   = amb_df["c2_id"].str.lower() == "c2_ccp_r1"
+        if not mask.any():
+            return data
+
+        homes  = sorted(amb_df.loc[mask, "start_loc_id"].unique().tolist())
+        if not homes:
+            return data
+
+        to_remove = set()
+        for _ in range(n):
+            victim_home = rng.choice(homes)
+            alive = [
+                aid for aid in amb_df.loc[
+                    mask & (amb_df["start_loc_id"] == victim_home), "amb_id"
+                ].tolist()
+                if aid not in to_remove
+            ]
+            if alive:
+                to_remove.add(rng.choice(alive))
+
+        if not to_remove:
+            return data
+
+        data["ambulance_df"] = (
+            amb_df[~amb_df["amb_id"].isin(to_remove)].reset_index(drop=True)
+        )
+        new_c2_df = c2_df.copy()
+        new_c2_df["ambulance_ids"] = new_c2_df["ambulance_ids"].apply(
+            lambda ids: [aid for aid in ids if aid not in to_remove]
+        )
+        data["c2_df"] = new_c2_df
+        new_elig = {}
+        for k, df in amb_elig.items():
+            new_elig[k] = df.loc[[i for i in df.index if i not in to_remove]]
+        data["amb_eligibility_datasets"] = new_elig
+
+        return data
 
     def _set_ambulances(self, data: dict, n: int, c2_id: str, seed: int,
                         start_loc_id: str = None) -> dict:

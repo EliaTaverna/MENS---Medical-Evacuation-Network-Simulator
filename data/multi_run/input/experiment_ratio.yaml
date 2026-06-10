@@ -1,0 +1,63 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: DISTANCE RATIO — FULL FACTORIAL ON BCAS × 4 POLICIES
+# ═══════════════════════════════════════════════════════════════════════════════
+# Single wave (waves=1, duration=1 min) to isolate distance-ratio effect.
+# Full factorial on bcas_rate (7 values: 0.01 to 0.07).
+# LHS on distances: same_bn 5-40, inter_bn 15-70.
+#
+# 5000 LHS scenarios × 7 bcas values × 4 policies = 140,000 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_ratio.yaml
+output_folder: data/multi_run/output
+
+uncertainties:
+
+  - name: ccp_r1_same_bn_min
+    type: integer
+    lower: 5
+    upper: 40
+
+  - name: ccp_r1_inter_bn_min
+    type: integer
+    lower: 15
+    upper: 70
+
+levers:
+
+  - name: bcas_rate
+    type: categorical
+    values: [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07]
+
+  - name: facility_eligibility
+    type: categorical
+    values: [0, 1]
+
+  - name: ambulance_eligibility
+    type: categorical
+    values: [0, 1]
+
+outcomes:
+
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+
+  - n_patients_T1_BCAS
+  - n_dead_T1_BCAS
+
+  - median_wait_ccp_transport_T1
+  - median_wait_r1_care_T1
+
+  - mortality_ccp_transport_T1
+  - mortality_r1_care_T1
+
+  - frac_facility_cross_bn
+  - frac_transport_cross_bn
+
+run_settings:
+  n_scenarios: 5000
+  n_policies: 28          # 7 bcas × 2 fac × 2 amb = 28
+  uncertainty_sampler: lhs
+  lever_sampler: fullfactorial
+  batch_size: 2000
+  max_parallel: 20
