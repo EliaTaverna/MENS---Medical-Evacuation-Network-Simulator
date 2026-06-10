@@ -10,7 +10,12 @@
 scenario: data/single_run/input/scenarios/scenario_ratio_bcas07.yaml
 output_folder: data/multi_run/output
 
-uncertainties: []
+uncertainties:
+
+  - name: seed
+    type: integer
+    lower: 1
+    upper: 100000
 
 levers:
 
