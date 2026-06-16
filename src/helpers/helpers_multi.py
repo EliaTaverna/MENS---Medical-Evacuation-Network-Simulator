@@ -1137,7 +1137,7 @@ def replay_run(results_csv: str, scenario_path: str,
     from src.components.run_setter import RunSetter
     from src.helpers.runner import run_simulation
     from src.helpers.helpers_run import (
-        save_logs, save_network_image, save_gantt_chart, print_summary,
+        save_logs, save_network_image, save_gantt_chart, save_ambulance_gantt, print_summary,
     )
 
     results_df = pd.read_csv(results_csv)
@@ -1206,6 +1206,7 @@ def replay_run(results_csv: str, scenario_path: str,
     save_logs(results)
     save_network_image(data, results)
     save_gantt_chart(data, results)
+    save_ambulance_gantt(results)
     if settings["make_video"]:
         from src.helpers.helpers_run import make_video
         make_video(data, results, settings)

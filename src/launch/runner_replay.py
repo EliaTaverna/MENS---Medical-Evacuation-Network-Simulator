@@ -11,7 +11,7 @@ from src.helpers.helpers_multi import replay_run
 
 if __name__ == "__main__":
     replay_run(
-        results_csv="data/multi_run/output/20260527_000623_scenario_elia_midterm/results.csv",
-        scenario_path="data/single_run/input/scenarios/scenario_second_test.yaml",
-        seed=3109,
+        results_csv="data_cluster/fullgrid/results.csv",
+        scenario_path="data/single_run/input/scenarios/scenario_ratio.yaml",
+        row_index=273671,  # stove own=20, seed=43857, mortality=0.875
     )
