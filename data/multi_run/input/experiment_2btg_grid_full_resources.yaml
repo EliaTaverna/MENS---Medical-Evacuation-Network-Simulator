@@ -1,10 +1,10 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# EXPERIMENT: FULL FACTORIAL DISTANCE GRID — 6 BCAS — ALL POLICIES — RESOURCE SWEEP
+# EXPERIMENT: FULL FACTORIAL DISTANCE GRID — 6 BCAS — ALL POLICIES — AMB SWEEP
 # ═══════════════════════════════════════════════════════════════════════════════
-# Same as experiment_2btg_grid_full but with ambulance count and DCR capacity
-# varied: n_amb_r1_to_ccp ∈ {1, 2}, dcr_capacity ∈ {1, 2}
-# 16 same_bn × 12 inter_bn × 6 bcas × 4 policies × 2 amb × 2 dcr = 18432 combos
-# 100 replications (seed uncertainty) → 1,843,200 runs
+# Same as experiment_2btg_grid_full but with ambulance count varied:
+# n_amb_r1_to_ccp ∈ {1, 2}
+# 13 same_bn × 13 inter_bn × 6 bcas × 4 policies × 2 amb = 8112 combos
+# 100 replications (seed uncertainty) → 811,200 runs
 # ═══════════════════════════════════════════════════════════════════════════════
 
 scenario: data/single_run/input/scenarios/scenario_ratio.yaml
@@ -21,11 +21,11 @@ levers:
 
   - name: ccp_r1_same_bn_min
     type: categorical
-    values: [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40]
+    values: [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
 
   - name: ccp_r1_inter_bn_min
     type: categorical
-    values: [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
+    values: [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
 
   - name: bcas_rate
     type: categorical
@@ -40,10 +40,6 @@ levers:
     values: [0, 1]
 
   - name: n_amb_r1_to_ccp
-    type: categorical
-    values: [1, 2]
-
-  - name: dcr_capacity
     type: categorical
     values: [1, 2]
 
@@ -85,8 +81,8 @@ outcomes:
 
 run_settings:
   n_scenarios: 100
-  n_policies: 18432          # 16 × 12 × 6 × 4 × 2 × 2
+  n_policies: 8112            # 13 × 13 × 6 × 4 × 2
   uncertainty_sampler: lhs
   lever_sampler: fullfactorial
-  batch_size: 100
+  batch_size: 1
   max_parallel: 20
