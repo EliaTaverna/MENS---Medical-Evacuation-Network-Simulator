@@ -715,9 +715,10 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
     if unc_sampler is Samplers.SOBOL and batch_size > 0:
         return run_ema_sobol_chunked(model, experiment, output_dir)
 
-    # Full factorial uncertainties: materialise the FF grid once, then chunk.
+    # Full factorial ignores n_scenarios — EMA enumerates all combinations.
+    # Disable batching to avoid re-running the same FF design per batch.
     if unc_sampler is Samplers.FF and batch_size > 0:
-        return run_ema_ff_chunked(model, experiment, output_dir)
+        batch_size = 0
 
     # EMA treats policies=0 as "no levers → 1 dummy policy"; reflect that in display
     n_policies_display = max(n_policies, 1)
@@ -784,78 +785,6 @@ def run_ema(model: Model, experiment: dict, output_dir: Path = None) -> tuple:
 
     merged_experiments = pd.concat(all_experiments, ignore_index=True)
     return merged_experiments, all_outcomes
-
-
-# ============================================================
-# FULL FACTORIAL uncertainties — chunked evaluation
-# ============================================================
-
-def run_ema_ff_chunked(model: Model, experiment: dict, output_dir: Path) -> tuple:
-    """Evaluate a full-factorial uncertainty design in chunks with pool restarts.
-
-    The FF grid is materialised ONCE up front; chunks slice the resulting
-    scenario list by row index.  Same memory-management pattern as the Sobol
-    chunked runner.
-    """
-    rs             = experiment.get("run_settings", {})
-    n_policies     = int(rs.get("n_policies", 0))
-    max_parallel   = int(rs.get("max_parallel", 1))
-    chunk_size     = int(rs.get("batch_size", 100))
-    lever_sampler_name = str(rs.get("lever_sampler", "ff")).lower()
-
-    # 1. Materialise the full FF uncertainty grid ONCE.
-    scenarios_full = list(sample_uncertainties(
-        model, 0, sampler=FullFactorialSampler()
-    ))
-    total_scenarios = len(scenarios_full)
-
-    # 2. Materialise policies ONCE.
-    if model.levers and n_policies > 0:
-        lever_sampler_cls = FullFactorialSampler() if lever_sampler_name == "ff" else FullFactorialSampler()
-        policies_full = list(sample_levers(model, n_policies, sampler=lever_sampler_cls))
-        n_policies_realised = len(policies_full)
-    else:
-        policies_full = 0
-        n_policies_realised = 1
-
-    n_chunks   = (total_scenarios + chunk_size - 1) // chunk_size
-    total_runs = total_scenarios * n_policies_realised
-
-    if max_parallel > 1:
-        from ema_workbench import MultiprocessingEvaluator
-        evaluator_cls    = MultiprocessingEvaluator
-        evaluator_kwargs = {"n_processes": max_parallel}
-    else:
-        evaluator_cls    = SequentialEvaluator
-        evaluator_kwargs = {}
-
-    print(f"FF chunked: {total_scenarios} scenarios × {n_policies_realised} policies "
-          f"= {total_runs} runs, split into {n_chunks} chunks of ≤{chunk_size} scenarios "
-          f"(max_parallel={max_parallel}).")
-
-    # 3. Evaluate chunks.
-    for chunk_id in range(n_chunks):
-        start = chunk_id * chunk_size
-        end   = min(start + chunk_size, total_scenarios)
-        chunk = scenarios_full[start:end]
-        print(f"\n--- Chunk {chunk_id + 1}/{n_chunks} "
-              f"(scenarios [{start}:{end}) × {n_policies_realised} policies "
-              f"= {(end - start) * n_policies_realised} runs) ---")
-
-        with evaluator_cls(model, **evaluator_kwargs) as evaluator:
-            exp_df, outcomes = perform_experiments(
-                model, scenarios=chunk, policies=policies_full, evaluator=evaluator,
-            )
-
-        if output_dir is not None:
-            save_batch_results(exp_df, outcomes, output_dir, chunk_id)
-
-        del exp_df, outcomes, chunk, evaluator
-        gc.collect()
-
-    # 4. Reassemble chunks.
-    scalar_outcome_names = list(experiment.get("outcomes", []))
-    return _reassemble_sobol_chunks(output_dir, n_chunks, scalar_outcome_names)
 
 
 # ============================================================
