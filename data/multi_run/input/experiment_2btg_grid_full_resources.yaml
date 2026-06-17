@@ -84,5 +84,5 @@ run_settings:
   n_policies: 8112            # 13 × 13 × 6 × 4 × 2
   uncertainty_sampler: lhs
   lever_sampler: fullfactorial
-  batch_size: 1
+  batch_size: 100
   max_parallel: 20
