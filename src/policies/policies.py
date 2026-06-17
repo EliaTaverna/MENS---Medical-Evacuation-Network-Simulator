@@ -174,7 +174,9 @@ def craft_plans(
         req_ids = gg["req_id"].astype(str).tolist()
         rmap = req_map_for_facility(pickup_fac)
         req_objs = [rmap.get(rid) for rid in req_ids]
-        req_objs = [r for r in req_objs if r is not None and getattr(r, "patient", None) is not None]
+        req_objs = [r for r in req_objs if r is not None
+                    and getattr(r, "patient", None) is not None
+                    and not getattr(r.patient, "is_dead", False)]
         patients = [r.patient for r in req_objs]
 
         if not patients:

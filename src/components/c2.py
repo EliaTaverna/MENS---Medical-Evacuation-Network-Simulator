@@ -185,8 +185,9 @@ class TransportC2(sim.Component):
         self._expire_stale()
         self._pending = [r for r in self._pending if r["status"] == "pending"]
 
+        skip_facilities: set[str] = set()
         while self._pending and self.idle_ambulances:
-            action = self._choose_action(self._pending)
+            action = self._choose_action(self._pending, skip_facilities)
             if action is None:
                 break
 
@@ -220,8 +221,7 @@ class TransportC2(sim.Component):
             self._log_dispatch(dispatch_df, snapshot_ambs, plans_craft, trigger_type)
 
             if not plans_craft:
-                for r in anchor_rows:
-                    r["status"] = "expired"
+                skip_facilities.add(anchor_facility_id)
 
             self._pending = [r for r in self._pending if r["status"] == "pending"]
 
@@ -229,7 +229,7 @@ class TransportC2(sim.Component):
     # rule-based decision logic
     # --------------------------------------------------------
 
-    def _choose_action(self, pending: list[dict]):
+    def _choose_action(self, pending: list[dict], skip_facilities: set[str] | None = None):
         """
         Evaluate dispatch rules in priority order.
         Returns: (trigger_label, facility_id, all_rows_at_facility) or None
@@ -254,6 +254,8 @@ class TransportC2(sim.Component):
                 by_fac.items(),
                 key=lambda item: min((r["t_issued"] or 0) for r in item[1]),
             ):
+                if skip_facilities and fac_id in skip_facilities:
+                    continue
                 if len(fac_rows) < min_count:
                     continue
                 if min_wait > 0:
@@ -272,7 +274,7 @@ class TransportC2(sim.Component):
     # --------------------------------------------------------
 
     def _expire_stale(self):
-        """Mark pending requests whose patients left the exit_queue."""
+        """Mark pending requests whose patients left the exit_queue or died."""
         exit_req_cache: dict[str, set] = {}
         for r in self._pending:
             if r["status"] != "pending":
@@ -286,6 +288,7 @@ class TransportC2(sim.Component):
                     exit_req_cache[fac_id] = {
                         getattr(rq, "req_id", None)
                         for rq in getattr(fac, "exit_queue", [])
+                        if not getattr(getattr(rq, "patient", None), "is_dead", False)
                     }
             if r["req_id"] not in exit_req_cache[fac_id]:
                 r["status"] = "expired"
