@@ -462,7 +462,7 @@ def save_ambulance_gantt(results: dict) -> None:
         }
 
     missions = []
-    for amb_id, grp in transport_df.sort_values("time").groupby("amb_id"):
+    for amb_id, grp in transport_df.sort_values("time", kind="mergesort").groupby("amb_id"):
         rows = grp.to_dict("records")
         buf, in_mission = [], False
         for row in rows:

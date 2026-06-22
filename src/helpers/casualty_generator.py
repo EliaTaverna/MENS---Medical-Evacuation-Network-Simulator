@@ -354,6 +354,7 @@ def populate_patient_attributes(
                 w.df["lifetime_low"]       = pd.Series(dtype=float)
                 w.df["lifetime_high"]      = pd.Series(dtype=float)
                 w.df["lifetime_mode"]      = pd.Series(dtype=float)
+                w.df["patient_seed"]       = pd.Series(dtype=int)
                 continue
 
             n = len(w.df)
@@ -381,6 +382,8 @@ def populate_patient_attributes(
                 lf_highs.append(params.get("high", params.get("std")))
                 lf_modes.append(params.get("mode"))
 
+            patient_seeds = rng.integers(0, 2**31, size=n).tolist()
+
             w.df = w.df.copy()
             w.df["triage"]            = triage
             w.df["prescription"]      = prescriptions
@@ -388,6 +391,7 @@ def populate_patient_attributes(
             w.df["lifetime_low"]       = lf_lows
             w.df["lifetime_high"]      = lf_highs
             w.df["lifetime_mode"]      = lf_modes
+            w.df["patient_seed"]       = patient_seeds
 
 
 # ============================================================
@@ -406,6 +410,7 @@ def merge_waves_to_casualties_df(*wave_dicts: WaveDict) -> pd.DataFrame:
         return pd.DataFrame(columns=[
             "t_create", "spawn_facility_id", "triage", "prescription",
             "lifetime_dist_type", "lifetime_low", "lifetime_high", "lifetime_mode",
+            "patient_seed",
         ])
 
     out = pd.concat(frames, ignore_index=True)

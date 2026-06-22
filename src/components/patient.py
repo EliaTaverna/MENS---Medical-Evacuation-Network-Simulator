@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 import math
+import numpy as np
 import salabim as sim
 
 
-def _make_lifetime_dist(params: dict):
-    """Build a salabim distribution from a lifetime params dict.
-
-    Called inside Patient.setup(), which runs during the simulation (after
-    sim.Environment(seed=…) is active) — so all samples are reproducibly
-    seeded.
-    """
+def _sample_lifetime(params: dict, rng: np.random.Generator) -> float:
+    """Sample a lifetime value from the distribution described by params,
+    using the given numpy RNG (policy-independent)."""
     t = str(params.get("type", "uniform")).lower()
     if t == "triangular":
         low  = float(params["low"])
@@ -19,13 +16,13 @@ def _make_lifetime_dist(params: dict):
         mode = params.get("mode")
         if mode is None or (isinstance(mode, float) and math.isnan(mode)):
             mode = (low + high) / 2.0
-        return sim.Triangular(low, high, float(mode))
+        return float(rng.triangular(low, float(mode), high))
     if t == "exponential":
-        return sim.Exponential(float(params["mean"]))
+        return float(rng.exponential(float(params["mean"])))
     if t == "normal":
-        return sim.Normal(float(params["mean"]), float(params["std"]))
+        return float(rng.normal(float(params["mean"]), float(params["std"])))
     # default: uniform
-    return sim.Uniform(float(params["low"]), float(params["high"]))
+    return float(rng.uniform(float(params["low"]), float(params["high"])))
 
 
 class Patient(sim.Component):
@@ -37,11 +34,12 @@ class Patient(sim.Component):
     - Clock EXTENDED after each treatment step
     """
 
-    def setup(self, patient_id: str, triage: str, prescription: list, life_time_params: dict, spawn_facility, injury_time):
+    def setup(self, patient_id: str, triage: str, prescription: list, life_time_params: dict, spawn_facility, injury_time, patient_seed=None):
         self.patient_id = patient_id
         self.triage = triage
         self.prescription = list(prescription)
-        self.life_time_dist = _make_lifetime_dist(life_time_params)
+        self._life_time_params = life_time_params
+        self._patient_rng = np.random.default_rng(patient_seed)
         self.spawn_facility = spawn_facility
         self.current_facility = spawn_facility
         self.rx_index = 0
@@ -53,7 +51,7 @@ class Patient(sim.Component):
         self.injury_time = float(injury_time)
 
         # Death clock state
-        self._remaining_survival_time = float(self.life_time_dist.sample())
+        self._remaining_survival_time = _sample_lifetime(life_time_params, self._patient_rng)
         self._clock_running = False
         self._wait_start_time = None
 
@@ -126,7 +124,7 @@ class Patient(sim.Component):
 
     def extend_survival_time(self):
         """Extend survival time after treatment. Called after care_completed."""
-        extension = float(self.life_time_dist.sample())
+        extension = _sample_lifetime(self._life_time_params, self._patient_rng)
         self._remaining_survival_time += extension
         self._log(action="SURVIVAL_EXTENDED", life_budget=self._remaining_survival_time)
 

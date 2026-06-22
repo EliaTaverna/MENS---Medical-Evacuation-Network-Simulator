@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import uuid
+import pandas as pd
 import salabim as sim
 
 from src.components.patient import Patient
@@ -26,6 +27,7 @@ class CasualtySpawner(sim.Component):
                 "high": row.lifetime_high,
                 "mode": row.lifetime_mode,
             }
+            patient_seed = int(row.patient_seed) if hasattr(row, "patient_seed") and not pd.isna(row.patient_seed) else None
             p = Patient(
                 patient_id=uuid.uuid4().hex,
                 triage=row.triage,
@@ -33,5 +35,6 @@ class CasualtySpawner(sim.Component):
                 life_time_params=life_time_params,
                 spawn_facility=spawn,
                 injury_time=injury_time,
+                patient_seed=patient_seed,
             )
             spawn.patient_handed_over(p)
