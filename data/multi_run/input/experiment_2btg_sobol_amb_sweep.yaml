@@ -1,0 +1,101 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: SOBOL WITH AMBULANCE SWEEP (OLD DISTANCE RANGES)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Same uncertainty structure as 1rq_rerun_sobol but with n_amb_r1_to_ccp ∈ {1,2}
+# added as full factorial lever alongside policies.
+# 4 continuous uncertainties (same_bn, inter_bn, bcas, wave_duration) + 1
+# categorical (waves_per_day, 6 levels) sampled via Sobol.
+# N=512 base × (4+2) = 3072 Sobol rows × 400 lever combos = 1,228,800 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_2btg_pooling_limit_baseline_stove.yaml
+output_folder: data/multi_run/output
+
+uncertainties:
+
+  - name: ccp_r1_same_bn_min
+    type: integer
+    lower: 10
+    upper: 20
+
+  - name: ccp_r1_inter_bn_min
+    type: integer
+    lower: 15
+    upper: 35
+
+  - name: bcas_rate
+    type: real
+    lower: 0.01
+    upper: 0.07
+
+  - name: waves_per_day
+    type: categorical
+    values: [1, 2, 3, 4, 5, 6]
+
+  - name: wave_duration_min
+    type: integer
+    lower: 1
+    upper: 60
+
+levers:
+
+  - name: facility_eligibility
+    type: categorical
+    values: [0, 1]
+
+  - name: ambulance_eligibility
+    type: categorical
+    values: [0, 1]
+
+  - name: n_amb_r1_to_ccp
+    type: categorical
+    values: [1, 2]
+
+  - name: seed
+    type: categorical
+    values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50]
+
+outcomes:
+
+  # ── Mortality ──────────────────────────────────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+
+  # ── Patient counts ────────────────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+
+  # ── Median wait times per phase ────────────────────────────────────────────
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+
+  # ── Per-phase mortality rates ──────────────────────────────────────────────
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Pooling fractions ──────────────────────────────────────────────────────
+  - frac_facility_cross_bn
+  - frac_transport_cross_bn
+
+run_settings:
+  n_scenarios: 512
+  n_policies: 400               # 2 × 2 × 2 × 50 (fac × amb × n_amb × seed)
+  uncertainty_sampler: sobol
+  lever_sampler: fullfactorial
+  sobol_second_order: false
+  batch_size: 1
+  max_parallel: 20
