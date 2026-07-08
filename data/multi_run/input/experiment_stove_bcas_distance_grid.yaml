@@ -14,7 +14,7 @@ uncertainties:
   - name: seed
     type: integer
     lower: 1
-    upper: 999999
+    upper: 100
 
 levers:
 
@@ -26,21 +26,6 @@ levers:
     type: categorical
     values: [10, 15, 20]
 
-  - name: facility_eligibility
-    type: categorical
-    values: [0]
-
-  - name: ambulance_eligibility
-    type: categorical
-    values: [0]
-
-  - name: wave_duration_min
-    type: categorical
-    values: [1]
-
-  - name: waves_per_day
-    type: categorical
-    values: [1]
 
 outcomes:
 
