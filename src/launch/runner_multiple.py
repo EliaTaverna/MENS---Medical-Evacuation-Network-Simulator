@@ -25,7 +25,7 @@ from src.helpers.helpers_multi import (
 )
 
 # ── Point this at your experiment YAML ───────────────────────────────────────
-EXPERIMENT_PATH = "data/multi_run/input/experiment_2btg_sobol_amb_sweep.yaml"
+EXPERIMENT_PATH = "data/multi_run/input/experiment_stove_bcas_distance_grid.yaml"
 # ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
