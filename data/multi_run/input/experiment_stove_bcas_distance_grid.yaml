@@ -16,8 +16,6 @@ uncertainties:
     lower: 1
     upper: 100
 
-levers:
-
   - name: bcas_rate
     type: categorical
     values: [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07]
@@ -25,7 +23,6 @@ levers:
   - name: ccp_r1_same_bn_min
     type: categorical
     values: [10, 15, 20]
-
 
 outcomes:
 
@@ -36,9 +33,9 @@ outcomes:
   - mortality_r1_transport_T1
 
 run_settings:
-  n_scenarios: 100
+  n_scenarios: 0
   n_policies: 0
-  uncertainty_sampler: lhs
+  uncertainty_sampler: fullfactorial
   lever_sampler: fullfactorial
-  batch_size: 0
+  batch_size: 30000
   max_parallel: 5
