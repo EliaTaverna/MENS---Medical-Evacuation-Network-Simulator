@@ -5,7 +5,7 @@
 # Total: 2000 × 4 = 8,000 runs.
 # ═══════════════════════════════════════════════════════════════════════════════
 
-scenario: data/single_run/input/scenarios/scenario_second_test.yaml
+scenario: data/single_run/input/scenarios/scenario_2btg_fixed_high_bcas.yaml
 output_folder: data_cluster/srq1_lhs_convergence
 
 uncertainties:
