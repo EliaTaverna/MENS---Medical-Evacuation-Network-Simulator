@@ -1,0 +1,98 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPERIMENT: FULL FACTORIAL DISTANCE GRID — EXTENDED WITH WAVES
+# ═══════════════════════════════════════════════════════════════════════════════
+# Same as experiment_2btg_grid_full_resources but adds wave variability:
+# bcas_rate ∈ {0.01, 0.07}, waves_per_day ∈ {1, 6}, wave_duration_min ∈ {1, 60}
+# Uncertainties: 13 same_bn × 13 inter_bn × 2 bcas × 2 waves × 2 duration × 2 amb
+#   = 13 × 13 × 2 × 2 × 2 × 2 = 2,704 combos
+# Levers: 4 policies
+# 30 seeds → 2,704 × 4 × 30 = 324,480 runs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenario: data/single_run/input/scenarios/scenario_ratio.yaml
+output_folder: data_cluster/resource_grid_extended
+
+uncertainties:
+
+  - name: ccp_r1_same_bn_min
+    type: categorical
+    values: [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
+
+  - name: ccp_r1_inter_bn_min
+    type: categorical
+    values: [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
+
+  - name: bcas_rate
+    type: categorical
+    values: [0.01, 0.07]
+
+  - name: waves_per_day
+    type: categorical
+    values: [1, 6]
+
+  - name: wave_duration_min
+    type: categorical
+    values: [1, 60]
+
+  - name: n_amb_r1_to_ccp
+    type: categorical
+    values: [1, 2]
+
+levers:
+
+  - name: facility_eligibility
+    type: categorical
+    values: [0, 1]
+
+  - name: ambulance_eligibility
+    type: categorical
+    values: [0, 1]
+
+  - name: seed
+    type: integer
+    lower: 1
+    upper: 100000
+
+outcomes:
+
+  # ── Mortality ──────────────────────────────────────────────────────────────
+  - death_rate_T1_BCAS
+  - death_rate_T2_BCAS
+  - death_rate_T3_BCAS
+
+  # ── Patient counts ────────────────────────────────────────────────────────
+  - n_patients_T1_BCAS
+  - n_patients_T2_BCAS
+  - n_patients_T3_BCAS
+
+  # ── Median wait times per phase ────────────────────────────────────────────
+  - median_wait_ccp_transport_T1
+  - median_wait_ccp_transport_T2
+  - median_wait_r1_care_T1
+  - median_wait_r1_care_T2
+  - median_wait_r1_transport_T1
+  - median_wait_r1_transport_T2
+  - median_wait_r2_care_T1
+  - median_wait_r2_care_T2
+
+  # ── Per-phase mortality rates ──────────────────────────────────────────────
+  - mortality_ccp_transport_T1
+  - mortality_ccp_transport_T2
+  - mortality_r1_care_T1
+  - mortality_r1_care_T2
+  - mortality_r1_transport_T1
+  - mortality_r1_transport_T2
+  - mortality_r2_care_T1
+  - mortality_r2_care_T2
+
+  # ── Pooling fractions ──────────────────────────────────────────────────────
+  - frac_facility_cross_bn
+  - frac_transport_cross_bn
+
+run_settings:
+  n_scenarios: 2704           # 13 × 13 × 2 × 2 × 2 × 2
+  n_policies: 120            # 4 policies × 30 seeds
+  uncertainty_sampler: fullfactorial
+  lever_sampler: fullfactorial
+  batch_size: 1
+  max_parallel: 20

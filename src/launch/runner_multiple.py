@@ -25,7 +25,7 @@ from src.helpers.helpers_multi import (
 )
 
 # ── Point this at your experiment YAML ───────────────────────────────────────
-EXPERIMENT_PATH = "data/multi_run/input/experiment_srq1_lhs_1000sc_1seed.yaml"
+EXPERIMENT_PATH = "input_for_experiments/srq2_experiment/input/experiment/experiment_2btg_grid_full_resources_extended.yaml"
 # ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
